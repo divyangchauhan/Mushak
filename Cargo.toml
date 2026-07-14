@@ -1,0 +1,63 @@
+[package]
+name = "mushak"
+version = "0.1.0"
+edition = "2021"
+description = "Lightweight replacement for Logitech Options+ for the MX Master 2S"
+license = "MIT"
+rust-version = "1.77"
+
+[[bin]]
+name = "mushak"
+path = "src/main.rs"
+
+[dependencies]
+# Win32 bindings (official Microsoft crate).
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Accessibility",
+    "Win32_System_Threading",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Registry",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_Security",
+] }
+
+# Raw HID access to talk HID++ 2.0 to the mouse / Unifying receiver.
+hidapi = "2.6"
+
+# Tray icon + menu.
+tray-icon = "0.19"
+
+# Small pure-Rust immediate-mode GUI (no webview / Electron).
+eframe = { version = "0.29", default-features = false, features = [
+    "glow",
+    "default_fonts",
+] }
+
+# Config persistence.
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+serde_json = "1"
+
+# Lock-free shared state read from the mouse-hook hot path.
+arc-swap = "1"
+
+# Cross-thread channels between UI / hook / injector / HID threads.
+crossbeam-channel = "0.5"
+
+# Logging to a rotating file (with raw HID++ hex dumps at debug level).
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
+
+anyhow = "1"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+panic = "abort"
+codegen-units = 1
