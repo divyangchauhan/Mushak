@@ -1,0 +1,6 @@
+/target
+*.log
+
+# Local dev notes / scratch
+HANDOFF.md
+Prompt.txt
