@@ -84,7 +84,7 @@ pub fn run() {
                             tray.set_startup(new_cfg.start_with_windows);
                             state::set_config(new_cfg);
                             state::device_command(DeviceCommand::ApplyDeviceConfig);
-                            state::device_command(DeviceCommand::ApplyGestureDivert);
+                            state::device_command(DeviceCommand::ApplyControlDiverts);
                             tracing::info!("reloaded config after external edit");
                         }
                         Err(e) => tracing::debug!("config not ready, retrying: {e:#}"),

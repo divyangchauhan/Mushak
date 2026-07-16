@@ -120,7 +120,21 @@ the pointer can never freeze.
 Do **not** run Logitech Options / Options+ / LogiOptionsMgr or G HUB at the same
 time — they hold the HID++ diverts and will fight Mushak over the device. Mushak
 detects these and shows a warning banner. Quit them for gestures / SmartShift /
-DPI to work reliably (plain button remapping via the hook works regardless).
+DPI to work reliably.
+
+### Diverts left behind by other software
+
+Options+ *diverts* the side buttons over HID++ so it can remap them itself: a
+diverted button stops sending a normal mouse event and instead reports as an
+HID++ control event. That divert lives in the mouse and survives the app — if
+you quit Options+, the buttons stay diverted until the mouse power-cycles, which
+leaves them dead for everything else (including Mushak's hook, which only sees
+real mouse events).
+
+So on every connect Mushak asserts the divert state of *all* reprogrammable
+controls, not just the ones it uses: the thumb button is diverted when gestures
+are enabled, and every other button is explicitly restored to native reporting.
+This is what makes remapping work on a mouse that Options+ has touched.
 
 ## Reconnection
 
