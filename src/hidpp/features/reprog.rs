@@ -13,8 +13,18 @@ use anyhow::{anyhow, Result};
 /// CID of the MX Master 2S thumb "gesture" button.
 pub const CID_GESTURE: u16 = 0x00C3;
 
+// getControlInfo `flags` bits.
+const KEY_DIVERTABLE: u8 = 0x20;
+const KEY_PERSISTENTLY_DIVERTABLE: u8 = 0x40;
+const KEY_VIRTUAL: u8 = 0x80;
+// getControlInfo `additional_flags` bits.
+const KEY_RAW_XY: u8 = 0x01;
+
+// setControlReporting flags. Bit 0x04 (persistently diverted) is deliberately
+// never set: Mushak only ever takes a temporary divert.
 const RC_TEMP_DIVERT: u8 = 0x01;
 const RC_CHANGE_TEMP_DIVERT: u8 = 0x02;
+const RC_CHANGE_PERSIST_DIVERT: u8 = 0x08;
 const RC_RAWXY_DIVERT: u8 = 0x10;
 const RC_CHANGE_RAWXY_DIVERT: u8 = 0x20;
 
@@ -25,6 +35,28 @@ pub struct ControlInfo {
     pub tid: u16,
     pub flags: u8,
     pub additional_flags: u8,
+}
+
+impl ControlInfo {
+    /// The control can be temporarily diverted to HID++ reporting.
+    fn divertable(&self) -> bool {
+        self.flags & KEY_DIVERTABLE != 0
+    }
+
+    /// The control supports a divert that survives a power cycle.
+    fn persistently_divertable(&self) -> bool {
+        self.flags & KEY_PERSISTENTLY_DIVERTABLE != 0
+    }
+
+    /// The control can report raw sensor movement while held.
+    fn raw_xy(&self) -> bool {
+        self.additional_flags & KEY_RAW_XY != 0
+    }
+
+    /// Not a physical button — nothing to restore, so we leave these alone.
+    fn virtual_control(&self) -> bool {
+        self.flags & KEY_VIRTUAL != 0
+    }
 }
 
 impl Device {
@@ -51,17 +83,17 @@ impl Device {
         })
     }
 
-    /// Enumerate + log all controls; return true if the gesture CID is present.
-    pub(crate) fn enumerate_controls(&self) -> bool {
+    /// Enumerate + log every control the firmware exposes.
+    pub(crate) fn enumerate_controls(&self) -> Vec<ControlInfo> {
         let count = match self.control_count() {
             Ok(c) => c,
             Err(e) => {
                 tracing::warn!("getControlCount failed: {e:#}");
-                return false;
+                return Vec::new();
             }
         };
         tracing::info!("REPROG_CONTROLS_V4: {count} controls");
-        let mut has_gesture = false;
+        let mut controls = Vec::new();
         for i in 0..count {
             match self.control_info(i) {
                 Ok(ci) => {
@@ -72,14 +104,12 @@ impl Device {
                         ci.flags,
                         ci.additional_flags
                     );
-                    if ci.cid == CID_GESTURE {
-                        has_gesture = true;
-                    }
+                    controls.push(ci);
                 }
                 Err(e) => tracing::debug!("  control[{i:02}] read failed: {e:#}"),
             }
         }
-        has_gesture
+        controls
     }
 
     fn set_control_reporting(&self, cid: u16, flags: u8) -> Result<()> {
@@ -89,19 +119,67 @@ impl Device {
         Ok(())
     }
 
-    /// Divert or restore the gesture button (button + raw XY).
-    pub(crate) fn divert_gesture(&self, enable: bool) -> Result<()> {
-        let flags = if enable {
-            RC_TEMP_DIVERT | RC_CHANGE_TEMP_DIVERT | RC_RAWXY_DIVERT | RC_CHANGE_RAWXY_DIVERT
-        } else {
-            // Clear both divert bits (set change bits, leave value bits 0).
-            RC_CHANGE_TEMP_DIVERT | RC_CHANGE_RAWXY_DIVERT
-        };
-        tracing::info!(
-            "{} gesture CID {:#06x} (flags={flags:#04x})",
-            if enable { "diverting" } else { "restoring" },
-            CID_GESTURE
+    /// Divert one control to HID++ reporting, or restore its native behavior.
+    ///
+    /// Only the change bits a control actually supports are sent — a change bit
+    /// for an unsupported divert is rejected by the firmware.
+    fn set_divert(&self, ci: &ControlInfo, divert: bool) -> Result<()> {
+        if !ci.divertable() {
+            return Ok(());
+        }
+        let mut flags = RC_CHANGE_TEMP_DIVERT;
+        if divert {
+            flags |= RC_TEMP_DIVERT;
+        }
+        if ci.raw_xy() {
+            flags |= RC_CHANGE_RAWXY_DIVERT;
+            if divert {
+                flags |= RC_RAWXY_DIVERT;
+            }
+        }
+        if ci.persistently_divertable() {
+            // Clear any persistent divert; never set one.
+            flags |= RC_CHANGE_PERSIST_DIVERT;
+        }
+        tracing::debug!(
+            "{} CID {:#06x} (flags={flags:#04x})",
+            if divert { "divert" } else { "restore" },
+            ci.cid
         );
-        self.set_control_reporting(CID_GESTURE, flags)
+        self.set_control_reporting(ci.cid, flags)
+    }
+
+    /// Assert the divert state of *every* control: the thumb button diverted
+    /// when gestures are enabled, everything else reporting natively.
+    ///
+    /// Restoring the others is not merely tidy — it is required. Logitech
+    /// Options+ diverts the side buttons so it can remap them in software, and
+    /// those diverts live in the mouse until it power-cycles; quitting Options+
+    /// does not undo them. While a button is diverted the mouse emits an HID++
+    /// event instead of a normal mouse button, so the low-level hook never sees
+    /// it and the button appears dead.
+    pub(crate) fn apply_control_diverts(&self, gestures_enabled: bool) {
+        let mut diverted = 0usize;
+        let mut restored = 0usize;
+        for ci in &self.controls {
+            if ci.virtual_control() || !ci.divertable() {
+                continue;
+            }
+            let want = ci.cid == CID_GESTURE && gestures_enabled;
+            match self.set_divert(ci, want) {
+                Ok(()) => {
+                    if want {
+                        diverted += 1;
+                    } else {
+                        restored += 1;
+                    }
+                }
+                Err(e) => tracing::warn!(
+                    "set divert={want} on CID {:#06x} failed: {e:#}",
+                    ci.cid
+                ),
+            }
+        }
+        tracing::info!("control diverts applied: {diverted} diverted, {restored} native");
     }
 }

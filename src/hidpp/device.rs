@@ -3,6 +3,7 @@
 //! survives sleep/reconnect. Everything runs on one dedicated thread so the
 //! non-`Sync` HID handle is never touched concurrently.
 
+use super::features::reprog::ControlInfo;
 use super::features::{battery, reprog};
 use super::protocol::{self, Report, *};
 use super::transport::{ConnectionKind, HidppTransport};
@@ -48,8 +49,8 @@ pub struct DeviceStatus {
 pub enum DeviceCommand {
     /// Apply the current `config.device` (SmartShift, DPI, hi-res).
     ApplyDeviceConfig,
-    /// (Re)install the gesture-button divert per `config.gestures`.
-    ApplyGestureDivert,
+    /// Re-assert every control's divert state per `config.gestures`.
+    ApplyControlDiverts,
     /// Stop the thread.
     Shutdown,
 }
@@ -75,10 +76,10 @@ fn run(rx: Receiver<DeviceCommand>) {
         match Device::connect() {
             Ok(dev) => {
                 dev.apply_device_config();
-                dev.apply_gesture_divert();
+                dev.apply_diverts();
                 dev.event_loop(&rx);
                 if SHUTDOWN.load(Ordering::Relaxed) {
-                    dev.restore_gesture();
+                    dev.restore_diverts();
                 }
                 state::update_device_status(|s| s.connected = false);
             }
@@ -105,6 +106,8 @@ pub struct Device {
     pub(crate) transport: HidppTransport,
     pub(crate) index: u8,
     pub(crate) features: FeatureMap,
+    /// Reprogrammable controls (0x1B04), read once per connection.
+    pub(crate) controls: Vec<ControlInfo>,
 }
 
 impl Device {
@@ -120,6 +123,7 @@ impl Device {
                         transport,
                         index: 0xFF,
                         features: FeatureMap::default(),
+                        controls: Vec::new(),
                     };
                     match dev.discover() {
                         Ok(()) => return Ok(dev),
@@ -162,11 +166,14 @@ impl Device {
 
         self.enumerate_features();
 
-        if self.features.reprog.is_some() && !self.enumerate_controls() {
-            tracing::warn!(
-                "gesture CID {:#06x} not found; gestures may be unavailable",
-                reprog::CID_GESTURE
-            );
+        if self.features.reprog.is_some() {
+            self.controls = self.enumerate_controls();
+            if !self.controls.iter().any(|c| c.cid == reprog::CID_GESTURE) {
+                tracing::warn!(
+                    "gesture CID {:#06x} not found; gestures may be unavailable",
+                    reprog::CID_GESTURE
+                );
+            }
         }
 
         let firmware = self.firmware_string().ok();
@@ -299,7 +306,7 @@ impl Device {
         if rep.report_id() == REPORT_ID_SHORT && rep.feature_index() == 0x41 {
             tracing::info!("receiver connection notification (0x41): re-applying settings");
             self.apply_device_config();
-            self.apply_gesture_divert();
+            self.apply_diverts();
             let _ = self.refresh();
             return;
         }
@@ -348,7 +355,7 @@ impl Device {
                 match cmd {
                     DeviceCommand::Shutdown => return,
                     DeviceCommand::ApplyDeviceConfig => self.apply_device_config(),
-                    DeviceCommand::ApplyGestureDivert => self.apply_gesture_divert(),
+                    DeviceCommand::ApplyControlDiverts => self.apply_diverts(),
                 }
             }
 
@@ -357,7 +364,7 @@ impl Device {
             // refresh the battery reading in case no broadcast arrived.
             if last_reapply.elapsed() >= reapply_every {
                 self.apply_device_config();
-                self.apply_gesture_divert();
+                self.apply_diverts();
                 let _ = self.refresh();
                 last_reapply = Instant::now();
             }
@@ -420,21 +427,18 @@ impl Device {
         });
     }
 
-    /// (Re)install (or remove) the gesture-button divert per config.
-    pub(crate) fn apply_gesture_divert(&self) {
+    /// Re-assert the divert state of every control per config.
+    pub(crate) fn apply_diverts(&self) {
         if self.features.reprog.is_none() {
             return;
         }
-        let enabled = state::config().gestures.enabled;
-        if let Err(e) = self.divert_gesture(enabled) {
-            tracing::warn!("gesture divert ({enabled}) failed: {e:#}");
-        }
+        self.apply_control_diverts(state::config().gestures.enabled);
     }
 
-    /// Restore native gesture-button behavior (called on shutdown).
-    pub(crate) fn restore_gesture(&self) {
+    /// Restore native behavior on every control (called on shutdown).
+    pub(crate) fn restore_diverts(&self) {
         if self.features.reprog.is_some() {
-            let _ = self.divert_gesture(false);
+            self.apply_control_diverts(false);
         }
     }
 
