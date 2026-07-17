@@ -31,3 +31,35 @@ font!(DISPLAY_BOLD, "BricolageGrotesque-Bold.ttf");
 font!(MONO_MEDIUM, "JetBrainsMono-Medium.ttf");
 font!(MONO_SEMIBOLD, "JetBrainsMono-SemiBold.ttf");
 font!(MONO_BOLD, "JetBrainsMono-Bold.ttf");
+
+/// Every font, so they can be loaded up front.
+const ALL: [&FontAsset; 8] = [
+    &SANS,
+    &SANS_MEDIUM,
+    &SANS_SEMIBOLD,
+    &SANS_BOLD,
+    &DISPLAY_BOLD,
+    &MONO_MEDIUM,
+    &MONO_SEMIBOLD,
+    &MONO_BOLD,
+];
+
+/// Load every font before the first frame is laid out.
+///
+/// Ply loads a font lazily, from inside the *render* pass
+/// (`FontManager::ensure` in `renderer::render`) — which runs after layout has
+/// already measured the text. So on the first frame `FontManager::get` returns
+/// `None` for a font nobody has drawn yet, and macroquad quietly measures with
+/// its built-in font instead. Anything sized `Fit` around non-default-font text
+/// therefore comes out to the *wrong* font's width, and since measurements are
+/// cached the bad number never corrects itself: a mono chip ends up far too
+/// narrow and its own text spills out of it.
+///
+/// Loading everything up front means every measurement, including the first,
+/// uses the font the text is actually drawn in.
+pub async fn preload() {
+    for f in ALL {
+        ply_engine::renderer::FontManager::ensure(f).await;
+    }
+    tracing::debug!("preloaded {} fonts", ALL.len());
+}
