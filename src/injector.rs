@@ -9,7 +9,8 @@ use crate::config::{Action, Modifier};
 use crossbeam_channel::{Receiver, Sender};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, INPUT_MOUSE, KEYBDINPUT, KEYBD_EVENT_FLAGS,
-    KEYEVENTF_KEYUP, MOUSEEVENTF_MOVE, MOUSEINPUT, VIRTUAL_KEY, VK_CONTROL, VK_LWIN, VK_MENU,
+    KEYEVENTF_KEYUP, MOUSEEVENTF_MOVE, MOUSEEVENTF_WHEEL, MOUSEINPUT, VIRTUAL_KEY, VK_CONTROL,
+    VK_LWIN, VK_MENU,
     VK_SHIFT,
 };
 
@@ -112,6 +113,31 @@ pub fn move_cursor(dx: i32, dy: i32) {
                 dy,
                 mouseData: 0,
                 dwFlags: MOUSEEVENTF_MOVE,
+                time: 0,
+                dwExtraInfo: INJECT_SIGNATURE,
+            },
+        },
+    };
+    unsafe {
+        SendInput(&[input], std::mem::size_of::<INPUT>() as i32);
+    }
+}
+
+/// Emit a vertical wheel event. `delta` is in Windows' units, where
+/// `WHEEL_DELTA` (120) is one notch — fractions of it are what make scrolling
+/// smooth, and apps that support high-resolution wheels honour them.
+pub fn wheel(delta: i32) {
+    if delta == 0 {
+        return;
+    }
+    let input = INPUT {
+        r#type: INPUT_MOUSE,
+        Anonymous: INPUT_0 {
+            mi: MOUSEINPUT {
+                dx: 0,
+                dy: 0,
+                mouseData: delta as u32,
+                dwFlags: MOUSEEVENTF_WHEEL,
                 time: 0,
                 dwExtraInfo: INJECT_SIGNATURE,
             },
