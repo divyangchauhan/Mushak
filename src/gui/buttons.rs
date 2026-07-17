@@ -187,13 +187,25 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
 }
 
 /// Dropdown listing the profiles. Floats over the content below it.
+///
+/// `attach_id` is not optional decoration: `FloatingAttachToElement::None` is
+/// the default, and it means *not attached*, so the whole floating config is
+/// skipped and the menu lays out inline — shoving every row below it down the
+/// page. (`attach_parent`'s doc comment calls itself the default; it is not.)
+/// Anchoring the menu's top-right to the button's bottom-right reproduces the
+/// design's `top: 100%; right: 0; margin-top: 6px`.
 fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usize>) {
     let pal = app.pal;
     let selected = app.selected_profile;
     ui.element()
         .width(fixed!(200.0))
         .height(fit!())
-        .floating(|f| f.offset((0.0, 6.0)))
+        .floating(|f| {
+            f.attach_id("profile_btn")
+                .anchor((Right, Top), (Right, Bottom))
+                .offset((0.0, 6.0))
+                .z_index(50)
+        })
         .corner_radius(11.0)
         .background_color(pal.pop)
         .border(|b| b.all(1).color(pal.line_strong))
