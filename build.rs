@@ -69,13 +69,16 @@ fn render(path: &Path, size: u32) -> (Vec<u8>, Vec<u8>) {
         .unwrap_or_else(|e| panic!("parse {}: {e}", path.display()));
 
     let mut pixmap = tiny_skia::Pixmap::new(size, size).expect("alloc pixmap");
-    // The SVGs use assorted viewBoxes (12, 13, 24, 64); scale each to `size`
-    // rather than assuming one.
+    // The SVGs use assorted viewBoxes (12, 13, 24, and a tall one for the app
+    // icon); scale each to fit `size` rather than assuming one, and centre it —
+    // a non-square viewBox would otherwise be pinned to the top-left corner.
     let vb = tree.size();
     let scale = size as f32 / vb.width().max(vb.height());
+    let tx = (size as f32 - vb.width() * scale) / 2.0;
+    let ty = (size as f32 - vb.height() * scale) / 2.0;
     resvg::render(
         &tree,
-        usvg::Transform::from_scale(scale, scale),
+        usvg::Transform::from_translate(tx, ty).pre_scale(scale, scale),
         &mut pixmap.as_mut(),
     );
     let png = pixmap.encode_png().expect("encode png");

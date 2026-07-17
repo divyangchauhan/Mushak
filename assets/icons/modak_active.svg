@@ -1,1 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><path d="M32 12c3 5 9 6 12 6-3 3-3 10-1 15 3 8-4 17-11 17s-14-9-11-17c2-5 2-12-1-15 3 0 9-1 12-6z" fill="#F2A73B" stroke="#F2A73B" stroke-width="0"/><path d="M32 22v7" stroke="#231705" stroke-width="2.2" stroke-linecap="round"/><circle cx="32" cy="32" r="2.6" fill="#231705"/></svg>
+<!-- viewBox is cropped to the artwork, not the design's 0 0 64 64. The modak is
+     a narrow teardrop: in a square box its ink covered only 37% of the width
+     and 59% of the height, so at 16x16 in the tray the glyph was ~6x9px and
+     read as a speck. Cropping to the ink (plus room for the paused variant's
+     3.6 stroke) lets it fill the icon. Both variants share this box so they are
+     the same size as the tray swaps between them. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 10 28 42" fill="none"><path d="M32 12c3 5 9 6 12 6-3 3-3 10-1 15 3 8-4 17-11 17s-14-9-11-17c2-5 2-12-1-15 3 0 9-1 12-6z" fill="#F2A73B" stroke="#F2A73B" stroke-width="0"/><path d="M32 22v7" stroke="#231705" stroke-width="2.2" stroke-linecap="round"/><circle cx="32" cy="32" r="2.6" fill="#231705"/></svg>
