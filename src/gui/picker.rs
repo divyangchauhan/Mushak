@@ -53,7 +53,10 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
         .background_color(Color::rgba(0.0, 0.0, 0.0, 128.0))
         .layout(|l| l.direction(TopToBottom).align(CenterX, Top).padding((62, 0, 0, 0)))
         .children(|ui| {
-            if ui.just_pressed() {
+            // A press on any descendant also marks its ancestors pressed, so the
+            // backdrop sees every click inside the panel too. Only a press that
+            // misses the panel is a dismissal.
+            if ui.just_pressed() && !ui.pointer_over("picker_panel") {
                 close = true;
             }
             ui.element()
@@ -65,8 +68,6 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                 .border(|b| b.all(1).color(pal.line_strong))
                 .layout(|l| l.direction(TopToBottom))
                 .children(|ui| {
-                    // Swallow presses so they don't reach the backdrop.
-                    let _ = ui.just_pressed();
                     header(ui, app, &target);
                     results(ui, app, &query, &current, &mut chosen);
                     custom_footer(ui, app, &mut chosen);
@@ -76,7 +77,15 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
     if let Some(a) = chosen {
         app.assign_action(&target, a);
         app.close_picker();
-    } else if close || is_key_pressed(KeyCode::Escape) {
+    } else if is_key_pressed(KeyCode::Escape) {
+        // While capturing, Escape backs out of the capture rather than
+        // discarding the whole palette.
+        if app.capturing_key {
+            app.capturing_key = false;
+        } else {
+            app.close_picker();
+        }
+    } else if close {
         app.close_picker();
     }
 }
