@@ -1,1 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><path d="M32 12c3 5 9 6 12 6-3 3-3 10-1 15 3 8-4 17-11 17s-14-9-11-17c2-5 2-12-1-15 3 0 9-1 12-6z" fill="none" stroke="#8a8272" stroke-width="3.6"/><path d="M32 22v7" stroke="#8a8272" stroke-width="2.2" stroke-linecap="round"/><rect x="29.4" y="31" width="2.4" height="8" rx="1.2" fill="#8a8272"/><rect x="32.2" y="31" width="2.4" height="8" rx="1.2" fill="#8a8272"/></svg>
+<!-- Same cropped box as modak_active.svg, so the tray icon does not change size
+     when it swaps to the paused mark. The box leaves room for this variant's
+     3.6 stroke, which sits ~1.8 units outside the shared path. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 10 28 42" fill="none"><path d="M32 12c3 5 9 6 12 6-3 3-3 10-1 15 3 8-4 17-11 17s-14-9-11-17c2-5 2-12-1-15 3 0 9-1 12-6z" fill="none" stroke="#8a8272" stroke-width="3.6"/><path d="M32 22v7" stroke="#8a8272" stroke-width="2.2" stroke-linecap="round"/><rect x="29.4" y="31" width="2.4" height="8" rx="1.2" fill="#8a8272"/><rect x="32.2" y="31" width="2.4" height="8" rx="1.2" fill="#8a8272"/></svg>
