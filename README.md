@@ -1,9 +1,9 @@
 # Mushak
 
 A lightweight Windows replacement for Logitech Options+, targeting the **MX
-Master 2S** mouse. Pure Rust, native GUI (egui — no Electron, no webview).
+Master 2S** mouse. Pure Rust, native GUI (Ply — no Electron, no webview).
 
-- Binary ~3.8 MB, idle RAM well under 30 MB.
+- Binary ~3.5 MB, idle RAM well under 30 MB.
 - Button remapping via a low-level mouse hook (works even without HID++).
 - HID++ 2.0 device control: SmartShift, DPI, hi-res/invert scrolling, battery,
   firmware, and software thumb-button gestures.
@@ -16,6 +16,32 @@ Master 2S** mouse. Pure Rust, native GUI (egui — no Electron, no webview).
   (USB `046D:C52B`) or directly over **Bluetooth** (`046D:B019`). Both are
   supported and auto-detected; if a receiver is plugged in but the mouse is on
   Bluetooth, Mushak falls back to Bluetooth automatically.
+
+## Install
+
+Pick whichever you prefer:
+
+**winget**
+
+```powershell
+winget install Divyang.Mushak
+```
+
+**Scoop**
+
+```powershell
+scoop bucket add mushak https://github.com/divyangchauhan/scoop-mushak
+scoop install mushak
+```
+
+**Direct download** — grab `mushak.exe` from the
+[latest release](https://github.com/divyangchauhan/Mushak/releases/latest).
+It's a single portable executable; no installer.
+
+> The released binary is **not code-signed yet**, so on first run Windows
+> SmartScreen shows an "unknown publisher" prompt — click *More info → Run
+> anyway*. Downloads are integrity-checked via the `SHA256SUMS.txt` published
+> with each release.
 
 ## Build
 
@@ -93,7 +119,7 @@ loaded):
      gesture events). Reconnects automatically.
 - **Settings process** (`mushak.exe --settings`) — launched on demand from the
   tray and closed when you're done. Only this short-lived process loads the
-  egui/OpenGL GUI.
+  Ply/OpenGL GUI.
 
 The two communicate through files in `%APPDATA%\Mushak`: the settings process
 writes `config.toml` (the resident watches it and re-applies within ~1 s), and
@@ -154,4 +180,4 @@ HID++ 1.0 `0x41` notification.
 
 ## License
 
-MIT.
+MIT — see [LICENSE](LICENSE).

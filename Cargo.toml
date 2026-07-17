@@ -1,9 +1,12 @@
 [package]
 name = "mushak"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 description = "Lightweight replacement for Logitech Options+ for the MX Master 2S"
 license = "MIT"
+repository = "https://github.com/divyangchauhan/Mushak"
+homepage = "https://github.com/divyangchauhan/Mushak"
+readme = "README.md"
 rust-version = "1.77"
 
 [[bin]]
