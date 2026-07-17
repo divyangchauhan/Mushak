@@ -255,20 +255,26 @@ impl App {
             if is_key_pressed(code) {
                 self.custom_key = Some(vk);
                 self.capturing_key = false;
-                // Mirror whatever modifiers were held at capture time, as the
-                // design's builder does.
-                self.custom_mods.clear();
+
+                // Adopt the modifiers physically held at capture time, so that
+                // pressing Ctrl+C records Ctrl+C. But only when something *was*
+                // held: pressing a bare key must not wipe modifiers the user
+                // picked with the chips beforehand.
+                let mut held = Vec::new();
                 if is_key_down(KeyCode::LeftControl) || is_key_down(KeyCode::RightControl) {
-                    self.custom_mods.push(Modifier::Ctrl);
+                    held.push(Modifier::Ctrl);
                 }
                 if is_key_down(KeyCode::LeftAlt) || is_key_down(KeyCode::RightAlt) {
-                    self.custom_mods.push(Modifier::Alt);
+                    held.push(Modifier::Alt);
                 }
                 if is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift) {
-                    self.custom_mods.push(Modifier::Shift);
+                    held.push(Modifier::Shift);
                 }
                 if is_key_down(KeyCode::LeftSuper) || is_key_down(KeyCode::RightSuper) {
-                    self.custom_mods.push(Modifier::Win);
+                    held.push(Modifier::Win);
+                }
+                if !held.is_empty() {
+                    self.custom_mods = held;
                 }
                 return;
             }
