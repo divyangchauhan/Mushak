@@ -11,6 +11,7 @@ mod injector;
 mod logging;
 mod profiles;
 mod resident;
+mod single_instance;
 mod startup;
 mod state;
 mod statusfile;
