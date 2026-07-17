@@ -69,6 +69,16 @@ impl Tray {
 
     pub fn set_paused(&self, paused: bool) {
         self.pause.set_checked(paused);
+        // The icon carries the paused state too, so the tray reads correctly
+        // without opening the menu.
+        match icon_for(paused) {
+            Ok(icon) => {
+                if let Err(e) = self._icon.set_icon(Some(icon)) {
+                    tracing::warn!("swapping tray icon failed: {e}");
+                }
+            }
+            Err(e) => tracing::warn!("building tray icon failed: {e:#}"),
+        }
     }
 
     pub fn set_startup(&self, on: bool) {
@@ -81,30 +91,20 @@ impl Tray {
 }
 
 /// A simple 32x32 accent-colored dot icon (no external asset needed).
+/// The Modak app icon, rasterised from SVG by `build.rs` as raw 32x32 RGBA.
+/// Raw pixels rather than PNG because the resident links no image decoder.
+const MODAK_ACTIVE: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/icons/modak_active.rgba"));
+const MODAK_PAUSED: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/icons/modak_paused.rgba"));
+const ICON_PX: u32 = 32;
+
 fn make_icon() -> Result<Icon> {
-    const N: i32 = 32;
-    let mut rgba = vec![0u8; (N * N * 4) as usize];
-    let cx = 15.5f32;
-    let cy = 15.5f32;
-    let r = 14.0f32;
-    let (ar, ag, ab) = (0x2Du8, 0x7Du8, 0xD2u8); // accent blue
-    for y in 0..N {
-        for x in 0..N {
-            let dx = x as f32 - cx;
-            let dy = y as f32 - cy;
-            let dist = (dx * dx + dy * dy).sqrt();
-            let idx = ((y * N + x) * 4) as usize;
-            if dist <= r {
-                // Slight radial highlight toward the top-left.
-                let hl = (1.0 - (dist / r) * 0.5).clamp(0.6, 1.0);
-                rgba[idx] = (ar as f32 * hl).min(255.0) as u8;
-                rgba[idx + 1] = (ag as f32 * hl).min(255.0) as u8;
-                rgba[idx + 2] = (ab as f32 * hl).min(255.0) as u8;
-                rgba[idx + 3] = 255;
-            } else {
-                rgba[idx + 3] = 0; // transparent
-            }
-        }
-    }
-    Ok(Icon::from_rgba(rgba, N as u32, N as u32)?)
+    icon_for(false)
 }
+
+/// Tray icon for the active / paused state. The design ships a distinct paused
+/// mark so the tray shows at a glance that remapping is off.
+fn icon_for(paused: bool) -> Result<Icon> {
+    let rgba = if paused { MODAK_PAUSED } else { MODAK_ACTIVE };
+    Ok(Icon::from_rgba(rgba.to_vec(), ICON_PX, ICON_PX)?)
+}
+
