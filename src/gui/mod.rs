@@ -4,13 +4,21 @@
 //! the GPU-backed GUI out of the always-resident process is what keeps idle RAM
 //! low.
 
+mod actions;
+mod buttons;
 mod chrome;
+mod device_tab;
 mod fonts;
+mod gestures_tab;
+mod icons;
+mod picker;
+mod profiles_tab;
+mod scroll;
 mod theme;
 mod uiprefs;
 mod widgets;
 
-use crate::config::Config;
+use crate::config::{Config, Modifier};
 use crate::statusfile::{self, SharedStatus};
 use crate::{conflicts, state};
 use conflicts::KillOutcome;
@@ -44,6 +52,15 @@ impl Section {
             Section::Gestures => "Gestures",
             Section::Profiles => "Profiles",
             Section::Device => "Device",
+        }
+    }
+    fn icon(self) -> &'static ply_engine::prelude::GraphicAsset {
+        match self {
+            Section::Buttons => &icons::NAV_BUTTONS,
+            Section::Scroll => &icons::NAV_SCROLL,
+            Section::Gestures => &icons::NAV_GESTURES,
+            Section::Profiles => &icons::NAV_PROFILES,
+            Section::Device => &icons::NAV_DEVICE,
         }
     }
     fn id(self) -> &'static str {
@@ -80,6 +97,25 @@ pub struct App {
     status_next_check: Instant,
     /// The OS title bar is stripped after the first frame, once the window exists.
     framed: bool,
+    /// Buttons section: is the profile dropdown open?
+    pub profile_menu_open: bool,
+    /// Device section: is the HID++ feature list expanded?
+    pub hidpp_expanded: bool,
+    /// Action picker state. `None` when closed.
+    pub picker: Option<PickerTarget>,
+    pub picker_query: String,
+    pub custom_mods: Vec<Modifier>,
+    pub custom_key: Option<u16>,
+    pub capturing_key: bool,
+}
+
+/// What the action picker is currently editing.
+#[derive(Clone, PartialEq, Eq)]
+pub enum PickerTarget {
+    /// Slot name: back / forward / middle.
+    Button(String),
+    /// Slot name: tap / up / down / left / right.
+    Gesture(String),
 }
 
 impl App {
@@ -105,6 +141,137 @@ impl App {
             device_view: statusfile::read(),
             status_next_check: Instant::now() + Duration::from_millis(500),
             framed: false,
+            profile_menu_open: false,
+            hidpp_expanded: false,
+            picker: None,
+            picker_query: String::new(),
+            custom_mods: Vec::new(),
+            custom_key: None,
+            capturing_key: false,
+        }
+    }
+
+    pub fn profile_at(&self, idx: usize) -> Option<&crate::config::Profile> {
+        if idx == 0 {
+            Some(&self.draft.default_profile)
+        } else {
+            self.draft.profiles.get(idx - 1)
+        }
+    }
+
+    /// Which profile row, if any, is waiting on a window pick.
+    pub fn pick_target_index(&self) -> Option<usize> {
+        self.pick_deadline.map(|_| self.pick_target)
+    }
+
+    pub fn pick_seconds_left(&self) -> u64 {
+        self.pick_deadline
+            .map(|d| d.saturating_duration_since(Instant::now()).as_secs() + 1)
+            .unwrap_or(0)
+    }
+
+    pub fn open_picker(&mut self, target: PickerTarget) {
+        // Seed the custom builder from the current binding, so reopening a
+        // custom combo shows what it already is.
+        let current = self.action_for(&target);
+        match &current {
+            crate::config::Action::Key { mods, vk } if actions::display(&current).kind == actions::Kind::Custom => {
+                self.custom_mods = mods.clone();
+                self.custom_key = Some(*vk);
+            }
+            _ => {
+                self.custom_mods.clear();
+                self.custom_key = None;
+            }
+        }
+        self.picker = Some(target);
+        self.picker_query.clear();
+        self.capturing_key = false;
+        self.profile_menu_open = false;
+    }
+
+    pub fn close_picker(&mut self) {
+        self.picker = None;
+        self.capturing_key = false;
+    }
+
+    /// The action currently bound to a picker target.
+    pub fn action_for(&self, target: &PickerTarget) -> crate::config::Action {
+        match target {
+            PickerTarget::Button(slot) => self
+                .profile_at(self.selected_profile)
+                .map(|p| match slot.as_str() {
+                    "back" => p.buttons.back.clone(),
+                    "forward" => p.buttons.forward.clone(),
+                    _ => p.buttons.middle.clone(),
+                })
+                .unwrap_or_default(),
+            PickerTarget::Gesture(slot) => {
+                let g = &self.draft.gestures;
+                match slot.as_str() {
+                    "tap" => g.tap.clone(),
+                    "up" => g.up.clone(),
+                    "down" => g.down.clone(),
+                    "left" => g.left.clone(),
+                    _ => g.right.clone(),
+                }
+            }
+        }
+    }
+
+    pub fn assign_action(&mut self, target: &PickerTarget, action: crate::config::Action) {
+        match target {
+            PickerTarget::Button(slot) => {
+                let idx = self.selected_profile;
+                let slot = slot.clone();
+                if let Some(p) = self.profile_at_mut(idx) {
+                    match slot.as_str() {
+                        "back" => p.buttons.back = action,
+                        "forward" => p.buttons.forward = action,
+                        _ => p.buttons.middle = action,
+                    }
+                }
+            }
+            PickerTarget::Gesture(slot) => {
+                let g = &mut self.draft.gestures;
+                match slot.as_str() {
+                    "tap" => g.tap = action,
+                    "up" => g.up = action,
+                    "down" => g.down = action,
+                    "left" => g.left = action,
+                    _ => g.right = action,
+                }
+            }
+        }
+        self.commit_config();
+    }
+
+    /// While the picker is capturing, the next key press becomes the custom key.
+    fn poll_key_capture(&mut self) {
+        if !self.capturing_key {
+            return;
+        }
+        for (code, vk) in KEY_MAP {
+            if is_key_pressed(code) {
+                self.custom_key = Some(vk);
+                self.capturing_key = false;
+                // Mirror whatever modifiers were held at capture time, as the
+                // design's builder does.
+                self.custom_mods.clear();
+                if is_key_down(KeyCode::LeftControl) || is_key_down(KeyCode::RightControl) {
+                    self.custom_mods.push(Modifier::Ctrl);
+                }
+                if is_key_down(KeyCode::LeftAlt) || is_key_down(KeyCode::RightAlt) {
+                    self.custom_mods.push(Modifier::Alt);
+                }
+                if is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift) {
+                    self.custom_mods.push(Modifier::Shift);
+                }
+                if is_key_down(KeyCode::LeftSuper) || is_key_down(KeyCode::RightSuper) {
+                    self.custom_mods.push(Modifier::Win);
+                }
+                return;
+            }
         }
     }
 
@@ -213,6 +380,24 @@ impl App {
 pub const DESIGN_W: f32 = 968.0;
 pub const DESIGN_H: f32 = 668.0;
 
+/// macroquad key -> Win32 virtual-key, for the picker's custom-combo capture.
+/// Modifiers are deliberately absent: they are read separately so that holding
+/// Ctrl and pressing C captures "Ctrl+C", not "Ctrl".
+const KEY_MAP: [(KeyCode, u16); 44] = [
+    (KeyCode::A, 0x41), (KeyCode::B, 0x42), (KeyCode::C, 0x43), (KeyCode::D, 0x44),
+    (KeyCode::E, 0x45), (KeyCode::F, 0x46), (KeyCode::G, 0x47), (KeyCode::H, 0x48),
+    (KeyCode::I, 0x49), (KeyCode::J, 0x4A), (KeyCode::K, 0x4B), (KeyCode::L, 0x4C),
+    (KeyCode::M, 0x4D), (KeyCode::N, 0x4E), (KeyCode::O, 0x4F), (KeyCode::P, 0x50),
+    (KeyCode::Q, 0x51), (KeyCode::R, 0x52), (KeyCode::S, 0x53), (KeyCode::T, 0x54),
+    (KeyCode::U, 0x55), (KeyCode::V, 0x56), (KeyCode::W, 0x57), (KeyCode::X, 0x58),
+    (KeyCode::Y, 0x59), (KeyCode::Z, 0x5A),
+    (KeyCode::F1, 0x70), (KeyCode::F2, 0x71), (KeyCode::F3, 0x72), (KeyCode::F4, 0x73),
+    (KeyCode::F5, 0x74), (KeyCode::F6, 0x75), (KeyCode::F7, 0x76), (KeyCode::F8, 0x77),
+    (KeyCode::F9, 0x78), (KeyCode::F10, 0x79), (KeyCode::F11, 0x7A), (KeyCode::F12, 0x7B),
+    (KeyCode::Left, 0x25), (KeyCode::Up, 0x26), (KeyCode::Right, 0x27), (KeyCode::Down, 0x28),
+    (KeyCode::Tab, 0x09), (KeyCode::Space, 0x20),
+];
+
 /// Entry point for the `--settings` subprocess.
 pub fn run() {
     let conf = macroquad::conf::Conf {
@@ -251,6 +436,7 @@ async fn frame_loop() {
 
     loop {
         app.poll_timers();
+        app.poll_key_capture();
 
         clear_background(app.pal.win.into());
         let mut ui = ply.begin();
@@ -295,6 +481,8 @@ fn window(ui: &mut Ui2, app: &mut App) {
                     rail(ui, app);
                     content(ui, app);
                 });
+            // Last, so it floats over everything.
+            picker::overlay(ui, app);
         });
 }
 
@@ -317,6 +505,18 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
             if ui.just_pressed() {
                 chrome::begin_drag();
             }
+            // Brand mark. Full-colour, so it is tinted white (a no-op multiply)
+            // rather than taking a palette colour like the UI glyphs do.
+            widgets::icon(
+                ui,
+                if paused {
+                    &icons::MODAK_PAUSED
+                } else {
+                    &icons::MODAK_ACTIVE
+                },
+                20.0,
+                theme::WHITE,
+            );
             ui.text("Mushak", |t| {
                 t.font(&fonts::DISPLAY_BOLD).font_size(14).color(pal.text)
             });
@@ -380,11 +580,11 @@ fn content(ui: &mut Ui2, app: &mut App) {
                 .height(fit!())
                 .layout(|l| l.direction(TopToBottom).padding((26, 30, 40, 30)))
                 .children(|ui| match app.section {
-                    Section::Buttons => widgets::placeholder(ui, app, "Buttons"),
-                    Section::Scroll => widgets::placeholder(ui, app, "Scroll"),
-                    Section::Gestures => widgets::placeholder(ui, app, "Gestures"),
-                    Section::Profiles => widgets::placeholder(ui, app, "Profiles"),
-                    Section::Device => widgets::placeholder(ui, app, "Device"),
+                    Section::Buttons => buttons::section(ui, app),
+                    Section::Scroll => scroll::section(ui, app),
+                    Section::Gestures => gestures_tab::section(ui, app),
+                    Section::Profiles => profiles_tab::section(ui, app),
+                    Section::Device => device_tab::section(ui, app),
                 });
         });
 }
