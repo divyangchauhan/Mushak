@@ -189,6 +189,83 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
 
     ui.element().width(grow!()).height(fixed!(18.0)).empty();
 
+    // Wheel deadzone. Only meaningful with hi-res on: that is the only mode
+    // where the wheel reports to us rather than straight to Windows, so it is
+    // the only mode we can filter.
+    let deadzone = app.draft.device.scroll_deadzone as i64;
+    let mut new_deadzone: Option<i64> = None;
+    let dz_text = if hires { pal.text } else { pal.muted };
+    widgets::card(ui, &pal)
+        .layout(|l| l.direction(TopToBottom).gap(3).padding((16, 17, 16, 17)))
+        .children(|ui| {
+            ui.element()
+                .width(grow!())
+                .height(fit!())
+                .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
+                .children(|ui| {
+                    ui.element().width(grow!()).height(fit!()).children(|ui| {
+                        ui.text("Ignore accidental nudges", |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(dz_text)
+                        });
+                    });
+                    ui.text(
+                        &if deadzone == 0 {
+                            "off".to_string()
+                        } else {
+                            deadzone.to_string()
+                        },
+                        |t| t.font(&fonts::MONO_BOLD).font_size(13).color(pal.accent),
+                    );
+                });
+            ui.text(
+                if hires {
+                    "How far the wheel must turn before it counts. The wheel reports 8 steps per \
+                     click, so 4 ignores a resting finger without slowing a real scroll."
+                } else {
+                    "Needs high-resolution scrolling: without it the wheel reports straight to \
+                     Windows and Mushak never sees the movement."
+                },
+                |t| {
+                    t.font(&fonts::SANS)
+                        .font_size(widgets::px(12.5))
+                        .color(pal.muted)
+                },
+            );
+            ui.element().width(grow!()).height(fixed!(12.0)).empty();
+            ui.element()
+                .width(grow!())
+                .height(fit!())
+                .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
+                .children(|ui| {
+                    ui.text("off", |t| {
+                        t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
+                    });
+                    if hires {
+                        if let Some(v) = widgets::slider(ui, &pal, "deadzone", deadzone, 0, 8, 1) {
+                            new_deadzone = Some(v);
+                        }
+                    } else {
+                        ui.element()
+                            .width(grow!())
+                            .height(fixed!(20.0))
+                            .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
+                            .children(|ui| {
+                                ui.element()
+                                    .width(grow!())
+                                    .height(fixed!(4.0))
+                                    .corner_radius(2.0)
+                                    .background_color(pal.s2)
+                                    .empty();
+                            });
+                    }
+                    ui.text("8", |t| {
+                        t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
+                    });
+                });
+        });
+
+    ui.element().width(grow!()).height(fixed!(18.0)).empty();
+
     ui.element()
         .width(grow!())
         .height(fit!())
@@ -222,6 +299,10 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     }
     if let Some(v) = new_flick {
         app.draft.device.smartshift_threshold = v as u8;
+        app.commit_config();
+    }
+    if let Some(v) = new_deadzone {
+        app.draft.device.scroll_deadzone = v as u8;
         app.commit_config();
     }
     if toggle_hires {
