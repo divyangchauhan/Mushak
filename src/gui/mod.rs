@@ -438,6 +438,9 @@ pub fn run() {
 
 async fn frame_loop() {
     let mut ply = Ply::<()>::new(&fonts::SANS).await;
+    // Must happen before the first begin(): layout measures text, and Ply only
+    // loads a font during the render pass that follows.
+    fonts::preload().await;
     let mut app = App::new();
 
     loop {
