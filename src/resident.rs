@@ -21,6 +21,16 @@ use windows::Win32::UI::WindowsAndMessaging::{
 pub fn run() {
     tracing::info!("Mushak {} resident starting", env!("CARGO_PKG_VERSION"));
 
+    // Only one resident per session. If another already owns the lock, it has
+    // been asked to show its settings window; this launch just exits.
+    let instance = match crate::single_instance::InstanceGuard::acquire() {
+        Some(g) => g,
+        None => {
+            tracing::info!("another Mushak resident is already running; exiting");
+            return;
+        }
+    };
+
     let cfg = Config::load();
     let inject_tx = injector::spawn();
     state::set_inject_tx(inject_tx);
@@ -60,6 +70,11 @@ pub fn run() {
             if let TrayIconEvent::DoubleClick { .. } = ev {
                 open_settings(&exe, &mut settings_child);
             }
+        }
+
+        // A second launch of the exe pulses this instead of starting up.
+        if instance.take_show_settings_request() {
+            open_settings(&exe, &mut settings_child);
         }
 
         update_tray_battery(&tray);

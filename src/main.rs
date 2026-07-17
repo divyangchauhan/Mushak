@@ -11,12 +11,11 @@ mod injector;
 mod logging;
 mod profiles;
 mod resident;
+mod single_instance;
 mod startup;
 mod state;
 mod statusfile;
 mod tray;
-
-use eframe::egui;
 
 fn main() {
     let settings_mode = std::env::args().any(|a| a == "--settings");
@@ -36,27 +35,11 @@ fn main() {
     }
 }
 
-/// The `--settings` subprocess: just the eframe settings window. It owns no
-/// hooks, HID handle or tray — it edits config.toml and reads status.json.
+/// The `--settings` subprocess: just the settings window. It owns no hooks,
+/// HID handle or tray — it edits config.toml and reads status.json.
 fn settings_main() {
     tracing::info!("Mushak settings window starting");
     state::init(config::Config::load());
-
-    let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_title("Mushak Settings")
-            .with_inner_size([780.0, 580.0])
-            .with_min_inner_size([560.0, 420.0]),
-        ..Default::default()
-    };
-
-    let result = eframe::run_native(
-        "Mushak",
-        options,
-        Box::new(|cc| Ok(Box::new(gui::App::new(cc)) as Box<dyn eframe::App>)),
-    );
-    if let Err(e) = result {
-        tracing::error!("eframe run_native failed: {e}");
-    }
+    gui::run();
     tracing::info!("Mushak settings window closed");
 }

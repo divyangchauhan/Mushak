@@ -326,6 +326,12 @@ impl Device {
             return;
         }
 
+        // Wheel movement, diverted to us because high-resolution scrolling is on.
+        if Some(rep.feature_index()) == self.features.hires_wheel && rep.is_event() {
+            self.on_wheel_event(rep);
+            return;
+        }
+
         tracing::debug!("unhandled HID++ event: {}", crate::logging::hex(&rep.raw));
     }
 
@@ -436,10 +442,15 @@ impl Device {
     }
 
     /// Restore native behavior on every control (called on shutdown).
+    ///
+    /// The wheel is included: high-resolution scrolling diverts it to HID++, and
+    /// a wheel left diverted after we exit reports to nobody — scrolling would
+    /// simply stop until the mouse power-cycles.
     pub(crate) fn restore_diverts(&self) {
         if self.features.reprog.is_some() {
             self.apply_control_diverts(false);
         }
+        self.restore_wheel();
     }
 
     /// Handle a diverted REPROG_CONTROLS_V4 event (button hold or raw XY).

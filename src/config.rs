@@ -150,6 +150,17 @@ pub struct DeviceConfig {
     pub invert_scroll: bool,
     /// Resolution in DPI (validated against the device's supported list).
     pub dpi: u16,
+    /// How far the wheel must move, in high-resolution increments, before a
+    /// scroll counts as deliberate. The wheel reports 8 increments per detent,
+    /// and reports them between detents too, so a finger merely resting on it
+    /// rocks it a unit or two and scrolls the page. Movement below this is held
+    /// back until it adds up; once scrolling starts it runs freely until the
+    /// wheel goes still, so a real scroll is never clipped.
+    ///
+    /// 0 disables the deadzone. Only applies while `hires_scroll` is on — that
+    /// is the only mode where the wheel reports to us rather than straight to
+    /// Windows.
+    pub scroll_deadzone: u8,
 }
 
 impl Default for DeviceConfig {
@@ -160,6 +171,9 @@ impl Default for DeviceConfig {
             hires_scroll: true,
             invert_scroll: false,
             dpi: 1000,
+            // Half a detent: an accidental nudge is a unit or two, a deliberate
+            // detent is a full 8 and so still scrolls on the very first click.
+            scroll_deadzone: 4,
         }
     }
 }
