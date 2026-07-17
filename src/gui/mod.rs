@@ -413,6 +413,9 @@ pub fn run() {
             window_height: 668,
             high_dpi: true,
             window_resizable: true,
+            // Not optional: miniquad defaults this to its own logo, so leaving
+            // it out puts the miniquad mark on our taskbar button.
+            icon: Some(icons::window_icon()),
             platform: miniquad::conf::Platform {
                 // Idle at ~zero CPU: only redraw when something happens. The
                 // frame loop calls schedule_update() while anything is
