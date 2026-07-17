@@ -17,8 +17,12 @@ use std::path::{Path, PathBuf};
 const UI_SIZE: u32 = 64;
 /// The app icon is also rendered into a 256px .ico, so it needs the detail.
 const APP_SIZE: u32 = 256;
-/// Windows tray icons are 16pt; 32px covers a 200% display.
-const TRAY_SIZE: u32 = 32;
+/// Raw-RGBA sizes emitted for the app icon.
+///
+/// 32 is the tray icon (16pt, doubled for a 200% display). 16/32/64 are the
+/// three levels miniquad's `conf::Icon` requires for the window — and so the
+/// taskbar button — as fixed-size arrays.
+const RGBA_SIZES: [u32; 3] = [16, 32, 64];
 
 fn main() {
     println!("cargo:rerun-if-changed=assets/icons");
@@ -45,12 +49,15 @@ fn main() {
         let (png, _) = render(&path, size);
         std::fs::write(icon_out.join(format!("{stem}.png")), png).expect("write png");
 
-        // The tray takes raw RGBA, and lives in the resident process which has
-        // no image decoder linked. Emit the pixels directly so tray.rs can
-        // include_bytes! them.
+        // The tray and the window icon both take raw RGBA, and both live in
+        // processes with no image decoder linked. Emit the pixels directly so
+        // they can be include_bytes!'d.
         if stem.starts_with("modak") {
-            let (_, rgba) = render(&path, TRAY_SIZE);
-            std::fs::write(icon_out.join(format!("{stem}.rgba")), rgba).expect("write rgba");
+            for size in RGBA_SIZES {
+                let (_, rgba) = render(&path, size);
+                std::fs::write(icon_out.join(format!("{stem}_{size}.rgba")), rgba)
+                    .expect("write rgba");
+            }
         }
         count += 1;
     }

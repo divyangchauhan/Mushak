@@ -90,11 +90,10 @@ impl Tray {
     }
 }
 
-/// A simple 32x32 accent-colored dot icon (no external asset needed).
 /// The Modak app icon, rasterised from SVG by `build.rs` as raw 32x32 RGBA.
 /// Raw pixels rather than PNG because the resident links no image decoder.
-const MODAK_ACTIVE: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/icons/modak_active.rgba"));
-const MODAK_PAUSED: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/icons/modak_paused.rgba"));
+const MODAK_ACTIVE: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/icons/modak_active_32.rgba"));
+const MODAK_PAUSED: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/icons/modak_paused_32.rgba"));
 const ICON_PX: u32 = 32;
 
 fn make_icon() -> Result<Icon> {

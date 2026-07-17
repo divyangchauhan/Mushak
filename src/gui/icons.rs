@@ -68,3 +68,17 @@ icon!(DISABLED, "disabled");
 // App icon (Modak).
 icon!(MODAK_ACTIVE, "modak_active");
 icon!(MODAK_PAUSED, "modak_paused");
+
+/// The window icon, which is what the taskbar button shows.
+///
+/// miniquad defaults this to `Icon::miniquad_logo()`, so leaving it unset does
+/// not mean "no icon" — it means the taskbar advertises miniquad. The three
+/// sizes are fixed-length arrays, hence the exact byte counts below; `build.rs`
+/// emits raw RGBA at each because this process links no image decoder.
+pub fn window_icon() -> ply_engine::prelude::miniquad::conf::Icon {
+    ply_engine::prelude::miniquad::conf::Icon {
+        small: *include_bytes!(concat!(env!("OUT_DIR"), "/icons/modak_active_16.rgba")),
+        medium: *include_bytes!(concat!(env!("OUT_DIR"), "/icons/modak_active_32.rgba")),
+        big: *include_bytes!(concat!(env!("OUT_DIR"), "/icons/modak_active_64.rgba")),
+    }
+}
