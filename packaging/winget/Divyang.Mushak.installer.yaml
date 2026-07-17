@@ -1,0 +1,12 @@
+PackageIdentifier: Divyang.Mushak
+PackageVersion: 0.0.1
+InstallerType: portable
+# Registers a "mushak" alias on PATH so it can also be launched from a terminal.
+Commands:
+  - mushak
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/divyangchauhan/Mushak/releases/download/v0.0.1/mushak.exe
+    InstallerSha256: REPLACE_WITH_SHA256_OF_MUSHAK_EXE
+ManifestType: installer
+ManifestVersion: 1.6.0
