@@ -68,3 +68,8 @@ codegen-units = 1
 
 [build-dependencies]
 resvg = "0.45.1"
+# Assemble the rasterised Modak into a multi-resolution .ico and embed it as
+# the exe's Win32 icon resource, so Explorer / Start-menu shortcuts / taskbar
+# show the app icon instead of the generic default.
+ico = "0.4"
+winresource = "0.1"

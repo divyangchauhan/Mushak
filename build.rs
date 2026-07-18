@@ -1,4 +1,6 @@
-//! Rasterises `assets/icons/*.svg` to PNG at build time.
+//! Rasterises `assets/icons/*.svg` to PNG at build time, and embeds the app
+//! icon into the exe as a Win32 icon resource (so shells show it, not a
+//! generic default).
 //!
 //! Ply can render SVG only through its `tinyvg` feature, which wants TinyVG
 //! rather than SVG, and a runtime rasteriser would ship resvg inside the
@@ -62,6 +64,30 @@ fn main() {
         count += 1;
     }
     println!("cargo:warning=rasterised {count} icons");
+
+    // Embed the app icon into the exe as a Win32 icon resource. Without this
+    // the binary has no icon, so Explorer, Start-menu shortcuts (Scoop's
+    // included), and pinned launchers all fall back to a generic default.
+    // Built from the same SVG source as every other icon.
+    let ico_path = build_app_ico(&src.join("modak_active.svg"), &out_dir);
+    let mut res = winresource::WindowsResource::new();
+    res.set_icon(ico_path.to_str().expect("ico path is valid utf-8"));
+    res.compile().expect("embed windows icon resource");
+}
+
+/// Assemble a multi-resolution `.ico` for the exe's Win32 icon resource and
+/// return its path. Windows shells pick the best-fit size from these.
+fn build_app_ico(svg: &Path, out_dir: &Path) -> PathBuf {
+    let mut dir = ico::IconDir::new(ico::ResourceType::Icon);
+    for size in [16u32, 24, 32, 48, 64, 128, 256] {
+        let (_, rgba) = render(svg, size);
+        let image = ico::IconImage::from_rgba_data(size, size, rgba);
+        dir.add_entry(ico::IconDirEntry::encode(&image).expect("encode ico entry"));
+    }
+    let path = out_dir.join("mushak.ico");
+    let file = std::fs::File::create(&path).expect("create mushak.ico");
+    dir.write(file).expect("write mushak.ico");
+    path
 }
 
 /// Render one SVG to `size`x`size`, returning (PNG bytes, raw RGBA bytes).
