@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
 PackageIdentifier: Divyang.Mushak
 PackageVersion: 0.0.1
 InstallerType: portable
@@ -9,4 +10,4 @@ Installers:
     InstallerUrl: https://github.com/divyangchauhan/Mushak/releases/download/v0.0.1/mushak.exe
     InstallerSha256: C2437C3CC9F88DB36304CE3147CCA4E01EE92F88DC2CD4D065C8A02969F8905B
 ManifestType: installer
-ManifestVersion: 1.6.0
+ManifestVersion: 1.12.0
