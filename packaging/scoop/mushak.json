@@ -6,7 +6,7 @@
   "architecture": {
     "64bit": {
       "url": "https://github.com/divyangchauhan/Mushak/releases/download/v0.0.1/mushak.exe#/mushak.exe",
-      "hash": "REPLACE_WITH_SHA256_OF_MUSHAK_EXE"
+      "hash": "c2437c3cc9f88db36304ce3147cca4e01ee92f88dc2cd4d065c8a02969f8905b"
     }
   },
   "bin": "mushak.exe",

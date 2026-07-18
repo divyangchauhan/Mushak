@@ -21,12 +21,6 @@ Master 2S** mouse. Pure Rust, native GUI (Ply — no Electron, no webview).
 
 Pick whichever you prefer:
 
-**winget**
-
-```powershell
-winget install Divyang.Mushak
-```
-
 **Scoop**
 
 ```powershell
