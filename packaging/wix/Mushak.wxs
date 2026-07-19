@@ -72,8 +72,11 @@
       <ComponentRef Id="StartMenuShortcut" />
     </Feature>
 
-    <!-- Minimal wizard: welcome -> license -> progress -> finish. -->
+    <!-- Minimal wizard: welcome -> license -> progress -> finish, branded with
+         the Modak on a cool-slate panel and a vermilion accent. -->
     <UIRef Id="WixUI_Minimal" />
     <WixVariable Id="WixUILicenseRtf" Value="packaging\wix\License.rtf" />
+    <WixVariable Id="WixUIDialogBmp" Value="packaging\wix\dialog.bmp" />
+    <WixVariable Id="WixUIBannerBmp" Value="packaging\wix\banner.bmp" />
   </Product>
 </Wix>
