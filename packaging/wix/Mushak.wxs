@@ -72,9 +72,12 @@
       <ComponentRef Id="StartMenuShortcut" />
     </Feature>
 
-    <!-- Minimal wizard: welcome -> license -> progress -> finish, branded with
-         the Modak on a cool-slate panel and a vermilion accent. -->
-    <UIRef Id="WixUI_Minimal" />
+    <!-- Wizard: welcome -> license -> install dir -> progress -> finish.
+         WixUI_InstallDir puts the license and install-dir screens on the top
+         banner (not the full side panel), so overlaid heading text never hits
+         the branding. Welcome/Finish still show the branded side panel. -->
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <UIRef Id="WixUI_InstallDir" />
     <WixVariable Id="WixUILicenseRtf" Value="packaging\wix\License.rtf" />
     <WixVariable Id="WixUIDialogBmp" Value="packaging\wix\dialog.bmp" />
     <WixVariable Id="WixUIBannerBmp" Value="packaging\wix\banner.bmp" />
