@@ -3,7 +3,7 @@
 A lightweight Windows replacement for Logitech Options+, targeting the **MX
 Master 2S** mouse. Pure Rust, native GUI (Ply — no Electron, no webview).
 
-- Binary ~3.5 MB, idle RAM well under 30 MB.
+- Binary ~3.5 MB, idle RAM ~1.5 MB (the settings window uses ~170 MB, but only while it is open).
 - Button remapping via a low-level mouse hook (works even without HID++).
 - HID++ 2.0 device control: SmartShift, DPI, hi-res/invert scrolling, battery,
   firmware, and software thumb-button gestures.
@@ -97,9 +97,10 @@ against a specific firmware — HID++ behavior varies. Override the level with t
 
 ## How it works
 
-Mushak runs as **two processes** so the always-on part stays tiny (idle ≈ 6 MB
-private / 16 MB working set — a GPU-backed GUI can't hit that if it's always
-loaded):
+Mushak runs as **two processes** so the always-on part stays tiny (≈ 1.5 MB
+while the settings window is closed). The GUI process is spawned on demand and
+uses ≈ 170 MB only while settings is open, then exits — a GPU-backed GUI can't
+stay that cheap if it's always loaded:
 
 - **Resident process** (`mushak.exe`) — the tray plus three worker threads,
   driven by a lightweight Win32 message pump (no GUI, no GPU context):
