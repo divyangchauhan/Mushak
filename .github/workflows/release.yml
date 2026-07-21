@@ -2,8 +2,8 @@ name: release
 
 # Cut a release by pushing a version tag, e.g.:
 #   git tag v0.0.1 && git push origin v0.0.1
-# This builds the size-optimized binary, computes checksums, and publishes a
-# GitHub Release with the portable exe + zip attached.
+# This builds the size-optimized binary and a per-user MSI installer, computes
+# checksums, and publishes a GitHub Release with the portable exe, zip, and MSI.
 
 on:
   push:
@@ -29,22 +29,35 @@ jobs:
       - name: Build release
         run: cargo build --release
 
-      # -- Signing hook -------------------------------------------------------
-      # Unsigned for now. When you have a certificate (Azure Trusted Signing,
-      # Certum Open Source, EV, ...), sign target\release\mushak.exe HERE,
-      # before the artifacts are packaged and hashed below. For example:
-      #
-      #   - name: Sign
-      #     uses: azure/trusted-signing-action@v0
-      #     with:
-      #       azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-      #       azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-      #       azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-      #       endpoint: ${{ vars.TRUSTED_SIGNING_ENDPOINT }}
-      #       trusted-signing-account-name: ${{ vars.TRUSTED_SIGNING_ACCOUNT }}
-      #       certificate-profile-name: ${{ vars.TRUSTED_SIGNING_PROFILE }}
-      #       files-folder: target/release
-      #       files-folder-filter: exe
+      # -- Signing hook (exe) -------------------------------------------------
+      # Unsigned for now. When you have a certificate (Certum Open Source, EV,
+      # ...), sign target\release\mushak.exe HERE, before the MSI is built so
+      # the installer wraps the signed exe. Then also sign the MSI in the
+      # matching hook after the "Build MSI" step below.
+      # -----------------------------------------------------------------------
+
+      - name: Build MSI installer (WiX v3)
+        id: msi
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v',''
+          # WiX v3 binaries, no admin install needed.
+          $zip = "$env:RUNNER_TEMP\wix314.zip"
+          Invoke-WebRequest -UseBasicParsing -OutFile $zip `
+            "https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip"
+          $wix = "$env:RUNNER_TEMP\wix314"
+          Expand-Archive -Force $zip $wix
+          New-Item -ItemType Directory -Force target/wix | Out-Null
+          & "$wix\candle.exe" -dVersion=$version -ext WixUIExtension -arch x64 -out target/wix/ packaging/wix/Mushak.wxs
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $msi = "mushak-$version-x64.msi"
+          & "$wix\light.exe" -ext WixUIExtension -out $msi target/wix/Mushak.wixobj
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          "msi=$msi" >> $env:GITHUB_OUTPUT
+
+      # -- Signing hook (MSI) -------------------------------------------------
+      # When signing, sign the ${{ steps.msi.outputs.msi }} here so users don't
+      # get an "unknown publisher" prompt on the installer itself.
       # -----------------------------------------------------------------------
 
       - name: Package artifacts
@@ -52,6 +65,7 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}" -replace '^v',''
+          $msi = "${{ steps.msi.outputs.msi }}"
           $stage = "dist"
           New-Item -ItemType Directory -Force $stage | Out-Null
           Copy-Item target/release/mushak.exe "$stage/mushak.exe"
@@ -59,14 +73,17 @@ jobs:
           Copy-Item README.md "$stage/README.md"
           $zip = "mushak-$version-x64.zip"
           Compress-Archive -Path "$stage/*" -DestinationPath $zip -Force
-          # SHA256 for the portable exe (Scoop/winget manifests) and the zip.
+          # SHA256 for the portable exe (Scoop/winget), the zip, and the MSI.
           $exeHash = (Get-FileHash target/release/mushak.exe -Algorithm SHA256).Hash
           $zipHash = (Get-FileHash $zip -Algorithm SHA256).Hash
+          $msiHash = (Get-FileHash $msi -Algorithm SHA256).Hash
           "mushak.exe  $exeHash" | Out-File SHA256SUMS.txt -Encoding ascii
           "$zip  $zipHash"       | Out-File SHA256SUMS.txt -Encoding ascii -Append
+          "$msi  $msiHash"       | Out-File SHA256SUMS.txt -Encoding ascii -Append
           Get-Content SHA256SUMS.txt
           "zip=$zip" >> $env:GITHUB_OUTPUT
           "exe_sha256=$exeHash" >> $env:GITHUB_OUTPUT
+          "msi_sha256=$msiHash" >> $env:GITHUB_OUTPUT
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -76,4 +93,5 @@ jobs:
           files: |
             target/release/mushak.exe
             ${{ steps.pkg.outputs.zip }}
+            ${{ steps.msi.outputs.msi }}
             SHA256SUMS.txt

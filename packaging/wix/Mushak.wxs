@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="windows-1252"?>
+<!--
+  MSI installer for Mushak, built with the WiX v3 toolset (candle + light).
+
+  Per-user install: no UAC prompt, lands in %LocalAppData%\Programs\Mushak,
+  registers under HKCU (Add/Remove Programs, per-user Start menu). This matches
+  Mushak's per-user nature (tray, config, and start-with-Windows are all
+  per-user) and keeps installation frictionless.
+
+  Version is passed at build time: `candle -dVersion=0.0.1 ...`.
+  The UpgradeCode below is PERMANENT - never change it, or upgrades break.
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*"
+           Name="Mushak"
+           Language="1033"
+           Version="$(var.Version)"
+           Manufacturer="Divyang Chauhan"
+           UpgradeCode="1F67CEE8-F3FF-4EB7-811C-C90D40B1B354">
+
+    <Package InstallerVersion="500"
+             Compressed="yes"
+             InstallScope="perUser"
+             Description="Mushak $(var.Version) installer" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Mushak is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Add/Remove Programs metadata. The icon is pulled from the exe's own
+         embedded resource, so there's a single icon source of truth. -->
+    <Icon Id="MushakIcon" SourceFile="target\release\mushak.exe" />
+    <Property Id="ARPPRODUCTICON" Value="MushakIcon" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/divyangchauhan/Mushak" />
+    <Property Id="ARPNOREPAIR" Value="1" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="LocalAppDataFolder">
+        <Directory Id="INSTALLFOLDER" Name="Mushak" />
+      </Directory>
+      <Directory Id="ProgramMenuFolder" />
+    </Directory>
+
+    <DirectoryRef Id="INSTALLFOLDER">
+      <!-- Fixed GUID: a component mixing a file with an HKCU key-path can't use
+           an auto-generated one. Keep it stable across versions. -->
+      <Component Id="MainExe" Guid="58151D65-D47D-4D4B-8CFE-B516E2522EC8">
+        <File Id="MushakExe" Source="target\release\mushak.exe" />
+        <!-- Per-user components must key off HKCU, not the file, and must
+             clean up their profile folder on uninstall (ICE38 / ICE64). -->
+        <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\Mushak" Name="InstallFolder"
+                       Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="ProgramMenuFolder">
+      <Component Id="StartMenuShortcut" Guid="*">
+        <Shortcut Id="MushakStartMenu"
+                  Name="Mushak"
+                  Description="Lightweight replacement for Logitech Options+"
+                  Target="[INSTALLFOLDER]mushak.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="MushakIcon" />
+        <RemoveFolder Id="CleanupStartMenu" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\Mushak" Name="StartMenu"
+                       Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <Feature Id="Main" Title="Mushak" Level="1">
+      <ComponentRef Id="MainExe" />
+      <ComponentRef Id="StartMenuShortcut" />
+    </Feature>
+
+    <!-- Wizard: welcome -> license -> install dir -> progress -> finish.
+         WixUI_InstallDir puts the license and install-dir screens on the top
+         banner (not the full side panel), so overlaid heading text never hits
+         the branding. Welcome/Finish still show the branded side panel. -->
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <UIRef Id="WixUI_InstallDir" />
+    <WixVariable Id="WixUILicenseRtf" Value="packaging\wix\License.rtf" />
+    <WixVariable Id="WixUIDialogBmp" Value="packaging\wix\dialog.bmp" />
+    <WixVariable Id="WixUIBannerBmp" Value="packaging\wix\banner.bmp" />
+  </Product>
+</Wix>
