@@ -48,7 +48,10 @@ jobs:
           $wix = "$env:RUNNER_TEMP\wix314"
           Expand-Archive -Force $zip $wix
           New-Item -ItemType Directory -Force target/wix | Out-Null
-          & "$wix\candle.exe" -dVersion=$version -ext WixUIExtension -arch x64 -out target/wix/ packaging/wix/Mushak.wxs
+          # Quote the -d define: unquoted `-dVersion=$version` makes PowerShell
+          # pass the literal token (no interpolation) for a `-flag=value` arg,
+          # so candle would see the string "$version". Quoting expands it.
+          & "$wix\candle.exe" "-dVersion=$version" -ext WixUIExtension -arch x64 -out target/wix/ packaging/wix/Mushak.wxs
           if ($LASTEXITCODE -ne 0) { exit 1 }
           $msi = "mushak-$version-x64.msi"
           & "$wix\light.exe" -ext WixUIExtension -out $msi target/wix/Mushak.wixobj
