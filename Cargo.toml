@@ -26,7 +26,12 @@ windows = { version = "0.58", features = [
     "Win32_System_Registry",
     "Win32_System_ProcessStatus",
     "Win32_System_Diagnostics_ToolHelp",
+    "Win32_Storage_Packaging_Appx",
     "Win32_Security",
+    # WinRT StartupTask, used for start-with-Windows when running as an MSIX
+    # package (the Store build); the unpackaged build keeps using the Run key.
+    "Foundation",
+    "ApplicationModel",
 ] }
 
 # Raw HID access to talk HID++ 2.0 to the mouse / Unifying receiver.
