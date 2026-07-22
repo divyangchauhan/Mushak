@@ -65,7 +65,9 @@ New-Item -ItemType Directory -Force $stage | Out-Null
 New-Item -ItemType Directory -Force (Join-Path $stage 'Assets') | Out-Null
 
 $manifest = Get-Content (Join-Path $msixDir 'AppxManifest.xml') -Raw
-if ($manifest -match 'REPLACEME') {
+# Case-sensitive (-cmatch): plain -match is case-insensitive and would also
+# hit "replaceme" inside the word "replacement" in the app Description.
+if ($manifest -cmatch 'REPLACEME') {
     Write-Warning "AppxManifest.xml still has REPLACEME identity placeholders. The package will pack but the Store will reject it, and signing/installing locally will not match. Fill them in from Partner Center first."
 }
 $manifest = $manifest -replace 'Version="0\.0\.0\.0"', ("Version=""{0}""" -f $msixVersion)

@@ -2,12 +2,10 @@
 <!--
   MSIX manifest for the Microsoft Store build of Mushak.
 
-  BEFORE BUILDING, replace the two REPLACEME placeholders in <Identity>
-  with the exact values from Partner Center:
-    Product identity page > Package/Identity/Name   -> Name=
-    Product identity page > Package/Identity/Publisher (CN=...) -> Publisher=
-  These must match Partner Center character-for-character or the upload is
-  rejected. See docs/ms-store-submission.md (kept locally, not committed).
+  The <Identity> Name and Publisher come from the Partner Center Product
+  identity page and must match it character-for-character. They are filled in
+  below and are frozen once the first submission is accepted.
+  See docs/ms-store-submission.md (kept locally, not committed).
 
   The <Version> last digit MUST stay 0 for Store packages; bump the first three
   to match the app version (e.g. 0.0.3.0). The build script substitutes it.
@@ -19,10 +17,11 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap uap5 rescap">
 
-  <!-- REPLACEME below: swap in the Partner Center identity before submitting. -->
+  <!-- Identity from Partner Center (Product identity page). Frozen once the
+       first submission is accepted; do not change Name or Publisher after that. -->
   <Identity
-    Name="REPLACEME.Mushak"
-    Publisher="CN=REPLACEME"
+    Name="DivyangChauhan.Mushak"
+    Publisher="CN=E262040C-30A8-40A4-800F-6C715C2EF7CF"
     Version="0.0.0.0"
     ProcessorArchitecture="x64" />
 
