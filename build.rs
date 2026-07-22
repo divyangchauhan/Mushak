@@ -72,6 +72,17 @@ fn main() {
     let ico_path = build_app_ico(&src.join("modak_active.svg"), &out_dir);
     let mut res = winresource::WindowsResource::new();
     res.set_icon(ico_path.to_str().expect("ico path is valid utf-8"));
+    // Populate the exe's version-info block. CompanyName in particular is what
+    // Task Manager's Startup "Publisher" column and Explorer's Details tab
+    // read; without it (winresource derives it from the empty `authors` field)
+    // the app shows a blank publisher everywhere.
+    res.set("CompanyName", "Divyang Chauhan");
+    res.set("ProductName", "Mushak");
+    res.set(
+        "FileDescription",
+        "Lightweight replacement for Logitech Options+ for the MX Master 2S",
+    );
+    res.set("LegalCopyright", "Copyright (c) 2026 Divyang Chauhan");
     res.compile().expect("embed windows icon resource");
 }
 
