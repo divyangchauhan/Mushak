@@ -13,6 +13,27 @@
 
 use std::path::{Path, PathBuf};
 
+/// Application manifest embedded into the exe. Declares Per-Monitor v2 DPI
+/// awareness (with the pre-1607 `true/pm` fallback) and the standard asInvoker
+/// run level.
+const APP_MANIFEST: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="asInvoker" uiAccess="false"/>
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+    </windowsSettings>
+  </application>
+</assembly>
+"#;
+
 /// Rasterisation size for UI glyphs, in pixels. The design draws them between
 /// 12 and 26pt; 64px covers that at 200% scaling with room to spare, and Ply
 /// samples down with a linear filter.
@@ -72,6 +93,24 @@ fn main() {
     let ico_path = build_app_ico(&src.join("modak_active.svg"), &out_dir);
     let mut res = winresource::WindowsResource::new();
     res.set_icon(ico_path.to_str().expect("ico path is valid utf-8"));
+    // Populate the exe's version-info block. CompanyName in particular is what
+    // Task Manager's Startup "Publisher" column and Explorer's Details tab
+    // read; without it (winresource derives it from the empty `authors` field)
+    // the app shows a blank publisher everywhere.
+    res.set("CompanyName", "Divyang Chauhan");
+    res.set("ProductName", "Mushak");
+    res.set(
+        "FileDescription",
+        "Lightweight replacement for Logitech Options+ for the MX Master 2S",
+    );
+    res.set("LegalCopyright", "Copyright (c) 2026 Divyang Chauhan");
+    // Declare Per-Monitor v2 DPI awareness in the application manifest so it is
+    // set at process start. The GUI backend (miniquad) sets awareness at
+    // runtime, but via a dynamically-resolved call the certification tooling
+    // can't see statically, so it flagged the app as "not DPI aware". Declaring
+    // it here makes the app crisp on mixed-DPI setups and clears that warning.
+    // trustInfo/asInvoker keeps the standard (non-elevating) run level.
+    res.set_manifest(APP_MANIFEST);
     res.compile().expect("embed windows icon resource");
 }
 
