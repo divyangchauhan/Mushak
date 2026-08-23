@@ -65,7 +65,12 @@ as a separate process and closing it just closes that window. Use the tray menu
 The low-level mouse hook cannot intercept input directed at windows running at a
 **higher integrity level** than Mushak. If you want remapping to work over
 elevated/admin apps (Task Manager, elevated terminals, some installers), run
-`mushak.exe` **as administrator**.
+`mushak.exe` **as administrator**. Scrolling does not require elevation: when
+an elevated or protected window is active, Mushak temporarily hands the wheel
+back to Windows for native hardware scrolling. It restores the configured
+high-resolution mode when you switch away. This fallback is part of the main
+executable and works the same in portable, WinGet, Scoop, and Store builds; no
+code-signing certificate is required.
 
 ## Settings
 
