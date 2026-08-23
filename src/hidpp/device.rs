@@ -49,6 +49,8 @@ pub struct DeviceStatus {
 pub enum DeviceCommand {
     /// Apply the current `config.device` (SmartShift, DPI, hi-res).
     ApplyDeviceConfig,
+    /// Re-evaluate only the wheel mode after the foreground integrity changes.
+    ApplyWheelMode,
     /// Re-assert every control's divert state per `config.gestures`.
     ApplyControlDiverts,
     /// Stop the thread.
@@ -361,6 +363,7 @@ impl Device {
                 match cmd {
                     DeviceCommand::Shutdown => return,
                     DeviceCommand::ApplyDeviceConfig => self.apply_device_config(),
+                    DeviceCommand::ApplyWheelMode => self.apply_wheel_mode(),
                     DeviceCommand::ApplyControlDiverts => self.apply_diverts(),
                 }
             }
@@ -396,13 +399,23 @@ impl Device {
         if let Err(e) = self.apply_smartshift(d.smartshift, d.smartshift_threshold) {
             tracing::warn!("apply smartshift failed: {e:#}");
         }
-        if let Err(e) = self.apply_hires(d.hires_scroll, d.invert_scroll) {
-            tracing::warn!("apply hires failed: {e:#}");
-        }
+        self.apply_wheel_mode();
         if let Err(e) = self.apply_dpi(d.dpi) {
             tracing::warn!("apply dpi failed: {e:#}");
         }
         self.read_device_settings();
+    }
+
+    /// Apply the configured wheel behavior unless the foreground window is at
+    /// a higher integrity level. In that case Windows must receive the mouse's
+    /// native reports because UIPI rejects Mushak's `SendInput` replacement.
+    pub(crate) fn apply_wheel_mode(&self) {
+        let cfg = state::config();
+        let d = &cfg.device;
+        let hires = d.hires_scroll && !state::wheel_native_fallback();
+        if let Err(e) = self.apply_hires(hires, d.invert_scroll) {
+            tracing::warn!("apply hires failed: {e:#}");
+        }
     }
 
     /// Read current device settings (DPI list/current, SmartShift, hi-res) into
