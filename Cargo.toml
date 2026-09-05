@@ -9,6 +9,11 @@ homepage = "https://github.com/divyangchauhan/Mushak"
 readme = "README.md"
 rust-version = "1.77"
 
+[workspace]
+members = ["uiaccess-helper"]
+default-members = ["."]
+resolver = "2"
+
 [[bin]]
 name = "mushak"
 path = "src/main.rs"

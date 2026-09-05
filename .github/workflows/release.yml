@@ -2,7 +2,7 @@ name: release
 
 # Cut a release by pushing a version tag, e.g.:
 #   git tag v0.0.1 && git push origin v0.0.1
-# This builds the size-optimized binary and a per-user MSI installer, computes
+# This builds the size-optimized binaries and a Program Files MSI installer, computes
 # checksums, and publishes a GitHub Release with the portable exe, zip, and MSI.
 
 on:
@@ -27,13 +27,14 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Build release
-        run: cargo build --release
+        run: cargo build --release --workspace
 
       # -- Signing hook (exe) -------------------------------------------------
-      # Unsigned for now. When you have a certificate (Certum Open Source, EV,
-      # ...), sign target\release\mushak.exe HERE, before the MSI is built so
-      # the installer wraps the signed exe. Then also sign the MSI in the
-      # matching hook after the "Build MSI" step below.
+      # Unsigned for now. Before publishing a UIAccess-enabled build, sign both
+      # target\release\mushak.exe and mushak-uiaccess-helper.exe HERE with an
+      # Authenticode certificate. Windows refuses UIAccess to an unsigned
+      # helper even when it is installed under Program Files. Then sign the MSI
+      # in the matching hook after the "Build MSI" step below.
       # -----------------------------------------------------------------------
 
       - name: Build MSI installer (WiX v3)

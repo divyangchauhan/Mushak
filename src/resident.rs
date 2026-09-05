@@ -8,7 +8,7 @@ use crate::config::Config;
 use crate::hidpp::device::DeviceCommand;
 use crate::statusfile::{self, SharedStatus};
 use crate::tray::Tray;
-use crate::{hidpp, hook, injector, startup, state};
+use crate::{hidpp, hook, injector, startup, state, uiaccess};
 use std::path::Path;
 use std::process::{Child, Command};
 use std::time::{Duration, Instant, SystemTime};
@@ -36,6 +36,7 @@ pub fn run() {
     state::set_inject_tx(inject_tx);
     state::init(cfg);
 
+    uiaccess::spawn();
     hook::spawn();
     let device_tx = hidpp::device::spawn();
     state::set_device_tx(device_tx);
@@ -122,6 +123,7 @@ pub fn run() {
     hook::request_stop();
     hidpp::device::request_stop();
     state::device_command(DeviceCommand::Shutdown);
+    uiaccess::request_stop();
     // Let the HID thread restore the gesture divert before we exit.
     std::thread::sleep(Duration::from_millis(300));
 }

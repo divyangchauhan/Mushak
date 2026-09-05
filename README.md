@@ -28,9 +28,10 @@ scoop bucket add mushak https://github.com/divyangchauhan/scoop-mushak
 scoop install mushak
 ```
 
-**Direct download** — grab `mushak.exe` from the
+**Direct download** — grab the MSI or portable `mushak.exe` from the
 [latest release](https://github.com/divyangchauhan/Mushak/releases/latest).
-It's a single portable executable; no installer.
+The signed MSI installs the optional elevated-window wheel helper under
+Program Files; the portable executable uses native-wheel fallback instead.
 
 > The released binary is **not code-signed yet**, so on first run Windows
 > SmartScreen shows an "unknown publisher" prompt — click *More info → Run
@@ -65,7 +66,16 @@ as a separate process and closing it just closes that window. Use the tray menu
 The low-level mouse hook cannot intercept input directed at windows running at a
 **higher integrity level** than Mushak. If you want remapping to work over
 elevated/admin apps (Task Manager, elevated terminals, some installers), run
-`mushak.exe` **as administrator**.
+`mushak.exe` **as administrator**. Scrolling does not require elevation: Mushak
+temporarily hands the wheel back to Windows for elevated foreground windows,
+then restores the configured high-resolution mode when you switch away.
+
+Signed direct-install builds can instead include the minimal
+`mushak-uiaccess-helper.exe`. It accepts only bounded wheel deltas over a private
+inherited pipe, letting high-resolution scrolling continue in Task Manager
+without giving the full resident process UIAccess. Windows activates that
+helper only when it is Authenticode-signed and installed under Program Files;
+portable, unsigned, and Store builds retain the native-wheel fallback.
 
 ## Settings
 

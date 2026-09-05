@@ -6,12 +6,12 @@
 //! `dwExtraInfo` so the hook can recognize and ignore them.
 
 use crate::config::{Action, Modifier};
+use crate::{state, uiaccess};
 use crossbeam_channel::{Receiver, Sender};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, INPUT_MOUSE, KEYBDINPUT, KEYBD_EVENT_FLAGS,
     KEYEVENTF_KEYUP, MOUSEEVENTF_MOVE, MOUSEEVENTF_WHEEL, MOUSEINPUT, VIRTUAL_KEY, VK_CONTROL,
-    VK_LWIN, VK_MENU,
-    VK_SHIFT,
+    VK_LWIN, VK_MENU, VK_SHIFT,
 };
 
 /// Marker written to `dwExtraInfo` on every event we synthesize, so our own
@@ -130,6 +130,17 @@ pub fn wheel(delta: i32) {
     if delta == 0 {
         return;
     }
+
+    // Only the tiny, wheel-only helper is allowed to cross an integrity
+    // boundary. If its private channel fails, mark it unavailable so the HID
+    // thread hands the wheel back to Windows instead of silently eating input.
+    if state::wheel_needs_uiaccess_helper() {
+        if !uiaccess::wheel(delta) {
+            state::set_uiaccess_helper_available(false);
+        }
+        return;
+    }
+
     let input = INPUT {
         r#type: INPUT_MOUSE,
         Anonymous: INPUT_0 {
@@ -143,7 +154,8 @@ pub fn wheel(delta: i32) {
             },
         },
     };
-    unsafe {
-        SendInput(&[input], std::mem::size_of::<INPUT>() as i32);
+    let sent = unsafe { SendInput(&[input], std::mem::size_of::<INPUT>() as i32) };
+    if sent != 1 {
+        state::report_wheel_injection_failure();
     }
 }

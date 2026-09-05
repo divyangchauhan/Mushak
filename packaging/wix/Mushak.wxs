@@ -2,12 +2,12 @@
 <!--
   MSI installer for Mushak, built with the WiX v3 toolset (candle + light).
 
-  Per-user install: no UAC prompt, lands in %LocalAppData%\Programs\Mushak,
-  registers under HKCU (Add/Remove Programs, per-user Start menu). This matches
-  Mushak's per-user nature (tray, config, and start-with-Windows are all
-  per-user) and keeps installation frictionless.
+  Per-machine install: a UAC prompt protects the binaries under Program Files.
+  That protected location, plus Authenticode signing and the helper's embedded
+  manifest, is required before Windows grants UIAccess to the wheel helper.
 
   Version is passed at build time: `candle -dVersion=0.0.1 ...`.
+  Use build-installer.ps1 so both executables are signed before packaging.
   The UpgradeCode below is PERMANENT - never change it, or upgrades break.
 -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
@@ -20,7 +20,8 @@
 
     <Package InstallerVersion="500"
              Compressed="yes"
-             InstallScope="perUser"
+             InstallScope="perMachine"
+             Platform="x64"
              Description="Mushak $(var.Version) installer" />
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of Mushak is already installed." />
@@ -34,27 +35,25 @@
     <Property Id="ARPNOREPAIR" Value="1" />
 
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="LocalAppDataFolder">
+      <Directory Id="ProgramFiles64Folder">
         <Directory Id="INSTALLFOLDER" Name="Mushak" />
       </Directory>
-      <Directory Id="ProgramMenuFolder" />
+      <Directory Id="CommonProgramMenuFolder" />
     </Directory>
 
     <DirectoryRef Id="INSTALLFOLDER">
-      <!-- Fixed GUID: a component mixing a file with an HKCU key-path can't use
-           an auto-generated one. Keep it stable across versions. -->
-      <Component Id="MainExe" Guid="58151D65-D47D-4D4B-8CFE-B516E2522EC8">
-        <File Id="MushakExe" Source="target\release\mushak.exe" />
-        <!-- Per-user components must key off HKCU, not the file, and must
-             clean up their profile folder on uninstall (ICE38 / ICE64). -->
+      <!-- Keep both signed binaries in one administrator-protected component.
+           The helper has no shortcut and cannot be meaningfully launched on
+           its own; Mushak gives it only a private inherited pipe. -->
+      <Component Id="MainBinaries" Guid="58151D65-D47D-4D4B-8CFE-B516E2522EC8" Win64="yes">
+        <File Id="MushakExe" Source="target\release\mushak.exe" KeyPath="yes" />
+        <File Id="MushakUiAccessHelper" Source="target\release\mushak-uiaccess-helper.exe" />
         <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
-        <RegistryValue Root="HKCU" Key="Software\Mushak" Name="InstallFolder"
-                       Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </DirectoryRef>
 
-    <DirectoryRef Id="ProgramMenuFolder">
-      <Component Id="StartMenuShortcut" Guid="*">
+    <DirectoryRef Id="CommonProgramMenuFolder">
+      <Component Id="StartMenuShortcut" Guid="*" Win64="yes">
         <Shortcut Id="MushakStartMenu"
                   Name="Mushak"
                   Description="Lightweight replacement for Logitech Options+"
@@ -62,13 +61,13 @@
                   WorkingDirectory="INSTALLFOLDER"
                   Icon="MushakIcon" />
         <RemoveFolder Id="CleanupStartMenu" On="uninstall" />
-        <RegistryValue Root="HKCU" Key="Software\Mushak" Name="StartMenu"
+        <RegistryValue Root="HKLM" Key="Software\Mushak" Name="StartMenu"
                        Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </DirectoryRef>
 
     <Feature Id="Main" Title="Mushak" Level="1">
-      <ComponentRef Id="MainExe" />
+      <ComponentRef Id="MainBinaries" />
       <ComponentRef Id="StartMenuShortcut" />
     </Feature>
 

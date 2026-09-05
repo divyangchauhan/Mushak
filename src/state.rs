@@ -17,6 +17,10 @@ use std::sync::{Arc, OnceLock};
 static CONFIG: OnceLock<ArcSwap<Config>> = OnceLock::new();
 static ACTIVE_MAP: OnceLock<ArcSwap<ButtonMap>> = OnceLock::new();
 static PAUSED: AtomicBool = AtomicBool::new(false);
+static FOREGROUND_REQUIRES_NATIVE_WHEEL: AtomicBool = AtomicBool::new(false);
+static UIACCESS_HELPER_AVAILABLE: AtomicBool = AtomicBool::new(false);
+static WHEEL_INJECTION_FAILED: AtomicBool = AtomicBool::new(false);
+static WHEEL_NATIVE_FALLBACK: AtomicBool = AtomicBool::new(false);
 static INJECT_TX: OnceLock<Sender<Action>> = OnceLock::new();
 static DEVICE_STATUS: OnceLock<ArcSwap<DeviceStatus>> = OnceLock::new();
 static DEVICE_TX: OnceLock<Sender<DeviceCommand>> = OnceLock::new();
@@ -71,6 +75,77 @@ pub fn reevaluate_active_profile() {
         );
     }
     set_active_map(map);
+
+    // High-resolution wheel reports are normally diverted to HID++ and then
+    // re-injected. UIPI blocks ordinary injection into elevated windows. A
+    // verified UIAccess helper can bridge that boundary; otherwise switch the
+    // device back to native wheel reports while the elevated window is active.
+    FOREGROUND_REQUIRES_NATIVE_WHEEL.store(
+        profiles::foreground_requires_native_wheel(),
+        Ordering::Relaxed,
+    );
+    // A prior SendInput failure is tied to the old foreground window. Let the
+    // new window attempt the configured path again.
+    WHEEL_INJECTION_FAILED.store(false, Ordering::Relaxed);
+    refresh_wheel_fallback();
+}
+
+pub fn wheel_native_fallback() -> bool {
+    WHEEL_NATIVE_FALLBACK.load(Ordering::Relaxed)
+}
+
+fn refresh_wheel_fallback() {
+    let fallback = needs_native_wheel_fallback(
+        FOREGROUND_REQUIRES_NATIVE_WHEEL.load(Ordering::Relaxed),
+        UIACCESS_HELPER_AVAILABLE.load(Ordering::Relaxed),
+        WHEEL_INJECTION_FAILED.load(Ordering::Relaxed),
+    );
+    if WHEEL_NATIVE_FALLBACK.swap(fallback, Ordering::Relaxed) != fallback {
+        tracing::info!(
+            "wheel input switched to {} for foreground integrity",
+            if fallback {
+                "native"
+            } else {
+                "configured mode"
+            }
+        );
+        device_command(DeviceCommand::ApplyWheelMode);
+    }
+}
+
+fn needs_native_wheel_fallback(
+    higher_integrity: bool,
+    helper_available: bool,
+    injection_failed: bool,
+) -> bool {
+    injection_failed || (higher_integrity && !helper_available)
+}
+
+/// Called only after the broker has verified that its child token really has
+/// UIAccess. Losing the helper immediately re-enables native wheel fallback.
+pub fn set_uiaccess_helper_available(available: bool) {
+    if UIACCESS_HELPER_AVAILABLE.swap(available, Ordering::Relaxed) != available {
+        tracing::info!(
+            "UIAccess wheel helper {}",
+            if available { "ready" } else { "unavailable" }
+        );
+        refresh_wheel_fallback();
+    }
+}
+
+/// Whether the next wheel event must cross UIPI through the helper.
+pub fn wheel_needs_uiaccess_helper() -> bool {
+    FOREGROUND_REQUIRES_NATIVE_WHEEL.load(Ordering::Relaxed)
+        && UIACCESS_HELPER_AVAILABLE.load(Ordering::Relaxed)
+}
+
+/// Direct SendInput can be blocked even if querying the foreground token was
+/// inconclusive. Fail closed to native reports until focus changes.
+pub fn report_wheel_injection_failure() {
+    if !WHEEL_INJECTION_FAILED.swap(true, Ordering::Relaxed) {
+        tracing::warn!("wheel SendInput was blocked; enabling native fallback");
+        refresh_wheel_fallback();
+    }
 }
 
 pub fn is_paused() -> bool {
@@ -125,5 +200,18 @@ pub fn set_device_tx(tx: Sender<DeviceCommand>) {
 pub fn device_command(cmd: DeviceCommand) {
     if let Some(tx) = DEVICE_TX.get() {
         let _ = tx.try_send(cmd);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::needs_native_wheel_fallback;
+
+    #[test]
+    fn elevated_foreground_fails_closed_without_the_helper() {
+        assert!(needs_native_wheel_fallback(true, false, false));
+        assert!(!needs_native_wheel_fallback(true, true, false));
+        assert!(!needs_native_wheel_fallback(false, false, false));
+        assert!(needs_native_wheel_fallback(false, true, true));
     }
 }

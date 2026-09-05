@@ -16,6 +16,7 @@ mod startup;
 mod state;
 mod statusfile;
 mod tray;
+mod uiaccess;
 
 fn main() {
     let settings_mode = std::env::args().any(|a| a == "--settings");
