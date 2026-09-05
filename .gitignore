@@ -5,3 +5,5 @@
 HANDOFF.md
 Prompt.txt
 *.zip
+*.msi
+*.wixpdb
