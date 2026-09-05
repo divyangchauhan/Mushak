@@ -7,8 +7,8 @@
   below and are frozen once the first submission is accepted.
   See docs/ms-store-submission.md (kept locally, not committed).
 
-  The <Version> last digit MUST stay 0 for Store packages; bump the first three
-  to match the app version (e.g. 0.0.3.0). The build script substitutes it.
+  Store package versions cannot start with 0, and Microsoft reserves the last
+  field. The build script maps app version 0.0.3 to package version 1.0.3.0.
 -->
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"

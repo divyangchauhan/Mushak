@@ -1,52 +1,59 @@
-# MSIX package (Microsoft Store build)
+# Microsoft Store package
 
-Scaffolding for the Microsoft Store build of Mushak. The Store re-signs the
-package for distribution, so no paid code-signing certificate is needed for
-this channel.
+Mushak ships to the Microsoft Store as an x64 MSIX package. Partner Center
+already assigned the package identity in `AppxManifest.xml`:
 
-## Before the first build
+- Name: `DivyangChauhan.Mushak`
+- Publisher: `CN=E262040C-30A8-40A4-800F-6C715C2EF7CF`
 
-1. Register in Partner Center as an Individual and reserve the name "Mushak".
-2. On the app's **Product identity** page, copy these into
-   `AppxManifest.xml` `<Identity>`, replacing the `REPLACEME` placeholders:
-   - `Name=` -> Package/Identity/Name (e.g. `1234Publisher.Mushak`)
-   - `Publisher=` -> Package/Identity/Publisher (e.g. `CN=ABCD1234-...`)
-
-   They must match Partner Center exactly or the upload is rejected.
-
-The `windows.startupTask` `TaskId` in the manifest (`MushakStartup`) must stay
-in sync with `STARTUP_TASK_ID` in `src/startup.rs`; that is how the packaged
-build's "start with Windows" toggle works.
+These values are case-sensitive and must continue to match Partner Center.
 
 ## Build
 
+Run the build from a clean release commit:
+
 ```powershell
-# Structural pack (version comes from Cargo.toml, coerced to x.x.x.0):
 pwsh packaging/msix/build-msix.ps1
 ```
 
-Output: `target/msix/mushak-<version>-x64.msix`.
+The script rebuilds with `Cargo.lock`, rejects identity placeholders, packs and
+reopens the finished archive, checks its identity, and prints the package
+SHA-256. Mushak `0.0.3` produces:
 
-## Test on your own machine
-
-The Store signs the package for release, but to install it locally you must
-sign it with a cert your machine trusts (local testing only, never shipped):
-
-```powershell
-# One-time: create + trust a self-signed cert whose subject matches Publisher
-# (see the full runbook for the exact New-SelfSignedCertificate command).
-pwsh packaging/msix/build-msix.ps1 -Sign -CertSubject "CN=<your-publisher-id>"
-Add-AppxPackage target/msix/mushak-<version>-x64.msix
+```text
+target/msix/mushak-0.0.3-x64.msix
+Store package version: 1.0.3.0
 ```
 
-Then run the Windows App Certification Kit (`appcert.exe`) against the package
-before submitting.
+Microsoft requires four numeric package version fields. The first field cannot
+be zero, and the fourth is reserved for Store use. The default mapping adds one
+to the Cargo major version. For example, `0.0.4` maps to `1.0.4.0`.
 
-## Files
+## Test
 
-- `AppxManifest.xml` - package manifest (fill in identity placeholders).
-- `Assets/` - Store/tile logos generated from the Modak icon.
-- `build-msix.ps1` - stages and packs the MSIX.
+Quit every running Mushak process before certification testing, then run:
 
-The full step-by-step submission runbook (Partner Center flow, WACK, listing,
-publish) is kept locally as `docs/ms-store-submission.md`.
+```powershell
+pwsh packaging/msix/test-msix.ps1
+```
+
+The script runs the Windows App Certification Kit and fails unless the report's
+overall result is `PASS`. The report is written under `target/msix/`.
+
+Partner Center accepts an unsigned MSIX and signs it after certification. A
+local installation needs a test certificate whose subject matches the manifest
+publisher. Never commit that certificate or upload it to Partner Center.
+
+## Package behavior
+
+The packaged build uses the `windows.startupTask` extension for the "Start with
+Windows" setting. Its `MushakStartup` task ID must match `STARTUP_TASK_ID` in
+`src/startup.rs`.
+
+The manifest declares `runFullTrust` because Mushak is a Win32 tray application
+that communicates with the mouse through Windows HID APIs and installs a mouse
+hook for the user's button mappings. Add the justification from
+`docs/ms-store-submission.md` to the Partner Center submission options.
+
+Store listing copy, screenshots, certification notes, and the manual submission
+checklist live under `docs/`.

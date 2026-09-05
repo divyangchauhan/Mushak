@@ -1,0 +1,43 @@
+name: ms-store-package
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/ms-store.yml"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "assets/**"
+      - "build.rs"
+      - "packaging/msix/**"
+      - "src/**"
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Build and inspect Store package
+        shell: pwsh
+        run: ./packaging/msix/build-msix.ps1
+
+      - name: Upload Store package
+        uses: actions/upload-artifact@v4
+        with:
+          name: mushak-ms-store-x64
+          path: target/msix/mushak-*-x64.msix
+          if-no-files-found: error
