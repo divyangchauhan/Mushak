@@ -39,6 +39,11 @@ It's a single portable executable; no installer.
 
 ## Build
 
+The MSI installer enables Start with Windows for the installing user. It adds
+Mushak to Windows Startup apps and removes the entry on uninstall. Use the tray
+menu's Start with Windows option to turn startup off or on. Portable builds
+require enabling that option manually.
+
 Install the Rust toolchain (MSVC) from <https://rustup.rs>, then:
 
 ```powershell

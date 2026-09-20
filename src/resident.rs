@@ -31,7 +31,12 @@ pub fn run() {
         }
     };
 
-    let cfg = Config::load();
+    let mut cfg = Config::load();
+    match startup::registered() {
+        Ok(Some(registered)) => cfg.start_with_windows = registered,
+        Ok(None) => {}
+        Err(e) => tracing::warn!("failed to read startup registration: {e:#}"),
+    }
     let inject_tx = injector::spawn();
     state::set_inject_tx(inject_tx);
     state::init(cfg);
@@ -171,6 +176,7 @@ fn toggle_startup(tray: &Tray, config_path: Option<&Path>, config_mtime: &mut Op
     cfg.start_with_windows = !cfg.start_with_windows;
     if let Err(e) = startup::set(cfg.start_with_windows) {
         tracing::error!("failed to update startup setting: {e:#}");
+        return;
     }
     tray.set_startup(cfg.start_with_windows);
     if let Err(e) = cfg.save() {

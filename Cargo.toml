@@ -1,6 +1,6 @@
 [package]
 name = "mushak"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2021"
 description = "Lightweight replacement for Logitech Options+ for the MX Master 2S"
 license = "MIT"
