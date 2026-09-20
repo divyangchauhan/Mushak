@@ -13,7 +13,7 @@
   pwsh packaging/msix/test-msix.ps1
 
 .EXAMPLE
-  pwsh packaging/msix/test-msix.ps1 -PackagePath target/msix/mushak-0.0.3-x64.msix
+  pwsh packaging/msix/test-msix.ps1 -PackagePath target/msix/mushak-0.0.4-x64.msix
 #>
 [CmdletBinding()]
 param(

@@ -26,8 +26,11 @@ jobs:
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
 
+      - name: Test
+        run: cargo test --locked
+
       - name: Build release
-        run: cargo build --release
+        run: cargo build --release --locked
 
       # -- Signing hook (exe) -------------------------------------------------
       # Unsigned for now. When you have a certificate (Certum Open Source, EV,
@@ -56,6 +59,7 @@ jobs:
           $msi = "mushak-$version-x64.msi"
           & "$wix\light.exe" -ext WixUIExtension -out $msi target/wix/Mushak.wixobj
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          & ./packaging/wix/test-msi.ps1 -Path $msi
           "msi=$msi" >> $env:GITHUB_OUTPUT
 
       # -- Signing hook (MSI) -------------------------------------------------

@@ -2,7 +2,7 @@
 <!--
   MSI installer for Mushak, built with the WiX v3 toolset (candle + light).
 
-  Per-user install: no UAC prompt, lands in %LocalAppData%\Programs\Mushak,
+  Per-user install: no UAC prompt, lands in %LocalAppData%\Mushak,
   registers under HKCU (Add/Remove Programs, per-user Start menu). This matches
   Mushak's per-user nature (tray, config, and start-with-Windows are all
   per-user) and keeps installation frictionless.
@@ -51,6 +51,14 @@
         <RegistryValue Root="HKCU" Key="Software\Mushak" Name="InstallFolder"
                        Type="integer" Value="1" KeyPath="yes" />
       </Component>
+      <!-- Use the same Run value as the tray's Start with Windows toggle.
+           MSI owns its lifetime, including removal on uninstall. -->
+      <Component Id="StartupRegistration" Guid="*">
+        <RegistryValue Root="HKCU"
+                       Key="Software\Microsoft\Windows\CurrentVersion\Run"
+                       Name="Mushak" Type="string" Value="&quot;[INSTALLFOLDER]mushak.exe&quot;"
+                       KeyPath="yes" />
+      </Component>
     </DirectoryRef>
 
     <DirectoryRef Id="ProgramMenuFolder">
@@ -69,6 +77,7 @@
 
     <Feature Id="Main" Title="Mushak" Level="1">
       <ComponentRef Id="MainExe" />
+      <ComponentRef Id="StartupRegistration" />
       <ComponentRef Id="StartMenuShortcut" />
     </Feature>
 

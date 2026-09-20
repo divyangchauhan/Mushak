@@ -18,11 +18,11 @@ pwsh packaging/msix/build-msix.ps1
 
 The script rebuilds with `Cargo.lock`, rejects identity placeholders, packs and
 reopens the finished archive, checks its identity, and prints the package
-SHA-256. Mushak `0.0.3` produces:
+SHA-256. Mushak `0.0.4` produces:
 
 ```text
-target/msix/mushak-0.0.3-x64.msix
-Store package version: 1.0.3.0
+target/msix/mushak-0.0.4-x64.msix
+Store package version: 1.0.4.0
 ```
 
 Microsoft requires four numeric package version fields. The first field cannot

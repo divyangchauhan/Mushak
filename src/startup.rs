@@ -17,11 +17,13 @@
 
 use anyhow::{Context, Result};
 use windows::core::{w, PCWSTR, PWSTR};
-use windows::Win32::Foundation::{ERROR_INSUFFICIENT_BUFFER, WIN32_ERROR};
+use windows::Win32::Foundation::{
+    ERROR_FILE_NOT_FOUND, ERROR_INSUFFICIENT_BUFFER, ERROR_SUCCESS, WIN32_ERROR,
+};
 use windows::Win32::Storage::Packaging::Appx::GetCurrentPackageFullName;
 use windows::Win32::System::Registry::{
-    RegCloseKey, RegCreateKeyExW, RegDeleteValueW, RegSetValueExW, HKEY, HKEY_CURRENT_USER,
-    KEY_WRITE, REG_OPTION_NON_VOLATILE, REG_SZ,
+    RegCloseKey, RegCreateKeyExW, RegDeleteValueW, RegGetValueW, RegSetValueExW, HKEY,
+    HKEY_CURRENT_USER, KEY_WRITE, REG_OPTION_NON_VOLATILE, REG_SZ, RRF_RT_REG_SZ,
 };
 
 const RUN_KEY: PCWSTR = w!("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
@@ -31,6 +33,35 @@ const VALUE_NAME: PCWSTR = w!("Mushak");
 /// `AppxManifest.xml` (see `packaging/msix/`). If they drift, enabling
 /// start-with-Windows silently no-ops in the packaged build.
 const STARTUP_TASK_ID: &str = "MushakStartup";
+
+/// MSI can register startup before the app has ever saved a config. Read the
+/// registration rather than showing a stale saved checkbox. Do not rewrite it
+/// on launch: Windows retains control over entries disabled in Task Manager.
+pub fn registered() -> Result<Option<bool>> {
+    if is_packaged() {
+        return Ok(None);
+    }
+    let mut size = 0;
+    let result = unsafe {
+        RegGetValueW(
+            HKEY_CURRENT_USER,
+            RUN_KEY,
+            VALUE_NAME,
+            RRF_RT_REG_SZ,
+            None,
+            None,
+            Some(&mut size),
+        )
+    };
+    match result {
+        ERROR_SUCCESS => Ok(Some(true)),
+        ERROR_FILE_NOT_FOUND => Ok(Some(false)),
+        other => {
+            other.ok().context("reading startup registration")?;
+            unreachable!()
+        }
+    }
+}
 
 /// Enable or disable launching this app at user logon.
 pub fn set(enabled: bool) -> Result<()> {

@@ -44,8 +44,8 @@ cargo test --locked
 pwsh packaging/msix/build-msix.ps1
 ```
 
-For app version `0.0.3`, the output is
-`target/msix/mushak-0.0.3-x64.msix`. Record the printed SHA-256 with the
+For app version `0.0.4`, the output is
+`target/msix/mushak-0.0.4-x64.msix`. Record the printed SHA-256 with the
 submission notes.
 
 The package is unsigned. That is correct for a Partner Center MSIX upload.
@@ -58,7 +58,7 @@ the exact file you plan to upload:
 
 ```powershell
 pwsh packaging/msix/test-msix.ps1 `
-  -PackagePath target/msix/mushak-0.0.3-x64.msix
+  -PackagePath target/msix/mushak-0.0.4-x64.msix
 ```
 
 Review the XML report even when the overall result is `PASS`. Record any
