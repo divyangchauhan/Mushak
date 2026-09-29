@@ -21,21 +21,27 @@ Master 2S** mouse. Pure Rust, native GUI (Ply — no Electron, no webview).
 
 Pick whichever you prefer:
 
-**Scoop**
+### Microsoft Store
+
+[Get Mushak from the Microsoft Store](https://apps.microsoft.com/detail/9N40MGPD7DGV).
+
+### Scoop
 
 ```powershell
 scoop bucket add mushak https://github.com/divyangchauhan/scoop-mushak
 scoop install mushak
 ```
 
-**Direct download** — grab `mushak.exe` from the
+### Direct download
+
+Grab `mushak.exe` from the
 [latest release](https://github.com/divyangchauhan/Mushak/releases/latest).
 It's a single portable executable; no installer.
 
-> The released binary is **not code-signed yet**, so on first run Windows
-> SmartScreen shows an "unknown publisher" prompt — click *More info → Run
-> anyway*. Downloads are integrity-checked via the `SHA256SUMS.txt` published
-> with each release.
+> The binary from GitHub releases is **not code-signed yet**, so on first run
+> Windows SmartScreen shows an "unknown publisher" prompt. Click *More info →
+> Run anyway*. Check GitHub downloads against the `SHA256SUMS.txt` published
+> with each release. This warning does not apply to Microsoft Store installs.
 
 ## Build
 
