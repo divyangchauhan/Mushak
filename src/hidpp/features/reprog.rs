@@ -10,7 +10,7 @@
 use crate::hidpp::device::Device;
 use anyhow::{anyhow, Result};
 
-/// CID of the MX Master 2S thumb "gesture" button.
+/// CID of the MX Master 2S and 3 thumb gesture button.
 pub const CID_GESTURE: u16 = 0x00C3;
 
 // getControlInfo `flags` bits.

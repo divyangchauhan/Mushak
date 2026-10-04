@@ -1,5 +1,5 @@
-//! Raw HID transport: locate and open the MX Master 2S HID++ interface (via a
-//! Unifying receiver or directly over Bluetooth) and move report bytes.
+//! Raw HID transport: locate and open a supported MX Master HID++ interface
+//! through a Unifying receiver or direct Bluetooth, then move report bytes.
 
 use super::protocol::*;
 use crate::logging::hex;
@@ -37,8 +37,8 @@ pub struct HidppTransport {
 impl HidppTransport {
     /// Enumerate Logitech HID++ control interfaces, ordered receiver-first then
     /// Bluetooth. The caller tries each until one yields a live device (a
-    /// receiver may be plugged in with no paired mouse while the 2S is actually
-    /// on Bluetooth).
+    /// receiver may be plugged in with no paired mouse while the mouse is on
+    /// Bluetooth).
     pub fn candidates() -> Result<Vec<Candidate>> {
         let api = HidApi::new().context("initializing hidapi")?;
 
@@ -67,7 +67,7 @@ impl HidppTransport {
                 if receiver.is_none() || prefer {
                     receiver = Some((path, info.usage()));
                 }
-            } else if pid == PID_MX_MASTER_2S_BT && info.usage_page() >= 0xFF00 {
+            } else if is_supported_bluetooth_pid(pid) && info.usage_page() >= 0xFF00 {
                 // Bluetooth HID++ lives on a vendor-defined usage page (e.g.
                 // 0xFF43); the standard mouse collection (0x0001) is skipped.
                 // The long collection may use usage 0x0002 or 0x0202.
@@ -93,7 +93,7 @@ impl HidppTransport {
         }
         if out.is_empty() {
             return Err(anyhow!(
-                "no MX Master 2S HID++ interface found (receiver {PID_UNIFYING_RECEIVER:04x} or BT {PID_MX_MASTER_2S_BT:04x})"
+                "no supported MX Master HID++ interface found (receiver {PID_UNIFYING_RECEIVER:04x}, MX Master 2S BT {PID_MX_MASTER_2S_BT:04x}, or MX Master 3 BT {PID_MX_MASTER_3_BT:04x})"
             ));
         }
         Ok(out)
@@ -135,5 +135,26 @@ impl HidppTransport {
         let report = Report::new(&buf[..n]);
         tracing::debug!("HID++ <<< {}", hex(&report.raw));
         Ok(Some(report))
+    }
+}
+
+fn is_supported_bluetooth_pid(pid: u16) -> bool {
+    matches!(pid, PID_MX_MASTER_2S_BT | PID_MX_MASTER_3_BT)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_supported_bluetooth_pid;
+    use crate::hidpp::protocol::{PID_MX_MASTER_2S_BT, PID_MX_MASTER_3_BT};
+
+    #[test]
+    fn accepts_bluetooth_ids_for_2s_and_3() {
+        assert!(is_supported_bluetooth_pid(PID_MX_MASTER_2S_BT));
+        assert!(is_supported_bluetooth_pid(PID_MX_MASTER_3_BT));
+    }
+
+    #[test]
+    fn rejects_other_logitech_bluetooth_ids() {
+        assert!(!is_supported_bluetooth_pid(0xB034));
     }
 }

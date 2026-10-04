@@ -9,12 +9,12 @@
 //!
 //! # Why high-resolution means diverting
 //!
-//! Turning on bit 0x02 alone makes the wheel report `multiplier` increments per
-//! detent (8 on the MX Master 2S) straight to Windows on the ordinary mouse
-//! interface. Windows is never told the resolution changed — that is negotiated
-//! through the HID Resolution Multiplier in the report descriptor, which
-//! Logitech's own driver drives and we do not — so it reads all 8 increments as
-//! 8 whole notches and scrolling comes out 8x too fast and jittery.
+//! Turning on bit 0x02 alone sends `multiplier` increments per detent straight
+//! to Windows on the ordinary mouse interface. The MX Master 2S reports 8 and
+//! the MX Master 3 reports 15. Windows is never told the resolution changed.
+//! Logitech's driver negotiates that through the HID Resolution Multiplier in
+//! the report descriptor. Mushak does not, so Windows reads each increment as
+//! a whole notch and scrolling comes out too fast and jittery.
 //!
 //! So high-resolution also sets the target bit, which routes wheel movement to
 //! us as HID++ events instead of to Windows. We scale them back to Windows'
@@ -385,6 +385,12 @@ mod tests {
     fn a_dividing_multiplier_never_leaves_a_remainder() {
         assert_eq!(scale_step(1, 8, 0), (15, 0));
         assert_eq!(scale_step(-1, 8, 0), (-15, 0));
+    }
+
+    #[test]
+    fn mx_master_3_multiplier_scales_exactly() {
+        assert_eq!(scale_step(1, 15, 0), (8, 0));
+        assert_eq!(scale_step(-1, 15, 0), (-8, 0));
     }
 
     /// A multiplier that does not divide 120 leaves a fraction that must be

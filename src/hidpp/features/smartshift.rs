@@ -1,4 +1,4 @@
-//! Feature 0x2110 SMART_SHIFT (original variant used by the MX Master 2S).
+//! Feature 0x2110 SMART_SHIFT, used by the MX Master 2S and 3.
 //!
 //! function 0 getStatus  -> { wheelMode, autoDisengage, autoDisengageDefault }
 //! function 1 setStatus  <- { wheelMode, autoDisengage, autoDisengageDefault }

@@ -7,12 +7,13 @@
 //!   byte3  address        (function << 4) | software id
 //!   byte4+ parameters
 //!
-//! Everything above is used over long reports for HID++ 2.0 traffic; the 2S
-//! accepts long reports for all 2.0 features, which keeps the transport simple.
+//! Everything above is used over long reports for HID++ 2.0 traffic. The MX
+//! Master 2S and 3 accept long reports for the features Mushak uses.
 
 pub const VENDOR_LOGITECH: u16 = 0x046D;
 pub const PID_UNIFYING_RECEIVER: u16 = 0xC52B;
 pub const PID_MX_MASTER_2S_BT: u16 = 0xB019;
+pub const PID_MX_MASTER_3_BT: u16 = 0xB023;
 
 /// Vendor-defined HID usage page carrying HID++ collections.
 pub const USAGE_PAGE_HIDPP: u16 = 0xFF00;
@@ -35,6 +36,7 @@ pub const ROOT_INDEX: u8 = 0x00;
 // Feature IDs (looked up to feature *indices* at runtime via IRoot).
 pub const FEAT_FEATURE_SET: u16 = 0x0001;
 pub const FEAT_DEVICE_INFO: u16 = 0x0003;
+pub const FEAT_DEVICE_NAME: u16 = 0x0005;
 pub const FEAT_BATTERY_STATUS: u16 = 0x1000;
 pub const FEAT_REPROG_CONTROLS_V4: u16 = 0x1B04;
 pub const FEAT_SMART_SHIFT: u16 = 0x2110;
@@ -64,7 +66,7 @@ pub fn long_request(device_index: u8, feature_index: u8, function: u8, params: &
 }
 
 /// Build a 7-byte short request (HID++ 1.0 receiver registers). Kept as a
-/// documented reference; the 2S path uses long reports exclusively.
+/// documented reference; the supported mouse paths use long reports.
 #[allow(dead_code)]
 pub fn short_request(device_index: u8, sub_id: u8, address_byte: u8, params: &[u8]) -> [u8; SHORT_LEN] {
     let mut r = [0u8; SHORT_LEN];

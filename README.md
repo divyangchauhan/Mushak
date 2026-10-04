@@ -1,7 +1,9 @@
 # Mushak
 
 A lightweight Windows replacement for Logitech Options+, targeting the **MX
-Master 2S** mouse. Pure Rust, native GUI (Ply — no Electron, no webview).
+Master 2S** and **MX Master 3**. MX Master 3 support is experimental until the
+hardware test on this branch is complete. Pure Rust, native GUI. Ply handles the
+interface, with no Electron or webview.
 
 - Binary ~3.5 MB, idle RAM ~1.5 MB (the settings window uses ~170 MB, but only while it is open).
 - Button remapping via a low-level mouse hook (works even without HID++).
@@ -12,10 +14,10 @@ Master 2S** mouse. Pure Rust, native GUI (Ply — no Electron, no webview).
 ## Requirements
 
 - Windows 10/11 (x64).
-- The MX Master 2S connected either via a **Logitech Unifying receiver**
-  (USB `046D:C52B`) or directly over **Bluetooth** (`046D:B019`). Both are
-  supported and auto-detected; if a receiver is plugged in but the mouse is on
-  Bluetooth, Mushak falls back to Bluetooth automatically.
+- An MX Master 2S or MX Master 3 connected through a **Logitech Unifying
+  receiver** with USB ID `046D:C52B`, or directly over **Bluetooth**. The
+  Bluetooth IDs are `046D:B019` for the 2S and `046D:B023` for the 3. Mushak
+  tries the receiver first, then Bluetooth.
 
 ## Install
 
@@ -139,11 +141,10 @@ reads it for the Device tab).
 
 ### Gestures
 
-The 2S has no usable hardware gesture feature for this purpose, so gestures are
-done in software: the thumb button (control CID `0x00C3`) is *diverted* via
-HID++ feature `0x1B04` (REPROG_CONTROLS_V4), along with its raw XY. While the
-button is held, the mouse reports raw motion to Mushak (the cursor stays put);
-on release the accumulated vector is classified into a tap or a directional
+The 2S and 3 expose the thumb button as control CID `0x00C3`. Mushak diverts it
+through HID++ feature `0x1B04` with its raw XY. While the button is held, the
+mouse reports raw motion to Mushak, and the cursor stays put. On release, the
+accumulated vector is classified into a tap or a directional
 swipe and the mapped action is injected. As a safety net, if raw XY ever arrives
 while the button is *not* held, the motion is re-injected as cursor movement so
 the pointer can never freeze.
@@ -175,13 +176,15 @@ This is what makes remapping work on a mouse that Options+ has touched.
 
 ## Reconnection
 
-The 2S sleeps aggressively. Mushak re-applies diverts and settings on a 30-second
-cadence (they reset when the mouse powers down) and re-runs discovery if the HID
-handle drops. Over a Unifying receiver, wake is also signalled by the receiver's
-HID++ 1.0 `0x41` notification.
+These mice sleep aggressively. Mushak re-applies diverts and settings every 30
+seconds. It also re-runs discovery if the HID handle drops. Over a Unifying
+receiver, the receiver's HID++ 1.0 `0x41` notification signals a wake.
 
 ## Limitations
 
+- MX Master 3 support is experimental. Work through
+  [`docs/mx-master-3-testing.md`](docs/mx-master-3-testing.md) before treating
+  it as supported hardware.
 - Tested primarily over Bluetooth. Receiver mode is implemented (device-index
   probing 1..6) but the receiver's short-report `0x41` wake notification is only
   seen if the short collection is available; the periodic re-apply is the

@@ -537,7 +537,13 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
                 .height(fixed!(15.0))
                 .background_color(pal.line_strong)
                 .empty();
-            ui.text("MX Master 2S", |t| {
+            let device_name = app
+                .device_view
+                .device
+                .name
+                .as_deref()
+                .unwrap_or("MX Master 2S / 3");
+            ui.text(device_name, |t| {
                 t.font(&fonts::SANS).font_size(13).color(pal.muted)
             });
             if paused {

@@ -1,4 +1,4 @@
-//! Feature 0x1000 BATTERY_STATUS (the 2S predates 0x1004 UNIFIED_BATTERY).
+//! Feature 0x1000 BATTERY_STATUS, used by the MX Master 2S and 3.
 
 use crate::hidpp::device::Device;
 use anyhow::{anyhow, Result};

@@ -18,6 +18,7 @@ use std::time::{Duration, Instant};
 pub struct FeatureMap {
     pub feature_set: Option<u8>,
     pub device_info: Option<u8>,
+    pub device_name: Option<u8>,
     pub battery: Option<u8>,
     pub reprog: Option<u8>,
     pub smartshift: Option<u8>,
@@ -30,8 +31,10 @@ pub struct FeatureMap {
 /// Snapshot of device state published to the GUI/tray (via `state`) and to the
 /// settings subprocess (via the status file).
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct DeviceStatus {
     pub connected: bool,
+    pub name: Option<String>,
     pub connection: Option<String>,
     pub battery_percent: Option<u8>,
     pub charging: bool,
@@ -160,6 +163,7 @@ impl Device {
 
         self.features.feature_set = self.lookup(FEAT_FEATURE_SET);
         self.features.device_info = self.lookup(FEAT_DEVICE_INFO);
+        self.features.device_name = self.lookup(FEAT_DEVICE_NAME);
         self.features.battery = self.lookup(FEAT_BATTERY_STATUS);
         self.features.reprog = self.lookup(FEAT_REPROG_CONTROLS_V4);
         self.features.smartshift = self.lookup(FEAT_SMART_SHIFT);
@@ -178,11 +182,16 @@ impl Device {
             }
         }
 
+        let name = self.device_name().ok();
+        if let Some(name) = &name {
+            tracing::info!("connected device: {name}");
+        }
         let firmware = self.firmware_string().ok();
         let battery = self.read_battery().ok();
 
         state::set_device_status(DeviceStatus {
             connected: true,
+            name,
             connection: Some(self.transport.kind.label(self.index)),
             battery_percent: battery.map(|b| b.0),
             charging: battery.map(|b| b.1).unwrap_or(false),
@@ -194,18 +203,29 @@ impl Device {
         Ok(())
     }
 
-    /// Probe receiver device indices 1..=6 and return the first that answers.
+    /// Probe receiver slots and return the first supported MX Master.
     fn probe_receiver_index(&self) -> Result<u8> {
         for i in 1..=6u8 {
             match self.ping(i) {
                 Ok((maj, min)) => {
                     tracing::info!("receiver slot {i} responded (protocol {maj}.{min})");
-                    return Ok(i);
+                    match self.device_name_on(i) {
+                        Ok(name) if is_supported_device_name(&name) => {
+                            tracing::info!("receiver slot {i} is {name}");
+                            return Ok(i);
+                        }
+                        Ok(name) => {
+                            tracing::debug!("receiver slot {i} is unsupported device {name}");
+                        }
+                        Err(e) => {
+                            tracing::debug!("receiver slot {i} name unavailable: {e:#}");
+                        }
+                    }
                 }
                 Err(e) => tracing::debug!("receiver slot {i} silent: {e:#}"),
             }
         }
-        bail!("no paired device answered on receiver slots 1..=6")
+        bail!("no supported MX Master found on receiver slots 1..=6")
     }
 
     fn lookup(&self, feature_id: u16) -> Option<u8> {
@@ -369,7 +389,7 @@ impl Device {
             }
 
             // Periodically re-assert diverts/settings so they survive a sleep we
-            // did not otherwise observe (they reset when the 2S powers down), and
+            // did not otherwise observe (they reset when the mouse powers down), and
             // refresh the battery reading in case no broadcast arrived.
             if last_reapply.elapsed() >= reapply_every {
                 self.apply_device_config();
@@ -490,5 +510,32 @@ impl Device {
             tracing::debug!("diverted rawXY (event {}): dx={dx} dy={dy}", rep.function());
             gestures::handle_raw_xy(dx, dy);
         }
+    }
+}
+
+fn is_supported_device_name(name: &str) -> bool {
+    matches!(
+        name,
+        "Wireless Mouse MX Master 2S"
+            | "MX Master 2S"
+            | "Wireless Mouse MX Master 3"
+            | "MX Master 3"
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_supported_device_name;
+
+    #[test]
+    fn receiver_matching_accepts_the_2s_and_3() {
+        assert!(is_supported_device_name("Wireless Mouse MX Master 2S"));
+        assert!(is_supported_device_name("Wireless Mouse MX Master 3"));
+    }
+
+    #[test]
+    fn receiver_matching_rejects_a_keyboard_and_3s() {
+        assert!(!is_supported_device_name("MX Keys"));
+        assert!(!is_supported_device_name("MX Master 3S"));
     }
 }
