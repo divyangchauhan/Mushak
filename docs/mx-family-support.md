@@ -62,5 +62,27 @@ Existing Windows button hooks remain global.
 
 ## Implementation record
 
-Requirements recorded before implementation. Implementation and validation
-results will be appended in the commits that perform the work.
+### Discovery and settings
+
+- Replaced the 2S product-ID filter with Logitech vendor-defined HID collection
+  discovery. Retain all candidate paths, prefer long-report collections, classify
+  the HID bus and receiver identity, and verify a HID++ 2.0 mouse before use.
+- Read names and device kinds through `0x0005`. Receiver probing skips keyboards
+  and empty slots. An unrecognized USB receiver can be identified by a responding
+  mouse slot without requiring a new product-ID entry.
+- Publish capabilities through status IPC. Hide unsupported Scroll and Gestures
+  sections and unsupported DPI, battery, and individual wheel controls.
+- DPI sliders select indices into the device's validated choices. Empty or
+  malformed lists never produce fallback DPI writes. Wheel scaling uses the
+  discovered multiplier, with no model-specific multiplier fallback.
+- Added `mushak.exe --diagnose-device` for read-only name, connection, feature,
+  capability, and DPI discovery. It does not load config, install hooks, or apply
+  device settings.
+- Automated validation passed 25 tests. The existing single-instance test was
+  excluded because the installed resident owns its named mutex. The test run
+  did not stop or replace the installed app.
+- `cargo build --release --locked` and `git diff --check` passed.
+- The read-only hardware check returned `no Logitech HID++ interface found`.
+  Windows lists the old 2S Bluetooth and Unifying mouse entries as unavailable;
+  the active pointing device is a Synaptics touchpad. Physical validation is
+  pending a connected mouse.

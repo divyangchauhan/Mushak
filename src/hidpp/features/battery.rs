@@ -11,6 +11,9 @@ impl Device {
             .battery
             .ok_or_else(|| anyhow!("no BATTERY_STATUS feature"))?;
         let rep = self.request(b, 0, &[])?;
+        if rep.raw.len() < 7 || rep.param(0) > 100 {
+            return Err(anyhow!("invalid battery state"));
+        }
         Ok(interpret(rep.param(0), rep.param(2)))
     }
 }

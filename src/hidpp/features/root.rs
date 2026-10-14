@@ -9,8 +9,16 @@ impl Device {
     /// `IRoot.getFeature(featureId)` — resolve a feature id to
     /// `(featureIndex, featureType, featureVersion)`, or `None` if absent.
     pub(crate) fn get_feature(&self, feature_id: u16) -> Result<Option<(u8, u8, u8)>> {
+        self.get_feature_on(self.index, feature_id)
+    }
+
+    pub(crate) fn get_feature_on(
+        &self,
+        device_index: u8,
+        feature_id: u16,
+    ) -> Result<Option<(u8, u8, u8)>> {
         let params = [(feature_id >> 8) as u8, (feature_id & 0xFF) as u8, 0];
-        let rep = self.request_on(self.index, ROOT_INDEX, 0, &params)?;
+        let rep = self.request_on(device_index, ROOT_INDEX, 0, &params)?;
         let idx = rep.param(0);
         if idx == 0 {
             Ok(None)

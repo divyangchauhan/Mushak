@@ -46,7 +46,10 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 .height(fixed!(38.0))
                 .corner_radius(10.0)
                 .background_color(pal.surface)
-                .border(|b| b.all(1).color(if hovered { pal.accent } else { pal.line_strong }))
+                .border(|b| {
+                    b.all(1)
+                        .color(if hovered { pal.accent } else { pal.line_strong })
+                })
                 .layout(|l| {
                     l.direction(LeftToRight)
                         .align(Left, CenterY)
@@ -86,7 +89,14 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         .layout(|l| l.direction(LeftToRight).gap(10))
         .children(|ui| {
             stat_tile(ui, app, "Connection", |ui| {
-                widgets::icon(ui, &icons::BLUETOOTH, 16.0, pal.accent);
+                let icon = if d.connection_kind
+                    == Some(crate::hidpp::transport::ConnectionKind::Bluetooth)
+                {
+                    &icons::BLUETOOTH
+                } else {
+                    &icons::NAV_DEVICE
+                };
+                widgets::icon(ui, icon, 16.0, pal.accent);
                 ui.text(d.connection.as_deref().unwrap_or("—"), |t| {
                     t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
                 });
@@ -103,85 +113,107 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         .height(fit!())
         .layout(|l| l.direction(LeftToRight).gap(10))
         .children(|ui| {
-            stat_tile(ui, app, "Battery", |ui| {
+            if d.capabilities.battery {
+                stat_tile(ui, app, "Battery", |ui| {
+                    ui.element()
+                        .width(grow!())
+                        .height(fixed!(8.0))
+                        .corner_radius(99.0)
+                        .background_color(pal.s2)
+                        .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
+                        .children(|ui| {
+                            let frac = battery.unwrap_or(0) as f32 / 100.0;
+                            ui.element()
+                                .width(ply_engine::layout::Sizing::Percent(frac.max(0.01)))
+                                .height(fixed!(8.0))
+                                .corner_radius(99.0)
+                                .background_color(batt_color)
+                                .empty();
+                        });
+                    ui.text(
+                        &battery.map(|p| format!("{p}%")).unwrap_or("—".into()),
+                        |t| t.font(&fonts::MONO_BOLD).font_size(15).color(pal.text),
+                    );
+                    if d.charging {
+                        ui.text("charging", |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(11).color(pal.good)
+                        });
+                    }
+                });
+            }
+            if d.capabilities.dpi {
+                stat_tile(ui, app, "Current DPI", |ui| {
+                    ui.text(
+                        &d.dpi_current.map(|v| v.to_string()).unwrap_or("—".into()),
+                        |t| t.font(&fonts::MONO_BOLD).font_size(15).color(pal.accent),
+                    );
+                });
+            }
+        });
+
+    ui.element().width(grow!()).height(fixed!(10.0)).empty();
+
+    let mut new_dpi: Option<u16> = None;
+    if d.capabilities.dpi && !d.dpi_list.is_empty() {
+        let choices = &d.dpi_list;
+        let min = choices[0];
+        let max = choices[choices.len() - 1];
+        let selected = choices
+            .iter()
+            .enumerate()
+            .min_by_key(|(_, value)| {
+                (i32::from(**value) - i32::from(app.draft.device.dpi)).unsigned_abs()
+            })
+            .map(|(index, _)| index)
+            .unwrap_or(0);
+        let dpi = choices[selected];
+
+        widgets::card(ui, &pal)
+            .layout(|l| l.direction(TopToBottom).gap(12).padding((16, 17, 16, 17)))
+            .children(|ui| {
                 ui.element()
                     .width(grow!())
-                    .height(fixed!(8.0))
-                    .corner_radius(99.0)
-                    .background_color(pal.s2)
+                    .height(fit!())
                     .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
                     .children(|ui| {
-                        let frac = battery.unwrap_or(0) as f32 / 100.0;
-                        ui.element()
-                            .width(ply_engine::layout::Sizing::Percent(frac.max(0.01)))
-                            .height(fixed!(8.0))
-                            .corner_radius(99.0)
-                            .background_color(batt_color)
-                            .empty();
-                    });
-                ui.text(
-                    &battery.map(|p| format!("{p}%")).unwrap_or("—".into()),
-                    |t| t.font(&fonts::MONO_BOLD).font_size(15).color(pal.text),
-                );
-                if d.charging {
-                    ui.text("charging", |t| {
-                        t.font(&fonts::SANS_SEMIBOLD).font_size(11).color(pal.good)
-                    });
-                }
-            });
-            stat_tile(ui, app, "Current DPI", |ui| {
-                ui.text(
-                    &d.dpi_current.map(|v| v.to_string()).unwrap_or("—".into()),
-                    |t| t.font(&fonts::MONO_BOLD).font_size(15).color(pal.accent),
-                );
-            });
-        });
-
-    ui.element().width(grow!()).height(fixed!(10.0)).empty();
-
-    // DPI slider, bounded by the device's reported list.
-    let (min, max) = match (d.dpi_list.first(), d.dpi_list.last()) {
-        (Some(&f), Some(&l)) if l > f => (f as i64, l as i64),
-        _ => (200, 4000),
-    };
-    let dpi = (app.draft.device.dpi as i64).clamp(min, max);
-    let mut new_dpi: Option<i64> = None;
-
-    widgets::card(ui, &pal)
-        .layout(|l| l.direction(TopToBottom).gap(12).padding((16, 17, 16, 17)))
-        .children(|ui| {
-            ui.element()
-                .width(grow!())
-                .height(fit!())
-                .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
-                .children(|ui| {
-                    ui.element().width(grow!()).height(fit!()).children(|ui| {
-                        ui.text("Pointer speed (DPI)", |t| {
-                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                        ui.element().width(grow!()).height(fit!()).children(|ui| {
+                            ui.text("Pointer speed (DPI)", |t| {
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                            });
+                        });
+                        ui.text(&dpi.to_string(), |t| {
+                            t.font(&fonts::MONO_BOLD).font_size(13).color(pal.accent)
                         });
                     });
-                    ui.text(&dpi.to_string(), |t| {
-                        t.font(&fonts::MONO_BOLD).font_size(13).color(pal.accent)
+                ui.element()
+                    .width(grow!())
+                    .height(fit!())
+                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
+                    .children(|ui| {
+                        ui.text(&min.to_string(), |t| {
+                            t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
+                        });
+                        if choices.len() > 1 {
+                            if let Some(v) = widgets::slider(
+                                ui,
+                                &pal,
+                                "dpi",
+                                selected as i64,
+                                0,
+                                (choices.len() - 1) as i64,
+                                1,
+                            ) {
+                                new_dpi = choices.get(v as usize).copied();
+                            }
+                        }
+                        ui.text(&max.to_string(), |t| {
+                            t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
+                        });
                     });
-                });
-            ui.element()
-                .width(grow!())
-                .height(fit!())
-                .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
-                .children(|ui| {
-                    ui.text(&min.to_string(), |t| {
-                        t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
-                    });
-                    if let Some(v) = widgets::slider(ui, &pal, "dpi", dpi, min, max, 50) {
-                        new_dpi = Some(v);
-                    }
-                    ui.text(&max.to_string(), |t| {
-                        t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
-                    });
-                });
-        });
+            });
 
-    ui.element().width(grow!()).height(fixed!(10.0)).empty();
+        ui.element().width(grow!()).height(fixed!(10.0)).empty();
+    }
 
     // HID++ feature list (diagnostic).
     let features = d.features.clone();
@@ -245,16 +277,15 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                         .padding((0, 10, 0, 10))
                                 })
                                 .children(|ui| {
-                                    ui.element()
-                                        .width(fixed!(64.0))
-                                        .height(fit!())
-                                        .children(|ui| {
+                                    ui.element().width(fixed!(64.0)).height(fit!()).children(
+                                        |ui| {
                                             ui.text(&format!("{id:#06x}"), |t| {
                                                 t.font(&fonts::MONO_MEDIUM)
                                                     .font_size(12)
                                                     .color(pal.accent)
                                             });
-                                        });
+                                        },
+                                    );
                                     ui.element().width(grow!()).height(fit!()).children(|ui| {
                                         ui.text(feature_name(*id), |t| {
                                             t.font(&fonts::SANS)
@@ -278,7 +309,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         app.hidpp_expanded = !expanded;
     }
     if let Some(v) = new_dpi {
-        app.draft.device.dpi = v as u16;
+        app.draft.device.dpi = v;
         app.commit_config();
     }
     if refresh {

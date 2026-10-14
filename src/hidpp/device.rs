@@ -18,6 +18,7 @@ use std::time::{Duration, Instant};
 pub struct FeatureMap {
     pub feature_set: Option<u8>,
     pub device_info: Option<u8>,
+    pub device_name: Option<u8>,
     pub battery: Option<u8>,
     pub reprog: Option<u8>,
     pub smartshift: Option<u8>,
@@ -27,12 +28,34 @@ pub struct FeatureMap {
     pub all: Vec<(u16, u8)>,
 }
 
+#[derive(Clone, Default, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+pub struct DeviceCapabilities {
+    pub smartshift: bool,
+    pub hires_scroll: bool,
+    pub invert_scroll: bool,
+    pub gestures: bool,
+    pub dpi: bool,
+    pub battery: bool,
+    pub wheel_multiplier: Option<u8>,
+}
+
+impl DeviceCapabilities {
+    pub fn has_scroll_settings(&self) -> bool {
+        self.smartshift || self.hires_scroll || self.invert_scroll
+    }
+}
+
 /// Snapshot of device state published to the GUI/tray (via `state`) and to the
 /// settings subprocess (via the status file).
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct DeviceStatus {
     pub connected: bool,
+    pub name: Option<String>,
     pub connection: Option<String>,
+    pub connection_kind: Option<ConnectionKind>,
+    pub capabilities: DeviceCapabilities,
     pub battery_percent: Option<u8>,
     pub charging: bool,
     pub firmware: Option<String>,
@@ -43,6 +66,16 @@ pub struct DeviceStatus {
     pub smartshift_freespin: Option<bool>,
     pub smartshift_threshold: Option<u8>,
     pub hires_on: Option<bool>,
+}
+
+impl DeviceStatus {
+    pub fn display_name(&self) -> &str {
+        if !self.connected {
+            "No mouse connected"
+        } else {
+            self.name.as_deref().unwrap_or("Connected mouse")
+        }
+    }
 }
 
 /// Commands sent to the device thread.
@@ -110,6 +143,9 @@ pub struct Device {
     pub(crate) features: FeatureMap,
     /// Reprogrammable controls (0x1B04), read once per connection.
     pub(crate) controls: Vec<ControlInfo>,
+    pub(crate) capabilities: DeviceCapabilities,
+    pub(crate) dpi_values: Vec<u16>,
+    ready: bool,
 }
 
 impl Device {
@@ -126,6 +162,9 @@ impl Device {
                         index: 0xFF,
                         features: FeatureMap::default(),
                         controls: Vec::new(),
+                        capabilities: DeviceCapabilities::default(),
+                        dpi_values: Vec::new(),
+                        ready: false,
                     };
                     match dev.discover() {
                         Ok(()) => return Ok(dev),
@@ -145,10 +184,9 @@ impl Device {
     }
 
     fn discover(&mut self) -> Result<()> {
-        self.index = match self.transport.kind {
-            ConnectionKind::Bluetooth => 0xFF,
-            ConnectionKind::Receiver => self.probe_receiver_index()?,
-        };
+        let (index, kind) = select_mouse(self.transport.kind, |index| self.is_mouse_on(index))?;
+        self.index = index;
+        self.transport.kind = kind;
 
         let (maj, min) = self.ping(self.index)?;
         tracing::info!(
@@ -160,6 +198,7 @@ impl Device {
 
         self.features.feature_set = self.lookup(FEAT_FEATURE_SET);
         self.features.device_info = self.lookup(FEAT_DEVICE_INFO);
+        self.features.device_name = self.lookup(FEAT_DEVICE_NAME);
         self.features.battery = self.lookup(FEAT_BATTERY_STATUS);
         self.features.reprog = self.lookup(FEAT_REPROG_CONTROLS_V4);
         self.features.smartshift = self.lookup(FEAT_SMART_SHIFT);
@@ -178,12 +217,26 @@ impl Device {
             }
         }
 
+        let name = self.device_name_on(self.index).ok().or_else(|| {
+            if self.transport.kind.is_receiver() {
+                None
+            } else {
+                self.transport
+                    .product
+                    .clone()
+                    .filter(|name| !name.trim().is_empty())
+            }
+        });
+        self.discover_capabilities();
         let firmware = self.firmware_string().ok();
         let battery = self.read_battery().ok();
 
         state::set_device_status(DeviceStatus {
             connected: true,
+            name,
             connection: Some(self.transport.kind.label(self.index)),
+            connection_kind: Some(self.transport.kind),
+            capabilities: self.capabilities.clone(),
             battery_percent: battery.map(|b| b.0),
             charging: battery.map(|b| b.1).unwrap_or(false),
             firmware,
@@ -191,21 +244,44 @@ impl Device {
             ..Default::default()
         });
         self.read_device_settings();
+        self.ready = true;
         Ok(())
     }
 
-    /// Probe receiver device indices 1..=6 and return the first that answers.
-    fn probe_receiver_index(&self) -> Result<u8> {
-        for i in 1..=6u8 {
-            match self.ping(i) {
-                Ok((maj, min)) => {
-                    tracing::info!("receiver slot {i} responded (protocol {maj}.{min})");
-                    return Ok(i);
-                }
-                Err(e) => tracing::debug!("receiver slot {i} silent: {e:#}"),
+    fn is_mouse_on(&self, index: u8) -> Result<bool> {
+        let Ok((major, _)) = self.ping(index) else {
+            return Ok(false);
+        };
+        if major < 2 {
+            return Ok(false);
+        }
+        // DEVICE_NAME kind 3 is a mouse. A known non-mouse kind must not fall
+        // through to DPI-based inference.
+        match self.device_kind_on(index) {
+            Ok(Some(kind)) => Ok(kind == 3),
+            _ => Ok(self.get_feature_on(index, FEAT_ADJUSTABLE_DPI)?.is_some()),
+        }
+    }
+
+    fn discover_capabilities(&mut self) {
+        self.capabilities.smartshift = self.get_smartshift().is_ok();
+        if let Ok((multiplier, flags)) = self.get_wheel_capability() {
+            if multiplier > 0 && self.get_wheel_mode().is_ok() {
+                self.capabilities.hires_scroll = true;
+                self.capabilities.wheel_multiplier = Some(multiplier);
+                self.capabilities.invert_scroll = flags & 0x08 != 0;
             }
         }
-        bail!("no paired device answered on receiver slots 1..=6")
+        self.capabilities.gestures = self
+            .controls
+            .iter()
+            .any(|c| c.cid == reprog::CID_GESTURE && c.supports_gestures());
+        self.dpi_values = self.get_dpi_list().unwrap_or_default();
+        self.capabilities.dpi = self
+            .get_dpi()
+            .map(|(current, _)| self.dpi_values.contains(&current))
+            .unwrap_or(false);
+        self.capabilities.battery = self.read_battery().is_ok();
     }
 
     fn lookup(&self, feature_id: u16) -> Option<u8> {
@@ -302,6 +378,9 @@ impl Device {
     // ---- Event routing --------------------------------------------------------
 
     fn route_event(&self, rep: &Report) {
+        if !self.ready || rep.device_index() != self.index {
+            return;
+        }
         // Unifying receiver device-connection notification (short, sub-id 0x41):
         // the mouse woke / reconnected. Diverts and volatile settings reset on
         // sleep, so re-apply everything.
@@ -396,12 +475,16 @@ impl Device {
     pub(crate) fn apply_device_config(&self) {
         let cfg = state::config();
         let d = &cfg.device;
-        if let Err(e) = self.apply_smartshift(d.smartshift, d.smartshift_threshold) {
-            tracing::warn!("apply smartshift failed: {e:#}");
+        if self.capabilities.smartshift {
+            if let Err(e) = self.apply_smartshift(d.smartshift, d.smartshift_threshold) {
+                tracing::warn!("apply smartshift failed: {e:#}");
+            }
         }
         self.apply_wheel_mode();
-        if let Err(e) = self.apply_dpi(d.dpi) {
-            tracing::warn!("apply dpi failed: {e:#}");
+        if self.capabilities.dpi {
+            if let Err(e) = self.apply_dpi(d.dpi) {
+                tracing::warn!("apply dpi failed: {e:#}");
+            }
         }
         self.read_device_settings();
     }
@@ -412,8 +495,10 @@ impl Device {
     pub(crate) fn apply_wheel_mode(&self) {
         let cfg = state::config();
         let d = &cfg.device;
-        let hires = d.hires_scroll && !state::wheel_native_fallback();
-        if let Err(e) = self.apply_hires(hires, d.invert_scroll) {
+        let hires =
+            d.hires_scroll && self.capabilities.hires_scroll && !state::wheel_native_fallback();
+        if let Err(e) = self.apply_hires(hires, d.invert_scroll && self.capabilities.invert_scroll)
+        {
             tracing::warn!("apply hires failed: {e:#}");
         }
     }
@@ -421,11 +506,7 @@ impl Device {
     /// Read current device settings (DPI list/current, SmartShift, hi-res) into
     /// the published status so the GUI can show live values.
     pub(crate) fn read_device_settings(&self) {
-        let dpi_list = if self.features.dpi.is_some() {
-            self.get_dpi_list().unwrap_or_default()
-        } else {
-            Vec::new()
-        };
+        let dpi_list = self.dpi_values.clone();
         let dpi_current = if self.features.dpi.is_some() {
             self.get_dpi().ok().map(|(cur, _)| cur)
         } else {
@@ -451,7 +532,7 @@ impl Device {
         if self.features.reprog.is_none() {
             return;
         }
-        self.apply_control_diverts(state::config().gestures.enabled);
+        self.apply_control_diverts(state::config().gestures.enabled && self.capabilities.gestures);
     }
 
     /// Restore native behavior on every control (called on shutdown).
@@ -483,12 +564,78 @@ impl Device {
             }
             tracing::debug!("diverted buttons: {:04x?}", cids);
             gestures::handle_buttons(gesture_held);
-        } else {
+        } else if rep.function() == 1 {
             // divertedRawMouseXYEvent: signed big-endian dx, dy.
             let dx = (((rep.param(0) as u16) << 8) | rep.param(1) as u16) as i16 as i32;
             let dy = (((rep.param(2) as u16) << 8) | rep.param(3) as u16) as i16 as i32;
             tracing::debug!("diverted rawXY (event {}): dx={dx} dy={dy}", rep.function());
             gestures::handle_raw_xy(dx, dy);
         }
+    }
+}
+
+fn select_mouse(
+    kind: ConnectionKind,
+    mut probe: impl FnMut(u8) -> Result<bool>,
+) -> Result<(u8, ConnectionKind)> {
+    if !kind.is_receiver() && probe(0xFF).unwrap_or(false) {
+        return Ok((0xFF, kind));
+    }
+    if kind == ConnectionKind::Bluetooth {
+        bail!("no HID++ 2.0 Bluetooth mouse");
+    }
+    for index in 1..=6 {
+        if probe(index).unwrap_or(false) {
+            return Ok((
+                index,
+                if kind.is_receiver() {
+                    kind
+                } else {
+                    ConnectionKind::OtherReceiver
+                },
+            ));
+        }
+    }
+    bail!("no HID++ 2.0 mouse answered")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn receiver_selection_skips_keyboards_and_empty_slots() {
+        let mut attempts = Vec::new();
+        let selected = select_mouse(ConnectionKind::BoltReceiver, |index| {
+            attempts.push(index);
+            if index == 2 {
+                bail!("asleep");
+            }
+            Ok(index == 3)
+        })
+        .unwrap();
+        assert_eq!(selected, (3, ConnectionKind::BoltReceiver));
+        assert_eq!(attempts, [1, 2, 3]);
+        assert_eq!(
+            select_mouse(ConnectionKind::Usb, |index| Ok(index == 0xFF)).unwrap(),
+            (0xFF, ConnectionKind::Usb)
+        );
+        assert_eq!(
+            select_mouse(ConnectionKind::Usb, |index| Ok(index == 4)).unwrap(),
+            (4, ConnectionKind::OtherReceiver)
+        );
+        assert!(select_mouse(ConnectionKind::Bluetooth, |index| Ok(index == 1)).is_err());
+    }
+    #[test]
+    fn status_uses_the_reported_name_and_neutral_fallbacks() {
+        let mut status = DeviceStatus::default();
+        assert_eq!(status.display_name(), "No mouse connected");
+        status.connected = true;
+        assert_eq!(status.display_name(), "Connected mouse");
+        status.name = Some("MX Vertical".into());
+        assert_eq!(status.display_name(), "MX Vertical");
+        let old = serde_json::json!({ "connected": true, "connection": "Bluetooth" });
+        let status: DeviceStatus = serde_json::from_value(old).unwrap();
+        assert!(!status.capabilities.has_scroll_settings());
+        assert!(!status.capabilities.dpi);
     }
 }

@@ -21,6 +21,9 @@ impl Device {
             .smartshift
             .ok_or_else(|| anyhow!("no SMART_SHIFT feature"))?;
         let rep = self.request(idx, 0, &[])?;
+        if rep.raw.len() < 7 || !matches!(rep.param(0), WHEEL_FREESPIN | WHEEL_RATCHET) {
+            return Err(anyhow!("invalid SmartShift state"));
+        }
         Ok((rep.param(0), rep.param(1), rep.param(2)))
     }
 

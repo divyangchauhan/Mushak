@@ -4,9 +4,9 @@
 use super::theme::{Palette, TRANSPARENT, WHITE};
 use super::{chrome, fonts, icons, App, Section};
 use ply_engine::layout::Sizing;
-use ply_engine::ElementBuilder;
 use ply_engine::prelude::GraphicAsset;
 use ply_engine::prelude::*;
+use ply_engine::ElementBuilder;
 
 /// Ply's `Ui` with the default (unused) custom-element payload.
 pub type Ui2<'a> = ply_engine::Ui<'a, ()>;
@@ -26,7 +26,12 @@ pub fn paused_pill(ui: &mut Ui2, pal: &Palette) {
         .corner_radius(99.0)
         .background_color(bg)
         .border(|b| b.all(1).color(border))
-        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(6).padding((3, 9, 3, 9)))
+        .layout(|l| {
+            l.direction(LeftToRight)
+                .align(Left, CenterY)
+                .gap(6)
+                .padding((3, 9, 3, 9))
+        })
         .children(|ui| {
             ui.element()
                 .width(fixed!(6.0))
@@ -192,9 +197,11 @@ pub fn conflict_banner(ui: &mut Ui2, app: &mut App) {
                         ignore = true;
                     }
                     ui.text("Ignore", |t| {
-                        t.font(&fonts::SANS)
-                            .font_size(px(12.5))
-                            .color(if ig_hover { pal.text } else { pal.muted })
+                        t.font(&fonts::SANS).font_size(px(12.5)).color(if ig_hover {
+                            pal.text
+                        } else {
+                            pal.muted
+                        })
                     });
                 });
         });
@@ -231,13 +238,15 @@ pub fn nav_item(ui: &mut Ui2, pal: &Palette, section: Section, active: bool) -> 
         .corner_radius(10.0)
         .background_color(bg)
         .border(|b| {
-            b.all(1).color(if active {
-                pal.line_strong
-            } else {
-                TRANSPARENT
-            })
+            b.all(1)
+                .color(if active { pal.line_strong } else { TRANSPARENT })
         })
-        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(11).padding(12))
+        .layout(|l| {
+            l.direction(LeftToRight)
+                .align(Left, CenterY)
+                .gap(11)
+                .padding(12)
+        })
         .children(|ui| {
             if ui.just_pressed() {
                 clicked = true;
@@ -260,7 +269,7 @@ pub fn status_card(ui: &mut Ui2, app: &mut App) {
     let (dot, label) = if paused {
         (pal.danger, "Paused")
     } else if !awake {
-        (pal.faint, "Asleep")
+        (pal.faint, "Disconnected")
     } else {
         (pal.good, "Connected")
     };
@@ -306,6 +315,9 @@ pub fn status_card(ui: &mut Ui2, app: &mut App) {
                 .height(fit!())
                 .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(9))
                 .children(|ui| {
+                    if !d.capabilities.battery {
+                        return;
+                    }
                     // Battery shell + fill.
                     ui.element()
                         .width(fixed!(34.0))
@@ -378,7 +390,10 @@ pub fn toggle(ui: &mut Ui2, pal: &Palette, id: &'static str, on: bool) -> bool {
         .height(fixed!(27.0))
         .corner_radius(99.0)
         .background_color(track_bg)
-        .border(|b| b.all(1).color(if on { TRANSPARENT } else { pal.line_strong }))
+        .border(|b| {
+            b.all(1)
+                .color(if on { TRANSPARENT } else { pal.line_strong })
+        })
         .layout(|l| {
             l.direction(LeftToRight)
                 .align(if on { Right } else { Left }, CenterY)
@@ -551,12 +566,11 @@ pub fn asleep_card(ui: &mut Ui2, pal: &Palette) {
                         .layout(|l| l.align(CenterX, CenterY))
                         .children(|ui| icon(ui, &icons::ASLEEP, 24.0, pal.muted));
                     ui.element().width(grow!()).height(fixed!(8.0)).empty();
-                    ui.text("Mouse is asleep", |t| {
+                    ui.text("Mouse unavailable", |t| {
                         t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
                     });
                     ui.text(
-                        "Click or move it to wake it. Button mappings still work while it \
-                         sleeps — scroll, gestures and live status don't.",
+                        "Connect or wake your mouse to read its settings. Windows button mappings remain available.",
                         |t| t.font(&fonts::SANS).font_size(13).color(pal.muted),
                     );
                 });

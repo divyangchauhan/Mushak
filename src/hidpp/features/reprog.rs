@@ -38,6 +38,9 @@ pub struct ControlInfo {
 }
 
 impl ControlInfo {
+    pub(crate) fn supports_gestures(&self) -> bool {
+        self.divertable() && self.raw_xy() && !self.virtual_control()
+    }
     /// The control can be temporarily diverted to HID++ reporting.
     fn divertable(&self) -> bool {
         self.flags & KEY_DIVERTABLE != 0
@@ -174,10 +177,7 @@ impl Device {
                         restored += 1;
                     }
                 }
-                Err(e) => tracing::warn!(
-                    "set divert={want} on CID {:#06x} failed: {e:#}",
-                    ci.cid
-                ),
+                Err(e) => tracing::warn!("set divert={want} on CID {:#06x} failed: {e:#}", ci.cid),
             }
         }
         tracing::info!("control diverts applied: {diverted} diverted, {restored} native");

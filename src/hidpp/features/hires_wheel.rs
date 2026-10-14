@@ -26,8 +26,8 @@
 
 use crate::hidpp::device::Device;
 use crate::injector;
-use anyhow::{anyhow, Result};
 use crate::state;
+use anyhow::{anyhow, Result};
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -78,7 +78,11 @@ fn deadzone_step(delta: i32, deadzone: i32, pending: i32, dir: i32) -> (Option<i
     if deadzone <= 0 {
         // Filter off: forward everything, still tracking direction so turning
         // the deadzone back on mid-scroll behaves.
-        return (Some(delta), 0, if delta != 0 { delta.signum() } else { dir });
+        return (
+            Some(delta),
+            0,
+            if delta != 0 { delta.signum() } else { dir },
+        );
     }
     if dir != 0 && delta.signum() == dir {
         // Continuing the current scroll: never clipped, and any half-built
@@ -127,6 +131,9 @@ impl Device {
     pub(crate) fn get_wheel_mode(&self) -> Result<u8> {
         let idx = self.hires_index()?;
         let rep = self.request(idx, 1, &[])?;
+        if rep.raw.len() < 5 {
+            return Err(anyhow!("truncated wheel mode"));
+        }
         Ok(rep.param(0))
     }
 
@@ -137,6 +144,9 @@ impl Device {
     pub(crate) fn get_wheel_capability(&self) -> Result<(u8, u8)> {
         let idx = self.hires_index()?;
         let rep = self.request(idx, 0, &[])?;
+        if rep.raw.len() < 6 {
+            return Err(anyhow!("truncated wheel capability"));
+        }
         Ok((rep.param(0), rep.param(1)))
     }
 
@@ -146,20 +156,12 @@ impl Device {
         Ok(())
     }
 
-    /// The wheel's hi-res multiplier, or 8 if the device will not say.
-    fn wheel_multiplier(&self) -> i32 {
-        match self.get_wheel_capability() {
-            Ok((m, _)) if m > 0 => m as i32,
-            _ => 8,
-        }
-    }
-
     /// Apply high-resolution + invert.
     ///
     /// High-resolution implies the target bit: see the module comment. Without
     /// it, Windows misreads every increment as a whole notch.
     pub(crate) fn apply_hires(&self, hires: bool, invert: bool) -> Result<()> {
-        if self.features.hires_wheel.is_none() {
+        if !self.capabilities.hires_scroll {
             return Ok(());
         }
         if let Ok((mult, flags)) = self.get_wheel_capability() {
@@ -206,7 +208,10 @@ impl Device {
         if delta == 0 {
             return;
         }
-        let mult = self.wheel_multiplier();
+        let Some(mult) = self.capabilities.wheel_multiplier.filter(|m| *m > 0) else {
+            return;
+        };
+        let mult = i32::from(mult);
 
         let Some(delta) = self.pass_deadzone(delta) else {
             return;
@@ -302,7 +307,10 @@ mod tests {
         let mut pending = 0;
         for delta in [1, 1, -1, -2, 1, -1, 1] {
             let (emit, p, dir) = deadzone_step(delta, DEADZONE, pending, IDLE);
-            assert_eq!(emit, None, "{delta} from pending {pending} should not scroll");
+            assert_eq!(
+                emit, None,
+                "{delta} from pending {pending} should not scroll"
+            );
             assert_eq!(dir, IDLE);
             pending = p;
         }
@@ -318,7 +326,11 @@ mod tests {
     #[test]
     fn negative_movement_crosses_the_threshold_too() {
         let (emit, _, dir) = deadzone_step(-DETENT, DEADZONE, 0, IDLE);
-        assert_eq!(emit, Some(-DETENT), "scrolling up must work like scrolling down");
+        assert_eq!(
+            emit,
+            Some(-DETENT),
+            "scrolling up must work like scrolling down"
+        );
         assert_eq!(dir, -1);
     }
 

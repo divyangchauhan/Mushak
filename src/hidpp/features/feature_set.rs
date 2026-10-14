@@ -18,9 +18,7 @@ impl Device {
                     for i in 0..=count {
                         match self.feature_id_at(fs, i) {
                             Ok((id, ftype)) => {
-                                tracing::info!(
-                                    "  feature[{i:02}] id={id:#06x} type={ftype:#04x}"
-                                );
+                                tracing::info!("  feature[{i:02}] id={id:#06x} type={ftype:#04x}");
                                 all.push((id, i));
                             }
                             Err(e) => tracing::debug!("  feature[{i:02}] read failed: {e:#}"),
@@ -56,6 +54,7 @@ impl Device {
         for (id, idx) in [
             (FEAT_FEATURE_SET, f.feature_set),
             (FEAT_DEVICE_INFO, f.device_info),
+            (FEAT_DEVICE_NAME, f.device_name),
             (FEAT_BATTERY_STATUS, f.battery),
             (FEAT_REPROG_CONTROLS_V4, f.reprog),
             (FEAT_SMART_SHIFT, f.smartshift),
