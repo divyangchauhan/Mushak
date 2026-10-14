@@ -1,28 +1,122 @@
-//! Feature 0x1000 BATTERY_STATUS (the 2S predates 0x1004 UNIFIED_BATTERY).
+//! Battery status, voltage, and unified battery use different wire layouts.
 
-use crate::hidpp::device::Device;
-use anyhow::{anyhow, Result};
+use crate::hidpp::{device::Device, protocol::*};
+use crate::state;
+use anyhow::{bail, Result};
+
+#[derive(Default, Debug)]
+pub struct BatteryReading {
+    pub percent: Option<u8>,
+    pub voltage_mv: Option<u16>,
+    pub level: Option<String>,
+    pub charging: bool,
+}
 
 impl Device {
-    /// `getBatteryLevelStatus` (function 0) -> `(percent, charging)`.
-    pub(crate) fn read_battery(&self) -> Result<(u8, bool)> {
-        let b = self
-            .features
-            .battery
-            .ok_or_else(|| anyhow!("no BATTERY_STATUS feature"))?;
-        let rep = self.request(b, 0, &[])?;
-        if rep.raw.len() < 7 || rep.param(0) > 100 {
-            return Err(anyhow!("invalid battery state"));
+    pub(crate) fn read_battery(&self) -> Result<BatteryReading> {
+        for (feature, index, function) in [
+            (FEAT_UNIFIED_BATTERY, self.features.unified_battery, 1),
+            (FEAT_BATTERY_STATUS, self.features.battery, 0),
+            (FEAT_BATTERY_VOLTAGE, self.features.battery_voltage, 0),
+        ] {
+            if let Some(index) = index {
+                if let Ok(reply) = self.request(index, function, &[]) {
+                    if let Ok(reading) = decode_battery(feature, reply.raw.get(4..).unwrap_or(&[]))
+                    {
+                        return Ok(reading);
+                    }
+                }
+            }
         }
-        Ok(interpret(rep.param(0), rep.param(2)))
+        bail!("no readable battery feature")
+    }
+
+    pub(crate) fn on_battery_event(&self, report: &Report) -> bool {
+        if report.function() != 0 {
+            return false;
+        }
+        for (feature, index) in [
+            (FEAT_UNIFIED_BATTERY, self.features.unified_battery),
+            (FEAT_BATTERY_STATUS, self.features.battery),
+            (FEAT_BATTERY_VOLTAGE, self.features.battery_voltage),
+        ] {
+            if index == Some(report.feature_index()) {
+                if let Ok(battery) = decode_battery(feature, report.raw.get(4..).unwrap_or(&[])) {
+                    state::update_device_status(|s| {
+                        s.battery_percent = battery.percent;
+                        s.battery_voltage_mv = battery.voltage_mv;
+                        s.battery_level = battery.level;
+                        s.charging = battery.charging;
+                    });
+                }
+                return true;
+            }
+        }
+        false
     }
 }
 
-/// Map a `getBatteryLevelStatus` reply / broadcast into `(percent, charging)`.
-///
-/// `status`: 0 discharging, 1 recharging, 2 almost-full (charging),
-/// 3 charge-complete, 4 charging-error, 5 invalid battery, 6 thermal-error.
-pub fn interpret(level: u8, status: u8) -> (u8, bool) {
-    let charging = matches!(status, 1 | 2 | 3);
-    (level, charging)
+fn decode_battery(feature: u16, data: &[u8]) -> Result<BatteryReading> {
+    if data.len() < 3 {
+        bail!("truncated battery report");
+    }
+    let mut reading = BatteryReading::default();
+    match feature {
+        FEAT_BATTERY_STATUS | FEAT_UNIFIED_BATTERY => {
+            if data[0] > 100 {
+                bail!("invalid battery percentage");
+            }
+            reading.percent = (data[0] > 0).then_some(data[0]);
+            reading.charging = matches!(data[2], 1 | 2);
+            if feature == FEAT_UNIFIED_BATTERY && reading.percent.is_none() {
+                reading.level = Some(
+                    match data[1] {
+                        8 => "Full",
+                        4 => "Good",
+                        2 => "Low",
+                        1 => "Critical",
+                        0 => "Empty",
+                        _ => {
+                            bail!("invalid unified battery level");
+                        }
+                    }
+                    .to_owned(),
+                );
+            }
+        }
+        FEAT_BATTERY_VOLTAGE => {
+            let voltage = u16::from_be_bytes([data[0], data[1]]);
+            if voltage == 0 {
+                bail!("invalid battery voltage");
+            }
+            reading.voltage_mv = Some(voltage);
+            reading.charging = data[2] & 0x80 != 0;
+        }
+        _ => bail!("unsupported battery feature"),
+    }
+    Ok(reading)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn decodes_each_battery_layout_without_inventing_a_percentage() {
+        let battery = decode_battery(FEAT_BATTERY_STATUS, &[73, 50, 1]).unwrap();
+        assert_eq!(battery.percent, Some(73));
+        assert!(battery.charging);
+        assert!(
+            !decode_battery(FEAT_UNIFIED_BATTERY, &[100, 8, 3, 0])
+                .unwrap()
+                .charging
+        );
+        let coarse = decode_battery(FEAT_UNIFIED_BATTERY, &[0, 2, 0, 0]).unwrap();
+        assert_eq!(coarse.percent, None);
+        assert_eq!(coarse.level.as_deref(), Some("Low"));
+        let voltage = decode_battery(FEAT_BATTERY_VOLTAGE, &[0x0F, 0xA0, 0x80]).unwrap();
+        assert_eq!(voltage.voltage_mv, Some(4000));
+        assert_eq!(voltage.percent, None);
+        assert!(decode_battery(FEAT_BATTERY_STATUS, &[101, 0, 0]).is_err());
+        assert!(decode_battery(FEAT_UNIFIED_BATTERY, &[80]).is_err());
+    }
 }

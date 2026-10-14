@@ -93,6 +93,10 @@ fn detector() -> &'static Mutex<GestureDetector> {
     DETECTOR.get_or_init(|| Mutex::new(GestureDetector::default()))
 }
 
+pub fn cancel() {
+    *detector().lock().unwrap_or_else(|e| e.into_inner()) = GestureDetector::default();
+}
+
 /// Handle a diverted-buttons event (whether the gesture button is currently
 /// held). Injects the configured action when a gesture completes.
 pub fn handle_buttons(gesture_held: bool) {

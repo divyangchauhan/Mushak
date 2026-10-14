@@ -39,7 +39,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         ui,
         &pal,
         "Gestures",
-        "Hold the thumb button and move the mouse to swipe, or just tap it.",
+        "Hold the gesture button and move the mouse to swipe, or just tap it.",
     );
     ui.element().width(grow!()).height(fixed!(22.0)).empty();
 
@@ -58,7 +58,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         ui,
         app,
         "sw_gestures",
-        "Thumb-button gestures",
+        "Button gestures",
         "Turn the whole gesture pad on or off.",
         enabled,
     ) {
@@ -83,7 +83,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(body_text)
                         });
                     });
-                    ui.text(&format!("{threshold}px"), |t| {
+                    ui.text(&format!("{threshold} units"), |t| {
                         t.font(&fonts::MONO_BOLD).font_size(13).color(pal.accent)
                     });
                 });
@@ -167,14 +167,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             24.0,
                             if enabled { pal.accent } else { pal.muted },
                         );
-                        ui.element()
-                            .width(grow!())
-                            .height(fit!())
-                            .children(|ui| {
-                                ui.text(name, |t| {
-                                    t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(body_text)
-                                });
+                        ui.element().width(grow!()).height(fit!()).children(|ui| {
+                            ui.text(name, |t| {
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(body_text)
                             });
+                        });
                         let id: Id = ("g_chip", slot_index(slot)).into();
                         if widgets::action_chip(ui, &pal, id, disp) && enabled {
                             open_picker = Some(PickerTarget::Gesture(slot.clone()));

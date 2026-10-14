@@ -34,7 +34,7 @@ impl ConnectionKind {
             Self::Usb => "Wired USB",
             Self::Other => "HID connection",
         };
-        if self.is_receiver() {
+        if self.is_receiver() && device_index != 0xFF {
             format!("{label}, device {device_index}")
         } else {
             label.to_owned()
@@ -52,9 +52,24 @@ pub struct Candidate {
 }
 
 pub struct HidppTransport {
-    device: HidDevice,
+    device: TransportIo,
     pub kind: ConnectionKind,
     pub product: Option<String>,
+}
+
+enum TransportIo {
+    Hid(HidDevice),
+    #[cfg(test)]
+    Test(std::sync::Mutex<TestIo>),
+}
+
+#[cfg(test)]
+type TestResponder = dyn FnMut(&[u8]) -> Result<Report> + Send;
+
+#[cfg(test)]
+struct TestIo {
+    respond: Box<TestResponder>,
+    pending: Option<Report>,
 }
 
 fn classify(bus: BusType, pid: u16, product: &str) -> ConnectionKind {
@@ -91,7 +106,80 @@ fn ordered_candidates(mut candidates: Vec<Candidate>) -> Vec<Candidate> {
     candidates
 }
 
+fn standard_mouse_status(
+    vendor: u16,
+    pid: u16,
+    bus: BusType,
+    product: Option<&str>,
+) -> super::device::DeviceStatus {
+    let kind = if vendor == VENDOR_LOGITECH {
+        classify(bus, pid, product.unwrap_or(""))
+    } else {
+        match bus {
+            BusType::Bluetooth => ConnectionKind::Bluetooth,
+            BusType::Usb
+                if product
+                    .unwrap_or("")
+                    .to_ascii_lowercase()
+                    .contains("receiver") =>
+            {
+                ConnectionKind::OtherReceiver
+            }
+            BusType::Usb => ConnectionKind::Usb,
+            _ => ConnectionKind::Other,
+        }
+    };
+    let name = product.map(|name| {
+        if kind.is_receiver() {
+            format!("Mouse via {name}")
+        } else {
+            name.to_owned()
+        }
+    });
+    super::device::DeviceStatus {
+        connected: true,
+        name,
+        connection_kind: Some(kind),
+        connection: Some(kind.label(0xFF)),
+        settings_unavailable_reason: Some(
+            "Advanced device settings are unavailable for this connection.".to_owned(),
+        ),
+        ..Default::default()
+    }
+}
+
 impl HidppTransport {
+    /// Standard HID mouse identity remains available without vendor controls.
+    pub fn other_mouse_status() -> Result<Option<super::device::DeviceStatus>> {
+        let api = HidApi::new().context("initializing hidapi")?;
+        for info in api.device_list() {
+            if info.usage_page() != 1 || info.usage() != 2 {
+                continue;
+            }
+            let product = info.product_string().filter(|name| !name.trim().is_empty());
+            return Ok(Some(standard_mouse_status(
+                info.vendor_id(),
+                info.product_id(),
+                info.bus_type(),
+                product,
+            )));
+        }
+        Ok(None)
+    }
+    #[cfg(test)]
+    pub(crate) fn test(
+        kind: ConnectionKind,
+        respond: impl FnMut(&[u8]) -> Result<Report> + Send + 'static,
+    ) -> Self {
+        Self {
+            device: TransportIo::Test(std::sync::Mutex::new(TestIo {
+                respond: Box::new(respond),
+                pending: None,
+            })),
+            kind,
+            product: None,
+        }
+    }
     pub fn candidates() -> Result<Vec<Candidate>> {
         let api = HidApi::new().context("initializing hidapi")?;
         let mut candidates = Vec::new();
@@ -138,7 +226,7 @@ impl HidppTransport {
             c.product_id
         );
         Ok(Self {
-            device,
+            device: TransportIo::Hid(device),
             kind: c.kind,
             product: c.product.clone(),
         })
@@ -146,7 +234,15 @@ impl HidppTransport {
 
     pub fn write(&self, bytes: &[u8]) -> Result<()> {
         tracing::debug!("HID++ >>> {}", hex(bytes));
-        let n = self.device.write(bytes).context("HID write")?;
+        let n = match &self.device {
+            TransportIo::Hid(device) => device.write(bytes).context("HID write")?,
+            #[cfg(test)]
+            TransportIo::Test(io) => {
+                let mut io = io.lock().unwrap();
+                io.pending = Some((io.respond)(bytes)?);
+                bytes.len()
+            }
+        };
         if n != bytes.len() {
             return Err(anyhow!("short HID write: {n}/{}", bytes.len()));
         }
@@ -155,10 +251,13 @@ impl HidppTransport {
 
     pub fn read(&self, timeout_ms: i32) -> Result<Option<Report>> {
         let mut buf = [0u8; LONG_LEN];
-        let n = self
-            .device
-            .read_timeout(&mut buf, timeout_ms)
-            .context("HID read")?;
+        let n = match &self.device {
+            TransportIo::Hid(device) => device
+                .read_timeout(&mut buf, timeout_ms)
+                .context("HID read")?,
+            #[cfg(test)]
+            TransportIo::Test(io) => return Ok(io.lock().unwrap().pending.take()),
+        };
         if n == 0 {
             return Ok(None);
         }
@@ -171,6 +270,20 @@ impl HidppTransport {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn ordinary_mice_keep_identity_without_unverified_vendor_settings() {
+        let mouse = standard_mouse_status(0x1234, 0xC548, BusType::Usb, Some("USB mouse"));
+        assert_eq!(mouse.display_name(), "USB mouse");
+        assert_eq!(mouse.connection_kind, Some(ConnectionKind::Usb));
+        assert!(!mouse.capabilities.dpi);
+        assert!(!mouse.capabilities.has_scroll_settings());
+        assert!(mouse.capabilities.buttons.is_empty());
+        let receiver = standard_mouse_status(0x1234, 0, BusType::Usb, Some("Wireless Receiver"));
+        assert_eq!(receiver.connection.as_deref(), Some("USB receiver"));
+        let bluetooth =
+            standard_mouse_status(0x1234, 0, BusType::Bluetooth, Some("Bluetooth mouse"));
+        assert_eq!(bluetooth.connection_kind, Some(ConnectionKind::Bluetooth));
+    }
     #[test]
     fn connections_do_not_depend_on_a_mouse_pid_whitelist() {
         assert_eq!(

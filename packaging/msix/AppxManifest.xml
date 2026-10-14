@@ -47,7 +47,7 @@
                  EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
         DisplayName="Mushak"
-        Description="Lightweight replacement for Logitech Options+ for the MX Master 2S"
+        Description="Native Windows customization for Logitech HID++ mice"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">

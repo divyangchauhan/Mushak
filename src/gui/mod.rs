@@ -42,6 +42,7 @@ impl Section {
         match self {
             Self::Scroll => device.connected && device.capabilities.has_scroll_settings(),
             Self::Gestures => device.connected && device.capabilities.gestures,
+            Self::Buttons => !device.connected || !device.capabilities.buttons.is_empty(),
             _ => true,
         }
     }
@@ -123,6 +124,20 @@ pub enum PickerTarget {
     Button(String),
     /// Slot name: tap / up / down / left / right.
     Gesture(String),
+}
+
+impl PickerTarget {
+    fn available(&self, device: &crate::hidpp::device::DeviceStatus) -> bool {
+        match self {
+            Self::Gesture(_) => device.connected && device.capabilities.gestures,
+            Self::Button(slot) if device.connected => device
+                .capabilities
+                .buttons
+                .iter()
+                .any(|button| button.slot == *slot),
+            Self::Button(slot) => matches!(slot.as_str(), "back" | "forward" | "middle"),
+        }
+    }
 }
 
 impl App {
@@ -212,7 +227,12 @@ impl App {
                 .map(|p| match slot.as_str() {
                     "back" => p.buttons.back.clone(),
                     "forward" => p.buttons.forward.clone(),
-                    _ => p.buttons.middle.clone(),
+                    "middle" => p.buttons.middle.clone(),
+                    _ => slot
+                        .strip_prefix("control_")
+                        .and_then(|key| p.buttons.controls.get(key))
+                        .cloned()
+                        .unwrap_or_default(),
                 })
                 .unwrap_or_default(),
             PickerTarget::Gesture(slot) => {
@@ -237,7 +257,16 @@ impl App {
                     match slot.as_str() {
                         "back" => p.buttons.back = action,
                         "forward" => p.buttons.forward = action,
-                        _ => p.buttons.middle = action,
+                        "middle" => p.buttons.middle = action,
+                        _ => {
+                            if let Some(key) = slot.strip_prefix("control_") {
+                                if action == crate::config::Action::PassThrough {
+                                    p.buttons.controls.remove(key);
+                                } else {
+                                    p.buttons.controls.insert(key.to_owned(), action);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -329,6 +358,13 @@ impl App {
         }
         if now >= self.status_next_check {
             self.device_view = statusfile::read();
+            if self
+                .picker
+                .as_ref()
+                .is_some_and(|target| !target.available(&self.device_view.device))
+            {
+                self.picker = None;
+            }
             self.status_next_check = now + Duration::from_millis(500);
         }
         if let Some(deadline) = self.pick_deadline {

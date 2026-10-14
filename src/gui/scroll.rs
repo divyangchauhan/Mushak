@@ -41,6 +41,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     let caps = app.device_view.device.capabilities.clone();
     let mode = app.draft.device.smartshift;
     let flick = app.draft.device.smartshift_threshold as i64;
+    let flick_max = i64::from(caps.smartshift_max_threshold.max(1));
     let hires = app.draft.device.hires_scroll;
     let invert = app.draft.device.invert_scroll;
     let flick_on = mode == SmartShiftMode::SmartShift;
@@ -164,7 +165,15 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
                         });
                         if flick_on {
-                            if let Some(v) = widgets::slider(ui, &pal, "flick", flick, 1, 30, 1) {
+                            if let Some(v) = widgets::slider(
+                                ui,
+                                &pal,
+                                "flick",
+                                flick.min(flick_max),
+                                1,
+                                flick_max,
+                                1,
+                            ) {
                                 new_flick = Some(v);
                             }
                         } else {
@@ -182,7 +191,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                         .empty();
                                 });
                         }
-                        ui.text("30", |t| {
+                        ui.text(&flick_max.to_string(), |t| {
                             t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
                         });
                     });

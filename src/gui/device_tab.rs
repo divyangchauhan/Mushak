@@ -15,13 +15,16 @@ fn feature_name(id: u16) -> &'static str {
         0x0005 => "Device name",
         0x1000 => "Battery status",
         0x1001 => "Battery voltage",
+        0x1004 => "Unified battery",
         0x1814 => "Change host",
         0x1b04 => "Reprogrammable controls v4",
         0x1982 => "Backlight",
         0x2100 => "Vertical scrolling",
         0x2110 => "SmartShift",
+        0x2111 => "Enhanced SmartShift",
         0x2121 => "Hi-res wheel",
         0x2201 => "Adjustable DPI",
+        0x2202 => "Extended adjustable DPI",
         0x2205 => "Pointer motion",
         _ => "Unknown",
     }
@@ -75,6 +78,12 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     }
 
     let d = app.device_view.device.clone();
+    if let Some(reason) = &d.settings_unavailable_reason {
+        ui.text(reason, |text| {
+            text.font(&fonts::SANS).font_size(13).color(pal.muted)
+        });
+        ui.element().width(grow!()).height(fixed!(10.0)).empty();
+    }
     let battery = d.battery_percent;
     let batt_color = match battery {
         Some(p) if p <= 20 => pal.danger,
@@ -122,6 +131,9 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         .background_color(pal.s2)
                         .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
                         .children(|ui| {
+                            if battery.is_none() {
+                                return;
+                            }
                             let frac = battery.unwrap_or(0) as f32 / 100.0;
                             ui.element()
                                 .width(ply_engine::layout::Sizing::Percent(frac.max(0.01)))
@@ -130,10 +142,9 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                 .background_color(batt_color)
                                 .empty();
                         });
-                    ui.text(
-                        &battery.map(|p| format!("{p}%")).unwrap_or("—".into()),
-                        |t| t.font(&fonts::MONO_BOLD).font_size(15).color(pal.text),
-                    );
+                    ui.text(&d.battery_label(), |t| {
+                        t.font(&fonts::MONO_BOLD).font_size(15).color(pal.text)
+                    });
                     if d.charging {
                         ui.text("charging", |t| {
                             t.font(&fonts::SANS_SEMIBOLD).font_size(11).color(pal.good)

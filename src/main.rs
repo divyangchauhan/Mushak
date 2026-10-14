@@ -25,10 +25,13 @@ fn main() {
                 "{}",
                 serde_json::to_string_pretty(&*state::device_status()).unwrap()
             ),
-            Err(error) => {
-                eprintln!("{error:#}");
-                std::process::exit(1);
-            }
+            Err(error) => match hidpp::transport::HidppTransport::other_mouse_status() {
+                Ok(Some(status)) => println!("{}", serde_json::to_string_pretty(&status).unwrap()),
+                _ => {
+                    eprintln!("{error:#}");
+                    std::process::exit(1);
+                }
+            },
         }
         return;
     }

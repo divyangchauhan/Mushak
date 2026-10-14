@@ -6,8 +6,8 @@ use ply_engine::prelude::*;
 
 /// The three physical buttons, as the design names them.
 const ROWS: [(&str, &str, &str); 3] = [
-    ("back", "Back button", "Lower side button"),
-    ("forward", "Forward button", "Upper side button"),
+    ("back", "Back button", "Side button"),
+    ("forward", "Forward button", "Side button"),
     ("middle", "Middle click", "Press the scroll wheel"),
 ];
 
@@ -24,7 +24,12 @@ fn slot_index(slot: &str) -> u32 {
     match slot {
         "back" => 0,
         "forward" => 1,
-        _ => 2,
+        "middle" => 2,
+        _ => slot
+            .strip_prefix("control_")
+            .and_then(|key| u32::from_str_radix(key, 16).ok())
+            .map(|cid| cid + 3)
+            .unwrap_or(3),
     }
 }
 
@@ -40,17 +45,14 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         .height(fit!())
         .layout(|l| l.direction(LeftToRight).align(Left, Top).gap(16))
         .children(|ui| {
-            ui.element()
-                .width(grow!())
-                .height(fit!())
-                .children(|ui| {
-                    widgets::heading(
-                        ui,
-                        &pal,
-                        "Buttons",
-                        "Remap the three physical buttons. Mappings are saved per profile.",
-                    );
-                });
+            ui.element().width(grow!()).height(fit!()).children(|ui| {
+                widgets::heading(
+                    ui,
+                    &pal,
+                    "Buttons",
+                    "Remap available mouse buttons. Mappings are saved per profile.",
+                );
+            });
             // Profile picker.
             let names = app.profile_names();
             let current = names
@@ -71,7 +73,8 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         .corner_radius(10.0)
                         .background_color(pal.surface)
                         .border(|b| {
-                            b.all(1).color(if hovered { pal.accent } else { pal.line_strong })
+                            b.all(1)
+                                .color(if hovered { pal.accent } else { pal.line_strong })
                         })
                         .layout(|l| {
                             l.direction(LeftToRight)
@@ -83,16 +86,13 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             if ui.just_pressed() {
                                 toggle_menu = true;
                             }
-                            ui.element()
-                                .width(grow!())
-                                .height(fit!())
-                                .children(|ui| {
-                                    ui.text(&current, |t| {
-                                        t.font(&fonts::SANS_SEMIBOLD)
-                                            .font_size(widgets::px(13.5))
-                                            .color(pal.text)
-                                    });
+                            ui.element().width(grow!()).height(fit!()).children(|ui| {
+                                ui.text(&current, |t| {
+                                    t.font(&fonts::SANS_SEMIBOLD)
+                                        .font_size(widgets::px(13.5))
+                                        .color(pal.text)
                                 });
+                            });
                             widgets::icon(ui, &icons::CHEVRON_DOWN, 13.0, pal.muted);
                         });
 
@@ -106,15 +106,39 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
 
     // The three rows.
     let idx = app.selected_profile;
-    let bindings: Vec<(String, String, String, actions::Display)> = ROWS
+    let rows: Vec<(String, String, String)> = if app.device_view.device.connected {
+        app.device_view
+            .device
+            .capabilities
+            .buttons
+            .iter()
+            .map(|button| {
+                (
+                    button.slot.clone(),
+                    button.name.clone(),
+                    "Choose an action for this button.".to_owned(),
+                )
+            })
+            .collect()
+    } else {
+        ROWS.iter()
+            .map(|(slot, name, desc)| (slot.to_string(), name.to_string(), desc.to_string()))
+            .collect()
+    };
+    let bindings: Vec<(String, String, String, actions::Display)> = rows
         .iter()
         .map(|(slot, name, desc)| {
             let action = app
                 .profile_at(idx)
-                .map(|p| match *slot {
+                .map(|p| match slot.as_str() {
                     "back" => p.buttons.back.clone(),
                     "forward" => p.buttons.forward.clone(),
-                    _ => p.buttons.middle.clone(),
+                    "middle" => p.buttons.middle.clone(),
+                    _ => slot
+                        .strip_prefix("control_")
+                        .and_then(|key| p.buttons.controls.get(key))
+                        .cloned()
+                        .unwrap_or_default(),
                 })
                 .unwrap_or_default();
             (
@@ -220,7 +244,11 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
                     .width(grow!())
                     .height(fixed!(34.0))
                     .corner_radius(8.0)
-                    .background_color(if active || hovered { pal.s2 } else { super::theme::TRANSPARENT })
+                    .background_color(if active || hovered {
+                        pal.s2
+                    } else {
+                        super::theme::TRANSPARENT
+                    })
                     .layout(|l| {
                         l.direction(LeftToRight)
                             .align(Left, CenterY)
@@ -231,14 +259,11 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
                         if ui.just_pressed() {
                             *pick = Some(i);
                         }
-                        ui.element()
-                            .width(grow!())
-                            .height(fit!())
-                            .children(|ui| {
-                                ui.text(name, |t| {
-                                    t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.text)
-                                });
+                        ui.element().width(grow!()).height(fit!()).children(|ui| {
+                            ui.text(name, |t| {
+                                t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.text)
                             });
+                        });
                         if active {
                             widgets::icon(ui, &icons::CHECK, 14.0, pal.accent);
                         }

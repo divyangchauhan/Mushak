@@ -2,7 +2,7 @@
 name = "mushak"
 version = "0.0.4"
 edition = "2021"
-description = "Lightweight replacement for Logitech Options+ for the MX Master 2S"
+description = "Native Windows customization for Logitech HID++ mice"
 license = "MIT"
 repository = "https://github.com/divyangchauhan/Mushak"
 homepage = "https://github.com/divyangchauhan/Mushak"
@@ -34,7 +34,7 @@ windows = { version = "0.58", features = [
     "ApplicationModel",
 ] }
 
-# Raw HID access to talk HID++ 2.0 to the mouse / Unifying receiver.
+# Raw HID access for HID++ mice and receivers.
 hidapi = "2.6"
 
 # Tray icon + menu.

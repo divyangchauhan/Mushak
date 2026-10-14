@@ -101,7 +101,7 @@ fn main() {
     res.set("ProductName", "Mushak");
     res.set(
         "FileDescription",
-        "Lightweight replacement for Logitech Options+ for the MX Master 2S",
+        "Native Windows customization for Logitech HID++ mice",
     );
     res.set("LegalCopyright", "Copyright (c) 2026 Divyang Chauhan");
     // Declare Per-Monitor v2 DPI awareness in the application manifest so it is

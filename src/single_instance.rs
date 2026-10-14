@@ -8,16 +8,21 @@
 //! double-clicking the tray icon expects.
 
 use windows::core::{w, PCWSTR};
-use windows::Win32::Foundation::{
-    CloseHandle, ERROR_ALREADY_EXISTS, HANDLE, WAIT_OBJECT_0,
-};
+use windows::Win32::Foundation::{CloseHandle, ERROR_ALREADY_EXISTS, HANDLE, WAIT_OBJECT_0};
 use windows::Win32::System::Threading::{
     CreateEventW, CreateMutexW, OpenEventW, SetEvent, WaitForSingleObject, EVENT_MODIFY_STATE,
 };
 
 /// Session-scoped so two different logged-in users each get their own resident.
+#[cfg(not(test))]
 const MUTEX_NAME: PCWSTR = w!("Local\\Mushak.Resident.SingleInstance");
+#[cfg(not(test))]
 const EVENT_NAME: PCWSTR = w!("Local\\Mushak.Resident.ShowSettings");
+// Tests must not signal or compete with the user's installed resident.
+#[cfg(test)]
+const MUTEX_NAME: PCWSTR = w!("Local\\Mushak.Tests.SingleInstance");
+#[cfg(test)]
+const EVENT_NAME: PCWSTR = w!("Local\\Mushak.Tests.ShowSettings");
 
 /// Held for the lifetime of the resident. Dropping (or exiting) releases the
 /// mutex so the next launch can take over.
@@ -55,11 +60,10 @@ impl InstanceGuard {
 
             // We're the owner. Create the manual-reset event the running
             // resident polls (initially unsignaled).
-            let show_settings = CreateEventW(None, true, false, EVENT_NAME)
-                .unwrap_or_else(|e| {
-                    tracing::warn!("show-settings event create failed: {e:#}");
-                    HANDLE::default()
-                });
+            let show_settings = CreateEventW(None, true, false, EVENT_NAME).unwrap_or_else(|e| {
+                tracing::warn!("show-settings event create failed: {e:#}");
+                HANDLE::default()
+            });
 
             Some(InstanceGuard {
                 mutex,

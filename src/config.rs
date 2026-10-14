@@ -6,6 +6,7 @@
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 /// Keyboard modifier keys that can accompany a remapped action.
@@ -77,6 +78,8 @@ pub struct ButtonMap {
     pub back: Action,
     pub forward: Action,
     pub middle: Action,
+    /// Extra HID++ control IDs, encoded as four lowercase hex digits.
+    pub controls: BTreeMap<String, Action>,
 }
 
 impl Default for ButtonMap {
@@ -85,11 +88,18 @@ impl Default for ButtonMap {
             back: Action::PassThrough,
             forward: Action::PassThrough,
             middle: Action::PassThrough,
+            controls: BTreeMap::new(),
         }
     }
 }
 
 impl ButtonMap {
+    pub fn control_action(&self, cid: u16) -> Action {
+        self.controls
+            .get(&format!("{cid:04x}"))
+            .cloned()
+            .unwrap_or_default()
+    }
     pub fn get(&self, button: MouseButton) -> &Action {
         match button {
             MouseButton::Back => &self.back,
@@ -142,7 +152,7 @@ impl Default for SmartShiftMode {
 #[serde(default)]
 pub struct DeviceConfig {
     pub smartshift: SmartShiftMode,
-    /// Auto-disengage threshold 1..=30 (only used in `SmartShift` mode).
+    /// Auto-disengage threshold, bounded by the SmartShift implementation.
     pub smartshift_threshold: u8,
     /// High-resolution (smooth) scrolling on/off.
     pub hires_scroll: bool,
@@ -151,9 +161,8 @@ pub struct DeviceConfig {
     /// Resolution in DPI (validated against the device's supported list).
     pub dpi: u16,
     /// How far the wheel must move, in high-resolution increments, before a
-    /// scroll counts as deliberate. The wheel reports 8 increments per detent,
-    /// and reports them between detents too, so a finger merely resting on it
-    /// rocks it a unit or two and scrolls the page. Movement below this is held
+    /// scroll counts as deliberate. Resolution depends on the reported wheel
+    /// multiplier. Movement below this threshold is held
     /// back until it adds up; once scrolling starts it runs freely until the
     /// wheel goes still, so a real scroll is never clipped.
     ///
@@ -171,8 +180,7 @@ impl Default for DeviceConfig {
             hires_scroll: true,
             invert_scroll: false,
             dpi: 1000,
-            // Half a detent: an accidental nudge is a unit or two, a deliberate
-            // detent is a full 8 and so still scrolls on the very first click.
+            // Preserve the existing default. The UI bounds it by wheel resolution.
             scroll_deadzone: 4,
         }
     }
@@ -240,6 +248,29 @@ impl Default for Config {
 pub fn app_dir() -> Result<PathBuf> {
     let appdata = std::env::var_os("APPDATA").context("APPDATA env var not set")?;
     Ok(PathBuf::from(appdata).join("Mushak"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn legacy_configs_load_and_extra_button_mappings_round_trip() {
+        let legacy = "[default_profile]\nname = 'Default'\nmatch_processes = []\n[default_profile.buttons.back]\nkind = 'Disabled'\n";
+        let mut config: Config = toml::from_str(legacy).unwrap();
+        assert_eq!(config.default_profile.buttons.back, Action::Disabled);
+        assert!(config.default_profile.buttons.controls.is_empty());
+        config.default_profile.buttons.controls.insert(
+            "00ed".into(),
+            Action::key(&[Modifier::Ctrl], vk::letter(b'C')),
+        );
+        let saved = toml::to_string_pretty(&config).unwrap();
+        let loaded: Config = toml::from_str(&saved).unwrap();
+        assert_eq!(loaded, config);
+        assert_eq!(
+            loaded.default_profile.buttons.control_action(0x00ED),
+            Action::key(&[Modifier::Ctrl], vk::letter(b'C'))
+        );
+    }
 }
 
 impl Config {

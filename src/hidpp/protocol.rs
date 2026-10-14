@@ -35,10 +35,14 @@ pub const FEAT_FEATURE_SET: u16 = 0x0001;
 pub const FEAT_DEVICE_INFO: u16 = 0x0003;
 pub const FEAT_DEVICE_NAME: u16 = 0x0005;
 pub const FEAT_BATTERY_STATUS: u16 = 0x1000;
+pub const FEAT_BATTERY_VOLTAGE: u16 = 0x1001;
+pub const FEAT_UNIFIED_BATTERY: u16 = 0x1004;
 pub const FEAT_REPROG_CONTROLS_V4: u16 = 0x1B04;
 pub const FEAT_SMART_SHIFT: u16 = 0x2110;
+pub const FEAT_SMART_SHIFT_ENHANCED: u16 = 0x2111;
 pub const FEAT_HIRES_WHEEL: u16 = 0x2121;
 pub const FEAT_ADJUSTABLE_DPI: u16 = 0x2201;
+pub const FEAT_EXTENDED_ADJUSTABLE_DPI: u16 = 0x2202;
 
 /// Marker in the feature-index byte for a HID++ 2.0 error reply.
 pub const ERR20_MARKER: u8 = 0xFF;

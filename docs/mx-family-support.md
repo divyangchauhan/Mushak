@@ -86,3 +86,97 @@ Existing Windows button hooks remain global.
   Windows lists the old 2S Bluetooth and Unifying mouse entries as unavailable;
   the active pointing device is a Synaptics touchpad. Physical validation is
   pending a connected mouse.
+
+### MX family implementation
+
+- Discovery accepts reported HID++ mouse identities across the Master family,
+  Mac and business variants, MX Vertical, and other HID++ mice. Product IDs do
+  not decide which mouse settings appear.
+- Standard HID mouse collections also provide a name and connection fallback
+  for other vendors and connections without HID++. Their unknown vendor settings
+  remain hidden. A receiver product string identifies the receiver, not its
+  paired mouse model; the fallback labels that case as a mouse via the receiver.
+- Added battery voltage `0x1001` and unified battery `0x1004`. Voltage and coarse
+  battery levels remain voltage and levels in the UI, with no invented percentage.
+- Added enhanced SmartShift `0x2111`, with its different read/write functions.
+  Preserve the existing torque byte when changing mode or sensitivity.
+- Added extended adjustable DPI `0x2202`, paged DPI lists, sensor discovery, and
+  preservation of independent Y resolution and lift-off distance on DPI writes.
+- Enumerated button controls populate the settings rows. Extra mappings live in
+  each profile under `buttons.controls`, keyed by control ID. Existing configs
+  remain readable. Foreground profile changes reapply extra button reporting.
+- Select gestures by a reported gesture control and raw-XY support. A DPI button
+  that reports raw movement remains a DPI button. Gesture buttons without raw XY
+  can be remapped as ordinary extra buttons, with movement gestures hidden.
+- Pause and exit restore extra buttons to native reporting. Shutdown waits for
+  the device thread to finish restoration. Reconnect notifications schedule
+  reapplication after the current request, avoiding nested HID++ requests.
+- Model names, DPI limits, wheel multipliers, and physical button positions no
+  longer come from a fixed MX Master 2S layout.
+- The binary and MSIX descriptions now describe HID++ mice. Existing Scoop,
+  WinGet, and Store listing documents still describe their released 2S version.
+  This work has not updated any published package or installed application.
+
+The protocol tests simulate exchanges for the original Master, 2S, 3, 3S, 4,
+Mac/business names, MX Vertical, and an unknown future mouse. They check discovery,
+receiver keyboard exclusion, feature indices, valid DPI writes, enhanced
+SmartShift writes, extended DPI preservation, and temporary control restoration.
+These are protocol fixtures, not recordings of every model or firmware.
+
+The single-instance test now uses test-only mutex and event names, so the entire
+suite can run while the installed resident remains active.
+
+The later live read-only probe found `Wireless Mouse MX Master 2S` over Bluetooth,
+firmware `MPM 12.01.B0006`, battery 50%, and 77 reported DPI choices from 200 to
+4000 in steps of 50. It reported wheel multiplier 8, SmartShift, high-resolution
+scrolling, inversion, raw-XY gestures, and Middle, Back, Forward, and wheel-mode
+buttons. The [captured JSON](validation/mx-master-2s-bluetooth.json) records this
+discovery. This check applied no device settings and did not replace the installed
+resident.
+
+Final checks passed `cargo test --locked`, with 37 tests and no exclusions,
+`cargo build --release --locked`, formatting checks for every changed Rust file,
+and `git diff --check`. The release executable also completed read-only discovery
+of the 2S Bluetooth device with exit code 0 and the same 77 DPI choices and wheel
+multiplier. Use `Start-Process -Wait` with redirected output when collecting
+diagnostics from the Windows GUI-subsystem release in PowerShell.
+
+Strict `cargo clippy --locked --all-targets -- -D warnings` remains blocked by
+existing repository lints. The original checkout reproduces eight lint issues;
+six remain here: two manual Default implementations, a redundant format call,
+the action picker's complex type, the wheel module's pre-existing Rust minimum
+version mismatch, and test-module ordering in the single-instance module. No new
+Clippy lint remains in the added implementation.
+
+## Physical validation status
+
+Behavior testing still needs a tester result from this branch. Earlier 2S testing
+applies to earlier releases and does not validate this implementation.
+
+| Mouse | Connections to check | Result |
+| --- | --- | --- |
+| Original MX Master | Bluetooth, compatible receiver | Pending |
+| MX Master 2S | Bluetooth, Unifying | Bluetooth discovery passed; behavior and Unifying pending |
+| MX Master 3 and variants | Bluetooth, compatible receiver | Pending |
+| MX Master 3S and variants | Bluetooth, Bolt | Pending |
+| MX Master 4 and variants | Bluetooth, Bolt | Pending |
+| MX Vertical | Bluetooth, Unifying, wired USB | Pending |
+| Other HID++ mice/receivers | Available connection paths | Pending |
+
+Capture `--diagnose-device` output and logs with the mouse name, firmware,
+Windows version, connection, and the acceptance checklist above. Settings that
+require a protocol Mushak does not implement remain unavailable. This work does
+not add Flow, hardware gesture feature `0x6501`, haptic intensity controls, or a
+replacement for Actions Ring.
+
+## Protocol references
+
+Consulted these primary project sources for wire layouts and device evidence.
+Mushak's implementation and protocol tests were written independently.
+
+- [Solaar feature definitions](https://github.com/pwr-Solaar/Solaar/blob/master/lib/logitech_receiver/hidpp20_constants.py)
+- [Solaar protocol handling](https://github.com/pwr-Solaar/Solaar/blob/master/lib/logitech_receiver/hidpp20.py)
+- [Solaar setting protocols](https://github.com/pwr-Solaar/Solaar/blob/master/lib/logitech_receiver/settings_templates.py)
+- [Original MX Master device report](https://github.com/pwr-Solaar/Solaar/blob/master/docs/devices/Wireless%20Mouse%20MX%20Master%20B012.txt)
+- [MX Master 4 business device report](https://github.com/pwr-Solaar/Solaar/issues/3264)
+- [Logitech MX Vertical specifications](https://www.logitech.com/content/dam/logitech/en/business/pdf/mx-vertical-advanced-ergo-mouse-data-sheet.pdf)

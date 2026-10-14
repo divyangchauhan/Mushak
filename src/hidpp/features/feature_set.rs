@@ -56,10 +56,14 @@ impl Device {
             (FEAT_DEVICE_INFO, f.device_info),
             (FEAT_DEVICE_NAME, f.device_name),
             (FEAT_BATTERY_STATUS, f.battery),
+            (FEAT_BATTERY_VOLTAGE, f.battery_voltage),
+            (FEAT_UNIFIED_BATTERY, f.unified_battery),
             (FEAT_REPROG_CONTROLS_V4, f.reprog),
             (FEAT_SMART_SHIFT, f.smartshift),
+            (FEAT_SMART_SHIFT_ENHANCED, f.smartshift_enhanced),
             (FEAT_HIRES_WHEEL, f.hires_wheel),
             (FEAT_ADJUSTABLE_DPI, f.dpi),
+            (FEAT_EXTENDED_ADJUSTABLE_DPI, f.extended_dpi),
         ] {
             if let Some(i) = idx {
                 v.push((id, i));

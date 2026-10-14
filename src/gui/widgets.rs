@@ -281,7 +281,7 @@ pub fn status_card(ui: &mut Ui2, app: &mut App) {
         _ => pal.good,
     };
     let batt_text = match pct {
-        Some(p) if awake => format!("{p}%"),
+        _ if awake => d.battery_label(),
         _ => "—".to_string(),
     };
     let fill = pct.unwrap_or(0) as f32 / 100.0;
@@ -326,6 +326,9 @@ pub fn status_card(ui: &mut Ui2, app: &mut App) {
                         .border(|b| b.all(2).color(pal.muted))
                         .layout(|l| l.direction(LeftToRight).align(Left, CenterY).padding(2))
                         .children(|ui| {
+                            if pct.is_none() {
+                                return;
+                            }
                             ui.element()
                                 .width(Sizing::Percent(fill.max(0.02)))
                                 .height(grow!())
