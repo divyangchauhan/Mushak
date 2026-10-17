@@ -44,7 +44,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     ui.element().width(grow!()).height(fixed!(22.0)).empty();
 
     if !app.mouse_awake() {
-        widgets::asleep_card(ui, &pal);
+        widgets::asleep_card(ui, &pal, &app.device_view.device);
         return;
     }
 

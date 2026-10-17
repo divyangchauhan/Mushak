@@ -91,10 +91,23 @@ impl DeviceStatus {
         }
     }
     pub fn display_name(&self) -> &str {
-        if !self.connected {
-            "No mouse connected"
+        self.name
+            .as_deref()
+            .filter(|name| !name.trim().is_empty())
+            .unwrap_or(if self.connected {
+                "Connected mouse"
+            } else {
+                "No device"
+            })
+    }
+
+    pub fn availability_label(&self) -> &str {
+        if self.connected {
+            "Connected"
+        } else if self.name.is_some() {
+            "Disconnected"
         } else {
-            self.name.as_deref().unwrap_or("Connected mouse")
+            "No device"
         }
     }
 }
@@ -114,10 +127,12 @@ pub enum DeviceCommand {
 static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 
 pub fn spawn() -> (Sender<DeviceCommand>, std::thread::JoinHandle<()>) {
+    let history = super::history::DeviceHistory::load();
+    state::set_device_status(history.disconnected());
     let (tx, rx) = crossbeam_channel::unbounded::<DeviceCommand>();
     let thread = std::thread::Builder::new()
         .name("hid-device".into())
-        .spawn(move || run(rx))
+        .spawn(move || run(rx, history))
         .expect("spawn hid-device thread");
     (tx, thread)
 }
@@ -126,11 +141,12 @@ pub fn request_stop() {
     SHUTDOWN.store(true, Ordering::Relaxed);
 }
 
-fn run(rx: Receiver<DeviceCommand>) {
+fn run(rx: Receiver<DeviceCommand>, mut history: super::history::DeviceHistory) {
     tracing::debug!("hid-device thread started");
     while !SHUTDOWN.load(Ordering::Relaxed) {
         match Device::connect() {
             Ok(dev) => {
+                history.observe((*state::device_status()).clone());
                 dev.apply_device_config();
                 dev.apply_diverts();
                 dev.event_loop(&rx);
@@ -138,15 +154,17 @@ fn run(rx: Receiver<DeviceCommand>) {
                 if SHUTDOWN.load(Ordering::Relaxed) {
                     dev.restore_diverts();
                 }
-                state::update_device_status(|s| s.connected = false);
+                state::set_device_status(history.disconnected());
             }
             Err(e) => {
                 tracing::debug!("device not connected: {e:#}");
                 state::set_device_status(
-                    HidppTransport::other_mouse_status()
-                        .ok()
-                        .flatten()
-                        .unwrap_or_default(),
+                    history.observe(
+                        HidppTransport::other_mouse_status()
+                            .ok()
+                            .flatten()
+                            .unwrap_or_default(),
+                    ),
                 );
             }
         }
@@ -727,11 +745,15 @@ mod tests {
     #[test]
     fn status_uses_the_reported_name_and_neutral_fallbacks() {
         let mut status = DeviceStatus::default();
-        assert_eq!(status.display_name(), "No mouse connected");
+        assert_eq!(status.display_name(), "No device");
+        assert_eq!(status.availability_label(), "No device");
         status.connected = true;
         assert_eq!(status.display_name(), "Connected mouse");
         status.name = Some("MX Vertical".into());
         assert_eq!(status.display_name(), "MX Vertical");
+        status.connected = false;
+        assert_eq!(status.display_name(), "MX Vertical");
+        assert_eq!(status.availability_label(), "Disconnected");
         let old = serde_json::json!({ "connected": true, "connection": "Bluetooth" });
         let status: DeviceStatus = serde_json::from_value(old).unwrap();
         assert!(!status.capabilities.has_scroll_settings());

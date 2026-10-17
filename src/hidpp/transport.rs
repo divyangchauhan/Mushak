@@ -112,6 +112,17 @@ fn standard_mouse_status(
     bus: BusType,
     product: Option<&str>,
 ) -> super::device::DeviceStatus {
+    // Internal touchpads also expose the generic desktop Mouse usage. Their
+    // presence says nothing about an external mouse being connected.
+    let product = product.filter(|name| !name.trim().is_empty());
+    let lower_name = product.unwrap_or("").to_ascii_lowercase();
+    if !matches!(bus, BusType::Usb | BusType::Bluetooth)
+        || lower_name.contains("touchpad")
+        || lower_name.contains("trackpad")
+        || lower_name.contains("hidi2c")
+    {
+        return Default::default();
+    }
     let kind = if vendor == VENDOR_LOGITECH {
         classify(bus, pid, product.unwrap_or(""))
     } else {
@@ -129,13 +140,12 @@ fn standard_mouse_status(
             _ => ConnectionKind::Other,
         }
     };
-    let name = product.map(|name| {
-        if kind.is_receiver() {
-            format!("Mouse via {name}")
-        } else {
-            name.to_owned()
-        }
-    });
+    // Receiver collections remain enumerated when their mouse is off. The
+    // HID++ path must verify a responding mouse in a receiver slot instead.
+    if kind.is_receiver() {
+        return Default::default();
+    }
+    let name = product.map(str::to_owned);
     super::device::DeviceStatus {
         connected: true,
         name,
@@ -157,12 +167,15 @@ impl HidppTransport {
                 continue;
             }
             let product = info.product_string().filter(|name| !name.trim().is_empty());
-            return Ok(Some(standard_mouse_status(
+            let status = standard_mouse_status(
                 info.vendor_id(),
                 info.product_id(),
                 info.bus_type(),
                 product,
-            )));
+            );
+            if status.connected && api.open_path(info.path()).is_ok() {
+                return Ok(Some(status));
+            }
         }
         Ok(None)
     }
@@ -271,6 +284,15 @@ impl HidppTransport {
 mod tests {
     use super::*;
     #[test]
+    fn internal_i2c_device_is_not_a_connected_mouse() {
+        let status = standard_mouse_status(0x06CB, 0, BusType::I2c, Some("HIDI2C Device"));
+        assert!(
+            !status.connected,
+            "the built-in I2C device must not report a connected mouse"
+        );
+        assert_eq!(status.display_name(), "No device");
+    }
+    #[test]
     fn ordinary_mice_keep_identity_without_unverified_vendor_settings() {
         let mouse = standard_mouse_status(0x1234, 0xC548, BusType::Usb, Some("USB mouse"));
         assert_eq!(mouse.display_name(), "USB mouse");
@@ -279,10 +301,18 @@ mod tests {
         assert!(!mouse.capabilities.has_scroll_settings());
         assert!(mouse.capabilities.buttons.is_empty());
         let receiver = standard_mouse_status(0x1234, 0, BusType::Usb, Some("Wireless Receiver"));
-        assert_eq!(receiver.connection.as_deref(), Some("USB receiver"));
+        assert!(!receiver.connected);
         let bluetooth =
             standard_mouse_status(0x1234, 0, BusType::Bluetooth, Some("Bluetooth mouse"));
         assert_eq!(bluetooth.connection_kind, Some(ConnectionKind::Bluetooth));
+    }
+    #[test]
+    fn empty_receivers_and_usb_touchpads_do_not_claim_a_mouse() {
+        for pid in [0xC52B, 0xC548, 0xC541] {
+            assert!(!standard_mouse_status(VENDOR_LOGITECH, pid, BusType::Usb, None).connected);
+        }
+        assert!(!standard_mouse_status(0x1234, 1, BusType::Usb, Some("USB Touchpad")).connected);
+        assert!(!standard_mouse_status(0x1234, 1, BusType::Unknown, Some("Mouse")).connected);
     }
     #[test]
     fn connections_do_not_depend_on_a_mouse_pid_whitelist() {

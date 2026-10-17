@@ -2,6 +2,7 @@
 
 pub mod device;
 pub mod features;
+pub mod history;
 pub mod protocol;
 pub mod transport;
 

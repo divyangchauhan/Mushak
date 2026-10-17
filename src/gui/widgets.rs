@@ -269,7 +269,7 @@ pub fn status_card(ui: &mut Ui2, app: &mut App) {
     let (dot, label) = if paused {
         (pal.danger, "Paused")
     } else if !awake {
-        (pal.faint, "Disconnected")
+        (pal.faint, d.availability_label())
     } else {
         (pal.good, "Connected")
     };
@@ -542,7 +542,7 @@ pub fn action_chip(ui: &mut Ui2, pal: &Palette, id: Id, disp: &super::actions::D
 
 /// The "Mouse is asleep" card that replaces Scroll / Gestures / Device bodies
 /// when the mouse cannot be reached.
-pub fn asleep_card(ui: &mut Ui2, pal: &Palette) {
+pub fn asleep_card(ui: &mut Ui2, pal: &Palette, device: &crate::hidpp::device::DeviceStatus) {
     ui.element()
         .width(grow!())
         .height(fit!())
@@ -569,11 +569,15 @@ pub fn asleep_card(ui: &mut Ui2, pal: &Palette) {
                         .layout(|l| l.align(CenterX, CenterY))
                         .children(|ui| icon(ui, &icons::ASLEEP, 24.0, pal.muted));
                     ui.element().width(grow!()).height(fixed!(8.0)).empty();
-                    ui.text("Mouse unavailable", |t| {
+                    ui.text(device.availability_label(), |t| {
                         t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
                     });
                     ui.text(
-                        "Connect or wake your mouse to read its settings. Windows button mappings remain available.",
+                        if device.name.is_some() {
+                            "Connect or wake your mouse to read its settings. Windows button mappings remain available."
+                        } else {
+                            "Connect a mouse to read its settings."
+                        },
                         |t| t.font(&fonts::SANS).font_size(13).color(pal.muted),
                     );
                 });

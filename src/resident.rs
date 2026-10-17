@@ -44,6 +44,10 @@ pub fn run() {
     hook::spawn();
     let (device_tx, device_thread) = hidpp::device::spawn();
     state::set_device_tx(device_tx);
+    statusfile::write(&SharedStatus {
+        device: (*state::device_status()).clone(),
+        paused: state::is_paused(),
+    });
 
     let tray = Tray::build(state::config().start_with_windows).expect("build tray icon");
 

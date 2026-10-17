@@ -150,6 +150,33 @@ Clippy lint remains in the added implementation.
 
 ## Physical validation status
 
+### Disconnected mouse identity
+
+The local test build exposed a discovery bug. The standard HID fallback accepted
+the built-in `HIDI2C Device` touchpad as a connected mouse. It also inferred a
+connected mouse from a receiver's USB collection, even with no responding mouse.
+
+The fallback now accepts present, openable USB and Bluetooth mouse collections,
+excludes internal I2C devices and named touchpads, and leaves receiver connection
+verification to HID++ slot discovery. A receiver without a responding HID++ mouse
+does not prove that a mouse is connected. Generic receivers without a supported
+connection-status protocol cannot report live mouse presence through this fallback.
+
+After detecting a mouse, Mushak saves its name in `%APPDATA%\Mushak\last-device.json`.
+Disconnection and app restart retain that name with a `Disconnected` status.
+Saved identity never restores connection state, battery readings, DPI, or other
+live settings. Without a previously detected mouse, the header and status show
+`No device`. The old `status.json` is not imported as history because it may
+contain the incorrect touchpad identity. Startup replaces that stale status.
+
+The I2C regression failed before the fix. All 41 tests now pass, including
+receiver exclusion, external USB and Bluetooth identity, disconnect and restart
+history, replacement by a different mouse, and invalid history recovery.
+The release resident also passed two isolated local checks with the mouse absent.
+A fresh data directory reported no name and `connected: false`. A separate data
+directory containing a test identity retained that name with `connected: false`
+through discovery retries. These checks did not modify the user's device history.
+
 Behavior testing still needs a tester result from this branch. Earlier 2S testing
 applies to earlier releases and does not validate this implementation.
 
