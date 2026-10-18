@@ -15,16 +15,22 @@ It discovers the connected mouse and shows the settings that mouse can use.
 - A Logitech HID++ 2.0 mouse connected by Bluetooth, Unifying, Bolt, another
   compatible receiver, or wired USB where the mouse supports it.
 
-This branch adds experimental support for the original MX Master, MX Master 2S,
+Version 0.0.6 includes support for the original MX Master, MX Master 2S,
 MX Master 3, MX Master 3S, MX Master 4, their Mac and business variants, and MX
 Vertical. Detection uses reported device kind and capabilities, with no model-name
-whitelist. Physical validation of the new paths is pending. Published packages
-can contain earlier code. See [requirements and validation](docs/mx-family-support.md).
+whitelist. The added model and connection paths are experimental. Physical
+validation across those models is pending. See
+[requirements and validation](docs/mx-family-support.md).
 
 SmartShift, wheel inversion, high-resolution scrolling, DPI choices, and extra
 button mappings appear only when the mouse reports the required capability.
 Software movement gestures require a gesture control that supports raw XY.
 An older gesture button without raw XY can still be mapped as a button.
+
+When a mouse disconnects, Mushak remembers its name across app restarts and shows
+it as disconnected. Before the first mouse connects, it shows "No device".
+Built-in touchpads and receivers without a responding mouse do not count as
+connected mice.
 
 For read-only diagnostics, run `mushak.exe --diagnose-device`. It prints the mouse
 name, connection, features, capabilities, and DPI choices without applying settings.
@@ -51,13 +57,18 @@ scoop bucket add mushak https://github.com/divyangchauhan/scoop-mushak
 scoop install mushak
 ```
 
+### WinGet
+
+```powershell
+winget install --id Divyang.Mushak --exact --source winget
+```
+
 ### Direct download
 
-Grab `mushak.exe` from the
+Download the MSI installer or portable `mushak.exe` from the
 [latest release](https://github.com/divyangchauhan/Mushak/releases/latest).
-It's a single portable executable; no installer.
 
-> The binary from GitHub releases is **not code-signed yet**, so on first run
+> The executable and MSI from GitHub releases are **not code-signed yet**, so on first run
 > Windows SmartScreen shows an "unknown publisher" prompt. Click *More info →
 > Run anyway*. Check GitHub downloads against the `SHA256SUMS.txt` published
 > with each release. This warning does not apply to Microsoft Store installs.

@@ -113,9 +113,10 @@ Existing Windows button hooks remain global.
   reapplication after the current request, avoiding nested HID++ requests.
 - Model names, DPI limits, wheel multipliers, and physical button positions no
   longer come from a fixed MX Master 2S layout.
-- The binary and MSIX descriptions now describe HID++ mice. Existing Scoop,
-  WinGet, and Store listing documents still describe their released 2S version.
-  This work has not updated any published package or installed application.
+- The binary and MSIX descriptions now describe HID++ mice. At this implementation
+  stage, Scoop, WinGet, and Store listing documents still described their released
+  2S version. Release preparation and validation for 0.0.6 are recorded in
+  [the release notes](releases/0.0.6.md).
 
 The protocol tests simulate exchanges for the original Master, 2S, 3, 3S, 4,
 Mac/business names, MX Vertical, and an unknown future mouse. They check discovery,

@@ -12,57 +12,71 @@ Use this copy for the English Partner Center listing.
 
 ## Short description
 
-Native Logitech Options+ alternative for the MX Master 2S. Remap buttons, tune
-SmartShift and DPI, assign thumb-button gestures, and switch mappings by app.
+Native Windows settings for Logitech HID++ mice. Remap buttons, set supported
+DPI and wheel options, and switch mappings by app.
 
 ## Description
 
-Mushak is a lightweight Windows utility for the Logitech MX Master 2S. It runs
+Mushak is a Windows utility for Logitech HID++ mice. It runs
 in the system tray and opens its settings window only when needed.
 
 Use Mushak to:
 
-- Remap the back, forward, and middle buttons to keyboard shortcuts, media keys,
-  or custom key combinations.
+- Remap the back, forward, middle, and supported extra buttons to keyboard
+  shortcuts, media keys, or custom key combinations.
 - Choose ratchet, free-spin, or SmartShift wheel mode and adjust flick
   sensitivity.
 - Enable high-resolution scrolling, invert direction, and filter accidental
   wheel movement.
 - Map the thumb button to a tap or four swipe directions.
-- Set pointer DPI and read live battery, firmware, and connection information.
+- Choose a DPI value reported by the mouse and read available battery,
+  firmware, and connection information.
 - Create per-application profiles that switch with the active program.
 
-Mushak works with a Logitech Unifying receiver or Bluetooth. It restores the
-configured settings when the mouse reconnects or wakes from sleep.
+Mushak discovers mice over Bluetooth, Unifying, Bolt, compatible HID++ receivers,
+and wired USB where the mouse supports it. It shows only settings supported by
+the connected mouse. Movement gestures require a gesture control with raw XY.
+It restores configured settings when the mouse reconnects or wakes from sleep.
+
+Version 0.0.6 adds experimental support for the original MX Master, MX Master 2S,
+MX Master 3, MX Master 3S, MX Master 4, their Mac and business variants, and MX
+Vertical. Protocol tests cover these families. Physical validation across all
+models and connections is pending. MX Vertical does not have the Master family's
+wheel and gesture features.
+
+The app remembers the last mouse name after disconnection and restart, while
+showing it as disconnected. It shows "No device" until a mouse has connected.
+Internal touchpads and empty receivers do not count as connected mice.
 
 The resident process uses about 1.5 MB of memory on the tested system. Mushak is
 written in Rust and has no webview, telemetry, analytics, advertising, or remote
 service.
 
-Mushak is designed and tested for the MX Master 2S. Do not run Logitech Options,
-Options+, or G HUB at the same time because they may compete for the same device
-controls.
+Do not run Logitech Options, Options+, or G HUB at the same time because they
+may compete for the same device controls. Mushak does not implement Flow,
+Actions Ring, or haptic intensity controls.
 
 ## Product features
 
-- Button remapping for the MX Master 2S
-- Ratchet, free-spin, and SmartShift wheel modes
-- High-resolution scrolling and direction control
-- Configurable thumb-button tap and swipe gestures
-- Pointer DPI control with live device information
+- Button remapping and reported extra mouse controls
+- Ratchet, free-spin, and SmartShift on compatible mice
+- High-resolution scrolling and direction control on compatible mice
+- Thumb-button tap and swipe gestures where raw XY is available
+- Mouse-reported DPI choices and available live device information
 - Profiles that switch with the active application
-- Unifying receiver and Bluetooth support
+- Bluetooth, Unifying, Bolt, compatible receivers, and supported wired USB
+- Last mouse name retained with disconnected status
 - Local configuration with no data collection
 
 ## Search terms
 
-1. mx master 2s
+1. mx master
 2. logitech
 3. mouse remap
 4. smartshift
 5. options plus alternative
 6. mouse dpi
-7. thumb gestures
+7. mx vertical
 
 ## Screenshots
 
@@ -89,4 +103,7 @@ app tile icon.
 - Privacy URL: <https://github.com/divyangchauhan/Mushak/blob/main/PRIVACY.md>
 - Copyright: Copyright 2026 Divyang Chauhan
 - License: MIT, <https://github.com/divyangchauhan/Mushak/blob/main/LICENSE>
-- What's new: First release on the Microsoft Store.
+- What's new: Experimental MX Master family and MX Vertical support, dynamic
+  device names, supported settings and DPI choices, extra button mappings, and
+  remembered mouse identity. Fixes false connections from built-in touchpads
+  and empty receivers. Physical validation across the added models is pending.
