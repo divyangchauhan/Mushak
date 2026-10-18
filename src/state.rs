@@ -58,6 +58,7 @@ pub fn active_map() -> Arc<ButtonMap> {
 
 pub fn set_active_map(map: ButtonMap) {
     active_cell().store(Arc::new(map));
+    device_command(DeviceCommand::ApplyControlDiverts);
 }
 
 /// Recompute the active mapping from the current config + foreground process.
@@ -129,6 +130,7 @@ pub fn is_paused() -> bool {
 
 pub fn set_paused(paused: bool) {
     PAUSED.store(paused, Ordering::Relaxed);
+    device_command(DeviceCommand::ApplyControlDiverts);
     tracing::info!("remapping {}", if paused { "paused" } else { "resumed" });
 }
 

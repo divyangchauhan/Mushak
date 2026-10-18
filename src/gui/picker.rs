@@ -11,12 +11,19 @@ use ply_engine::layout::Sizing;
 use ply_engine::prelude::*;
 
 impl PickerTarget {
-    pub fn label(&self) -> &'static str {
+    pub fn label<'a>(&self, device: &'a crate::hidpp::device::DeviceStatus) -> &'a str {
         match self {
             PickerTarget::Button(s) => match s.as_str() {
                 "back" => "Back button",
                 "forward" => "Forward button",
-                _ => "Middle click",
+                "middle" => "Middle click",
+                _ => device
+                    .capabilities
+                    .buttons
+                    .iter()
+                    .find(|button| button.slot == *s)
+                    .map(|button| button.name.as_str())
+                    .unwrap_or("Mouse button"),
             },
             PickerTarget::Gesture(s) => match s.as_str() {
                 "tap" => "Tap",
@@ -51,7 +58,11 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
         .height(Sizing::Fixed(screen_height()))
         .floating(|f| f.attach_root().offset((0.0, 0.0)).z_index(100))
         .background_color(Color::rgba(0.0, 0.0, 0.0, 128.0))
-        .layout(|l| l.direction(TopToBottom).align(CenterX, Top).padding((62, 0, 0, 0)))
+        .layout(|l| {
+            l.direction(TopToBottom)
+                .align(CenterX, Top)
+                .padding((62, 0, 0, 0))
+        })
         .children(|ui| {
             // A press on any descendant also marks its ancestors pressed, so the
             // backdrop sees every click inside the panel too. Only a press that
@@ -98,11 +109,17 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget) {
         .border(|b| b.bottom(1).color(pal.line))
         .layout(|l| l.direction(TopToBottom).gap(9).padding((13, 16, 11, 16)))
         .children(|ui| {
-            ui.text(&format!("ACTION FOR {}", target.label().to_uppercase()), |t| {
-                t.font(&fonts::SANS_SEMIBOLD)
-                    .font_size(widgets::px(11.5))
-                    .color(pal.faint)
-            });
+            ui.text(
+                &format!(
+                    "ACTION FOR {}",
+                    target.label(&app.device_view.device).to_uppercase()
+                ),
+                |t| {
+                    t.font(&fonts::SANS_SEMIBOLD)
+                        .font_size(widgets::px(11.5))
+                        .color(pal.faint)
+                },
+            );
             ui.element()
                 .width(grow!())
                 .height(fixed!(38.0))
@@ -137,13 +154,7 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget) {
     }
 }
 
-fn results(
-    ui: &mut Ui2,
-    app: &App,
-    query: &str,
-    current: &Action,
-    chosen: &mut Option<Action>,
-) {
+fn results(ui: &mut Ui2, app: &App, query: &str, current: &Action, chosen: &mut Option<Action>) {
     let pal = app.pal;
     let presets = actions::presets();
 
@@ -171,8 +182,16 @@ fn results(
         })
         .collect();
 
-    let mut groups: Vec<(String, Vec<(String, Option<String>, Vec<String>, Action, &'static GraphicAsset)>)> =
-        Vec::new();
+    let mut groups: Vec<(
+        String,
+        Vec<(
+            String,
+            Option<String>,
+            Vec<String>,
+            Action,
+            &'static GraphicAsset,
+        )>,
+    )> = Vec::new();
     if !quick.is_empty() {
         groups.push((
             "Quick".into(),
@@ -356,10 +375,17 @@ fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
                             .id(id)
                             .height(fixed!(30.0))
                             .corner_radius(8.0)
-                            .background_color(if on { pal.accent } else { super::theme::TRANSPARENT })
+                            .background_color(if on {
+                                pal.accent
+                            } else {
+                                super::theme::TRANSPARENT
+                            })
                             .border(|b| {
-                                b.all(1)
-                                    .color(if on { super::theme::TRANSPARENT } else { pal.line_strong })
+                                b.all(1).color(if on {
+                                    super::theme::TRANSPARENT
+                                } else {
+                                    pal.line_strong
+                                })
                             })
                             .layout(|l| l.align(CenterX, CenterY).padding((0, 12, 0, 12)))
                             .children(|ui| {
@@ -367,9 +393,11 @@ fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
                                     toggle_mod = Some(m);
                                 }
                                 ui.text(label, |t| {
-                                    t.font(&fonts::MONO_SEMIBOLD)
-                                        .font_size(12)
-                                        .color(if on { pal.accent_ink } else { pal.muted })
+                                    t.font(&fonts::MONO_SEMIBOLD).font_size(12).color(if on {
+                                        pal.accent_ink
+                                    } else {
+                                        pal.muted
+                                    })
                                 });
                             });
                     }
@@ -395,7 +423,8 @@ fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
                             let label = if capturing {
                                 "Press a key…".to_string()
                             } else {
-                                key.map(actions::key_name).unwrap_or_else(|| "Set key".into())
+                                key.map(actions::key_name)
+                                    .unwrap_or_else(|| "Set key".into())
                             };
                             ui.text(&label, |t| {
                                 t.font(&fonts::MONO_BOLD).font_size(12).color(pal.accent)
@@ -418,7 +447,11 @@ fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
                             ui.text("Assign", |t| {
                                 t.font(&fonts::SANS_BOLD)
                                     .font_size(widgets::px(12.5))
-                                    .color(if can_assign { pal.accent_ink } else { pal.faint })
+                                    .color(if can_assign {
+                                        pal.accent_ink
+                                    } else {
+                                        pal.faint
+                                    })
                             });
                         });
                 });

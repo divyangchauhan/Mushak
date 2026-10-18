@@ -3,7 +3,7 @@ name: release
 # Cut a release by pushing a version tag, e.g.:
 #   git tag v0.0.1 && git push origin v0.0.1
 # This builds the size-optimized binary and a per-user MSI installer, computes
-# checksums, and publishes a GitHub Release with the portable exe, zip, and MSI.
+# checksums, and creates a draft with the portable exe, zip, MSI, and Store MSIX.
 
 on:
   push:
@@ -67,6 +67,10 @@ jobs:
       # get an "unknown publisher" prompt on the installer itself.
       # -----------------------------------------------------------------------
 
+      - name: Build and inspect Store MSIX
+        shell: pwsh
+        run: ./packaging/msix/build-msix.ps1 -SkipBuild
+
       - name: Package artifacts
         id: pkg
         shell: pwsh
@@ -84,9 +88,12 @@ jobs:
           $exeHash = (Get-FileHash target/release/mushak.exe -Algorithm SHA256).Hash
           $zipHash = (Get-FileHash $zip -Algorithm SHA256).Hash
           $msiHash = (Get-FileHash $msi -Algorithm SHA256).Hash
+          $msix = "target/msix/mushak-$version-x64.msix"
+          $msixHash = (Get-FileHash $msix -Algorithm SHA256).Hash
           "mushak.exe  $exeHash" | Out-File SHA256SUMS.txt -Encoding ascii
           "$zip  $zipHash"       | Out-File SHA256SUMS.txt -Encoding ascii -Append
           "$msi  $msiHash"       | Out-File SHA256SUMS.txt -Encoding ascii -Append
+          "mushak-$version-x64.msix  $msixHash" | Out-File SHA256SUMS.txt -Encoding ascii -Append
           Get-Content SHA256SUMS.txt
           "zip=$zip" >> $env:GITHUB_OUTPUT
           "exe_sha256=$exeHash" >> $env:GITHUB_OUTPUT
@@ -101,4 +108,5 @@ jobs:
             target/release/mushak.exe
             ${{ steps.pkg.outputs.zip }}
             ${{ steps.msi.outputs.msi }}
+            target/msix/mushak-*-x64.msix
             SHA256SUMS.txt

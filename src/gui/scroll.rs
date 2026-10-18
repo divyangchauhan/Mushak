@@ -29,18 +29,19 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         ui,
         &pal,
         "Scroll",
-        "Tune the wheel's feel. SmartShift switches between clicky and free-spinning when \
-         you flick.",
+        "Configure the wheel settings supported by this mouse.",
     );
     ui.element().width(grow!()).height(fixed!(22.0)).empty();
 
     if !app.mouse_awake() {
-        widgets::asleep_card(ui, &pal);
+        widgets::asleep_card(ui, &pal, &app.device_view.device);
         return;
     }
 
+    let caps = app.device_view.device.capabilities.clone();
     let mode = app.draft.device.smartshift;
     let flick = app.draft.device.smartshift_threshold as i64;
+    let flick_max = i64::from(caps.smartshift_max_threshold.max(1));
     let hires = app.draft.device.hires_scroll;
     let invert = app.draft.device.invert_scroll;
     let flick_on = mode == SmartShiftMode::SmartShift;
@@ -50,152 +51,164 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     let mut toggle_hires = false;
     let mut toggle_invert = false;
 
-    widgets::eyebrow(ui, &pal, "Wheel mode");
-    ui.element().width(grow!()).height(fixed!(10.0)).empty();
+    if caps.smartshift {
+        widgets::eyebrow(ui, &pal, "Wheel mode");
+        ui.element().width(grow!()).height(fixed!(10.0)).empty();
 
-    ui.element()
-        .width(grow!())
-        .height(fit!())
-        .layout(|l| l.direction(TopToBottom).gap(9))
-        .children(|ui| {
-            for (i, (m, title, desc)) in MODES.into_iter().enumerate() {
-                let id: Id = ("mode", i as u32).into();
-                let sel = m == mode;
+        ui.element()
+            .width(grow!())
+            .height(fit!())
+            .layout(|l| l.direction(TopToBottom).gap(9))
+            .children(|ui| {
+                for (i, (m, title, desc)) in MODES.into_iter().enumerate() {
+                    let id: Id = ("mode", i as u32).into();
+                    let sel = m == mode;
+                    ui.element()
+                        .id(id)
+                        .width(grow!())
+                        .height(fit!())
+                        .corner_radius(13.0)
+                        .background_color(if sel {
+                            Palette2::mix_accent(&pal)
+                        } else {
+                            pal.surface
+                        })
+                        .border(|b| b.all(1).color(if sel { pal.accent } else { pal.line }))
+                        .layout(|l| {
+                            l.direction(LeftToRight)
+                                .align(Left, CenterY)
+                                .gap(13)
+                                .padding((13, 16, 13, 16))
+                        })
+                        .children(|ui| {
+                            if ui.just_pressed() {
+                                new_mode = Some(m);
+                            }
+                            // Radio.
+                            ui.element()
+                                .width(fixed!(18.0))
+                                .height(fixed!(18.0))
+                                .corner_radius(99.0)
+                                .border(|b| {
+                                    b.all(2)
+                                        .color(if sel { pal.accent } else { pal.line_strong })
+                                })
+                                .layout(|l| l.align(CenterX, CenterY))
+                                .children(|ui| {
+                                    ui.element()
+                                        .width(fixed!(9.0))
+                                        .height(fixed!(9.0))
+                                        .corner_radius(99.0)
+                                        .background_color(if sel {
+                                            pal.accent
+                                        } else {
+                                            super::theme::TRANSPARENT
+                                        })
+                                        .empty();
+                                });
+                            ui.element()
+                                .width(grow!())
+                                .height(fit!())
+                                .layout(|l| l.direction(TopToBottom).gap(1))
+                                .children(|ui| {
+                                    ui.text(title, |t| {
+                                        t.font(&fonts::SANS_SEMIBOLD)
+                                            .font_size(widgets::px(13.5))
+                                            .color(pal.text)
+                                    });
+                                    ui.text(desc, |t| {
+                                        t.font(&fonts::SANS)
+                                            .font_size(widgets::px(12.5))
+                                            .color(pal.muted)
+                                    });
+                                });
+                        });
+                }
+            });
+
+        ui.element().width(grow!()).height(fixed!(22.0)).empty();
+
+        // Flick sensitivity. Dimmed unless SmartShift is the active mode.
+        let dim = if flick_on { pal.text } else { pal.muted };
+        widgets::card(ui, &pal)
+            .layout(|l| l.direction(TopToBottom).gap(3).padding((16, 17, 16, 17)))
+            .children(|ui| {
                 ui.element()
-                    .id(id)
                     .width(grow!())
                     .height(fit!())
-                    .corner_radius(13.0)
-                    .background_color(if sel {
-                        Palette2::mix_accent(&pal)
-                    } else {
-                        pal.surface
-                    })
-                    .border(|b| b.all(1).color(if sel { pal.accent } else { pal.line }))
-                    .layout(|l| {
-                        l.direction(LeftToRight)
-                            .align(Left, CenterY)
-                            .gap(13)
-                            .padding((13, 16, 13, 16))
-                    })
+                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
                     .children(|ui| {
-                        if ui.just_pressed() {
-                            new_mode = Some(m);
-                        }
-                        // Radio.
-                        ui.element()
-                            .width(fixed!(18.0))
-                            .height(fixed!(18.0))
-                            .corner_radius(99.0)
-                            .border(|b| {
-                                b.all(2)
-                                    .color(if sel { pal.accent } else { pal.line_strong })
-                            })
-                            .layout(|l| l.align(CenterX, CenterY))
-                            .children(|ui| {
-                                ui.element()
-                                    .width(fixed!(9.0))
-                                    .height(fixed!(9.0))
-                                    .corner_radius(99.0)
-                                    .background_color(if sel {
-                                        pal.accent
-                                    } else {
-                                        super::theme::TRANSPARENT
-                                    })
-                                    .empty();
+                        ui.element().width(grow!()).height(fit!()).children(|ui| {
+                            ui.text("Flick sensitivity", |t| {
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(dim)
                             });
-                        ui.element()
-                            .width(grow!())
-                            .height(fit!())
-                            .layout(|l| l.direction(TopToBottom).gap(1))
-                            .children(|ui| {
-                                ui.text(title, |t| {
-                                    t.font(&fonts::SANS_SEMIBOLD)
-                                        .font_size(widgets::px(13.5))
-                                        .color(pal.text)
-                                });
-                                ui.text(desc, |t| {
-                                    t.font(&fonts::SANS)
-                                        .font_size(widgets::px(12.5))
-                                        .color(pal.muted)
-                                });
-                            });
-                    });
-            }
-        });
-
-    ui.element().width(grow!()).height(fixed!(22.0)).empty();
-
-    // Flick sensitivity. Dimmed unless SmartShift is the active mode.
-    let dim = if flick_on { pal.text } else { pal.muted };
-    widgets::card(ui, &pal)
-        .layout(|l| l.direction(TopToBottom).gap(3).padding((16, 17, 16, 17)))
-        .children(|ui| {
-            ui.element()
-                .width(grow!())
-                .height(fit!())
-                .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
-                .children(|ui| {
-                    ui.element().width(grow!()).height(fit!()).children(|ui| {
-                        ui.text("Flick sensitivity", |t| {
-                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(dim)
+                        });
+                        ui.text(&flick.to_string(), |t| {
+                            t.font(&fonts::MONO_BOLD).font_size(13).color(pal.accent)
                         });
                     });
-                    ui.text(&flick.to_string(), |t| {
-                        t.font(&fonts::MONO_BOLD).font_size(13).color(pal.accent)
-                    });
-                });
-            ui.text(
-                "Lower = a gentler flick frees the wheel. Only used in SmartShift mode.",
-                |t| {
-                    t.font(&fonts::SANS)
-                        .font_size(widgets::px(12.5))
-                        .color(pal.muted)
-                },
-            );
-            ui.element().width(grow!()).height(fixed!(12.0)).empty();
-            ui.element()
-                .width(grow!())
-                .height(fit!())
-                .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
-                .children(|ui| {
-                    ui.text("1", |t| {
-                        t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
-                    });
-                    if flick_on {
-                        if let Some(v) = widgets::slider(ui, &pal, "flick", flick, 1, 30, 1) {
-                            new_flick = Some(v);
+                ui.text(
+                    "Lower = a gentler flick frees the wheel. Only used in SmartShift mode.",
+                    |t| {
+                        t.font(&fonts::SANS)
+                            .font_size(widgets::px(12.5))
+                            .color(pal.muted)
+                    },
+                );
+                ui.element().width(grow!()).height(fixed!(12.0)).empty();
+                ui.element()
+                    .width(grow!())
+                    .height(fit!())
+                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
+                    .children(|ui| {
+                        ui.text("1", |t| {
+                            t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
+                        });
+                        if flick_on {
+                            if let Some(v) = widgets::slider(
+                                ui,
+                                &pal,
+                                "flick",
+                                flick.min(flick_max),
+                                1,
+                                flick_max,
+                                1,
+                            ) {
+                                new_flick = Some(v);
+                            }
+                        } else {
+                            // Same footprint, inert.
+                            ui.element()
+                                .width(grow!())
+                                .height(fixed!(20.0))
+                                .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
+                                .children(|ui| {
+                                    ui.element()
+                                        .width(grow!())
+                                        .height(fixed!(4.0))
+                                        .corner_radius(2.0)
+                                        .background_color(pal.s2)
+                                        .empty();
+                                });
                         }
-                    } else {
-                        // Same footprint, inert.
-                        ui.element()
-                            .width(grow!())
-                            .height(fixed!(20.0))
-                            .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
-                            .children(|ui| {
-                                ui.element()
-                                    .width(grow!())
-                                    .height(fixed!(4.0))
-                                    .corner_radius(2.0)
-                                    .background_color(pal.s2)
-                                    .empty();
-                            });
-                    }
-                    ui.text("30", |t| {
-                        t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
+                        ui.text(&flick_max.to_string(), |t| {
+                            t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
+                        });
                     });
-                });
-        });
+            });
 
-    ui.element().width(grow!()).height(fixed!(18.0)).empty();
+        ui.element().width(grow!()).height(fixed!(18.0)).empty();
+    }
 
     // Wheel deadzone. Only meaningful with hi-res on: that is the only mode
     // where the wheel reports to us rather than straight to Windows, so it is
     // the only mode we can filter.
     let deadzone = app.draft.device.scroll_deadzone as i64;
+    let multiplier = caps.wheel_multiplier.unwrap_or(1) as i64;
     let mut new_deadzone: Option<i64> = None;
     let dz_text = if hires { pal.text } else { pal.muted };
-    widgets::card(ui, &pal)
+    if caps.hires_scroll {
+        widgets::card(ui, &pal)
         .layout(|l| l.direction(TopToBottom).gap(3).padding((16, 17, 16, 17)))
         .children(|ui| {
             ui.element()
@@ -219,8 +232,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 });
             ui.text(
                 if hires {
-                    "How far the wheel must turn before it counts. The wheel reports 8 steps per \
-                     click, so 4 ignores a resting finger without slowing a real scroll."
+                    "How far the wheel must turn before it counts. Values are high-resolution increments reported by this mouse."
                 } else {
                     "Needs high-resolution scrolling: without it the wheel reports straight to \
                      Windows and Mushak never sees the movement."
@@ -241,7 +253,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
                     });
                     if hires {
-                        if let Some(v) = widgets::slider(ui, &pal, "deadzone", deadzone, 0, 8, 1) {
+                        if let Some(v) = widgets::slider(ui, &pal, "deadzone", deadzone.min(multiplier), 0, multiplier, 1) {
                             new_deadzone = Some(v);
                         }
                     } else {
@@ -258,37 +270,41 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                     .empty();
                             });
                     }
-                    ui.text("8", |t| {
+                    ui.text(&multiplier.to_string(), |t| {
                         t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
                     });
                 });
         });
 
-    ui.element().width(grow!()).height(fixed!(18.0)).empty();
-
+        ui.element().width(grow!()).height(fixed!(18.0)).empty();
+    }
     ui.element()
         .width(grow!())
         .height(fit!())
         .layout(|l| l.direction(TopToBottom).gap(10))
         .children(|ui| {
-            if switch_row(
-                ui,
-                app,
-                "sw_hires",
-                "High-resolution scrolling",
-                "Smooth, pixel-level scroll instead of chunky lines.",
-                hires,
-            ) {
+            if caps.hires_scroll
+                && switch_row(
+                    ui,
+                    app,
+                    "sw_hires",
+                    "High-resolution scrolling",
+                    "Smooth, pixel-level scroll instead of chunky lines.",
+                    hires,
+                )
+            {
                 toggle_hires = true;
             }
-            if switch_row(
-                ui,
-                app,
-                "sw_invert",
-                "Invert scroll direction",
-                "Push the wheel up to scroll the page up.",
-                invert,
-            ) {
+            if caps.invert_scroll
+                && switch_row(
+                    ui,
+                    app,
+                    "sw_invert",
+                    "Invert scroll direction",
+                    "Push the wheel up to scroll the page up.",
+                    invert,
+                )
+            {
                 toggle_invert = true;
             }
         });

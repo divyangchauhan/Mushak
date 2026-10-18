@@ -3,6 +3,7 @@
 
 pub mod battery; // 0x1000 BATTERY_STATUS
 pub mod device_info; // 0x0003 DEVICE_INFO (firmware)
+pub mod device_name; // 0x0005 DEVICE_NAME
 pub mod feature_set; // 0x0001 IFeatureSet
 pub mod root; // 0x0000 IRoot
 

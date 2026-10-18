@@ -1,7 +1,7 @@
 # Mushak
 
-A lightweight Windows replacement for Logitech Options+, targeting the **MX
-Master 2S** mouse. Pure Rust, native GUI (Ply — no Electron, no webview).
+A Windows utility for Logitech HID++ mice, written in Rust with a native Ply GUI.
+It discovers the connected mouse and shows the settings that mouse can use.
 
 - Binary ~3.5 MB, idle RAM ~1.5 MB (the settings window uses ~170 MB, but only while it is open).
 - Button remapping via a low-level mouse hook (works even without HID++).
@@ -12,10 +12,35 @@ Master 2S** mouse. Pure Rust, native GUI (Ply — no Electron, no webview).
 ## Requirements
 
 - Windows 10/11 (x64).
-- The MX Master 2S connected either via a **Logitech Unifying receiver**
-  (USB `046D:C52B`) or directly over **Bluetooth** (`046D:B019`). Both are
-  supported and auto-detected; if a receiver is plugged in but the mouse is on
-  Bluetooth, Mushak falls back to Bluetooth automatically.
+- A Logitech HID++ 2.0 mouse connected by Bluetooth, Unifying, Bolt, another
+  compatible receiver, or wired USB where the mouse supports it.
+
+Version 0.0.6 includes support for the original MX Master, MX Master 2S,
+MX Master 3, MX Master 3S, MX Master 4, their Mac and business variants, and MX
+Vertical. Detection uses reported device kind and capabilities, with no model-name
+whitelist. The added model and connection paths are experimental. Physical
+validation across those models is pending. See
+[requirements and validation](docs/mx-family-support.md).
+
+SmartShift, wheel inversion, high-resolution scrolling, DPI choices, and extra
+button mappings appear only when the mouse reports the required capability.
+Software movement gestures require a gesture control that supports raw XY.
+An older gesture button without raw XY can still be mapped as a button.
+
+When a mouse disconnects, Mushak remembers its name across app restarts and shows
+it as disconnected. Before the first mouse connects, it shows "No device".
+Built-in touchpads and receivers without a responding mouse do not count as
+connected mice.
+
+For read-only diagnostics, run `mushak.exe --diagnose-device`. It prints the mouse
+name, connection, features, capabilities, and DPI choices without applying settings.
+The release is a Windows GUI executable. In PowerShell, wait for it and capture
+its output with:
+
+```powershell
+Start-Process .\mushak.exe -ArgumentList '--diagnose-device' -Wait -WindowStyle Hidden -RedirectStandardOutput .\mushak-device.json -RedirectStandardError .\mushak-device-error.txt
+Get-Content .\mushak-device.json
+```
 
 ## Install
 
@@ -32,13 +57,18 @@ scoop bucket add mushak https://github.com/divyangchauhan/scoop-mushak
 scoop install mushak
 ```
 
+### WinGet
+
+```powershell
+winget install --id Divyang.Mushak --exact --source winget
+```
+
 ### Direct download
 
-Grab `mushak.exe` from the
+Download the MSI installer or portable `mushak.exe` from the
 [latest release](https://github.com/divyangchauhan/Mushak/releases/latest).
-It's a single portable executable; no installer.
 
-> The binary from GitHub releases is **not code-signed yet**, so on first run
+> The executable and MSI from GitHub releases are **not code-signed yet**, so on first run
 > Windows SmartScreen shows an "unknown publisher" prompt. Click *More info →
 > Run anyway*. Check GitHub downloads against the `SHA256SUMS.txt` published
 > with each release. This warning does not apply to Microsoft Store installs.

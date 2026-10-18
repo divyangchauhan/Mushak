@@ -18,9 +18,30 @@ mod statusfile;
 mod tray;
 
 fn main() {
+    if std::env::args().any(|a| a == "--diagnose-device") {
+        // Read-only discovery. Do not load config, start hooks, or apply settings.
+        match hidpp::device::Device::connect() {
+            Ok(_) => println!(
+                "{}",
+                serde_json::to_string_pretty(&*state::device_status()).unwrap()
+            ),
+            Err(error) => match hidpp::transport::HidppTransport::other_mouse_status() {
+                Ok(Some(status)) => println!("{}", serde_json::to_string_pretty(&status).unwrap()),
+                _ => {
+                    eprintln!("{error:#}");
+                    std::process::exit(1);
+                }
+            },
+        }
+        return;
+    }
     let settings_mode = std::env::args().any(|a| a == "--settings");
 
-    let _log_guard = match logging::init(if settings_mode { "mushak-settings" } else { "mushak" }) {
+    let _log_guard = match logging::init(if settings_mode {
+        "mushak-settings"
+    } else {
+        "mushak"
+    }) {
         Ok(g) => Some(g),
         Err(e) => {
             eprintln!("logging init failed: {e:#}");

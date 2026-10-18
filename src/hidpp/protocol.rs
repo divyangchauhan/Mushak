@@ -11,8 +11,6 @@
 //! accepts long reports for all 2.0 features, which keeps the transport simple.
 
 pub const VENDOR_LOGITECH: u16 = 0x046D;
-pub const PID_UNIFYING_RECEIVER: u16 = 0xC52B;
-pub const PID_MX_MASTER_2S_BT: u16 = 0xB019;
 
 /// Vendor-defined HID usage page carrying HID++ collections.
 pub const USAGE_PAGE_HIDPP: u16 = 0xFF00;
@@ -35,11 +33,16 @@ pub const ROOT_INDEX: u8 = 0x00;
 // Feature IDs (looked up to feature *indices* at runtime via IRoot).
 pub const FEAT_FEATURE_SET: u16 = 0x0001;
 pub const FEAT_DEVICE_INFO: u16 = 0x0003;
+pub const FEAT_DEVICE_NAME: u16 = 0x0005;
 pub const FEAT_BATTERY_STATUS: u16 = 0x1000;
+pub const FEAT_BATTERY_VOLTAGE: u16 = 0x1001;
+pub const FEAT_UNIFIED_BATTERY: u16 = 0x1004;
 pub const FEAT_REPROG_CONTROLS_V4: u16 = 0x1B04;
 pub const FEAT_SMART_SHIFT: u16 = 0x2110;
+pub const FEAT_SMART_SHIFT_ENHANCED: u16 = 0x2111;
 pub const FEAT_HIRES_WHEEL: u16 = 0x2121;
 pub const FEAT_ADJUSTABLE_DPI: u16 = 0x2201;
+pub const FEAT_EXTENDED_ADJUSTABLE_DPI: u16 = 0x2202;
 
 /// Marker in the feature-index byte for a HID++ 2.0 error reply.
 pub const ERR20_MARKER: u8 = 0xFF;
@@ -52,7 +55,12 @@ pub fn address(function: u8) -> u8 {
 }
 
 /// Build a 20-byte long request. `params` is zero-padded / truncated to fit.
-pub fn long_request(device_index: u8, feature_index: u8, function: u8, params: &[u8]) -> [u8; LONG_LEN] {
+pub fn long_request(
+    device_index: u8,
+    feature_index: u8,
+    function: u8,
+    params: &[u8],
+) -> [u8; LONG_LEN] {
     let mut r = [0u8; LONG_LEN];
     r[0] = REPORT_ID_LONG;
     r[1] = device_index;
@@ -66,7 +74,12 @@ pub fn long_request(device_index: u8, feature_index: u8, function: u8, params: &
 /// Build a 7-byte short request (HID++ 1.0 receiver registers). Kept as a
 /// documented reference; the 2S path uses long reports exclusively.
 #[allow(dead_code)]
-pub fn short_request(device_index: u8, sub_id: u8, address_byte: u8, params: &[u8]) -> [u8; SHORT_LEN] {
+pub fn short_request(
+    device_index: u8,
+    sub_id: u8,
+    address_byte: u8,
+    params: &[u8],
+) -> [u8; SHORT_LEN] {
     let mut r = [0u8; SHORT_LEN];
     r[0] = REPORT_ID_SHORT;
     r[1] = device_index;

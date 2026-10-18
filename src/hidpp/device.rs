@@ -3,8 +3,8 @@
 //! survives sleep/reconnect. Everything runs on one dedicated thread so the
 //! non-`Sync` HID handle is never touched concurrently.
 
+use super::features::reprog;
 use super::features::reprog::ControlInfo;
-use super::features::{battery, reprog};
 use super::protocol::{self, Report, *};
 use super::transport::{ConnectionKind, HidppTransport};
 use crate::{gestures, state};
@@ -18,22 +18,55 @@ use std::time::{Duration, Instant};
 pub struct FeatureMap {
     pub feature_set: Option<u8>,
     pub device_info: Option<u8>,
+    pub device_name: Option<u8>,
     pub battery: Option<u8>,
+    pub battery_voltage: Option<u8>,
+    pub unified_battery: Option<u8>,
     pub reprog: Option<u8>,
     pub smartshift: Option<u8>,
+    pub smartshift_enhanced: Option<u8>,
     pub hires_wheel: Option<u8>,
     pub dpi: Option<u8>,
+    pub extended_dpi: Option<u8>,
     /// Full (id, index) list for the Device tab / logs.
     pub all: Vec<(u16, u8)>,
+}
+
+#[derive(Clone, Default, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+pub struct DeviceCapabilities {
+    pub smartshift: bool,
+    pub hires_scroll: bool,
+    pub invert_scroll: bool,
+    pub gestures: bool,
+    pub dpi: bool,
+    pub battery: bool,
+    pub wheel_multiplier: Option<u8>,
+    pub gesture_control: Option<u16>,
+    pub smartshift_max_threshold: u8,
+    pub buttons: Vec<super::features::reprog::ButtonInfo>,
+}
+
+impl DeviceCapabilities {
+    pub fn has_scroll_settings(&self) -> bool {
+        self.smartshift || self.hires_scroll || self.invert_scroll
+    }
 }
 
 /// Snapshot of device state published to the GUI/tray (via `state`) and to the
 /// settings subprocess (via the status file).
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct DeviceStatus {
     pub connected: bool,
+    pub name: Option<String>,
     pub connection: Option<String>,
+    pub connection_kind: Option<ConnectionKind>,
+    pub capabilities: DeviceCapabilities,
+    pub settings_unavailable_reason: Option<String>,
     pub battery_percent: Option<u8>,
+    pub battery_voltage_mv: Option<u16>,
+    pub battery_level: Option<String>,
     pub charging: bool,
     pub firmware: Option<String>,
     pub features: Vec<(u16, u8)>,
@@ -43,6 +76,40 @@ pub struct DeviceStatus {
     pub smartshift_freespin: Option<bool>,
     pub smartshift_threshold: Option<u8>,
     pub hires_on: Option<bool>,
+}
+
+impl DeviceStatus {
+    pub fn battery_label(&self) -> String {
+        if let Some(percent) = self.battery_percent {
+            format!("{percent}%")
+        } else if let Some(level) = &self.battery_level {
+            level.clone()
+        } else if let Some(voltage) = self.battery_voltage_mv {
+            format!("{voltage} mV")
+        } else {
+            "Unknown".to_owned()
+        }
+    }
+    pub fn display_name(&self) -> &str {
+        self.name
+            .as_deref()
+            .filter(|name| !name.trim().is_empty())
+            .unwrap_or(if self.connected {
+                "Connected mouse"
+            } else {
+                "No device"
+            })
+    }
+
+    pub fn availability_label(&self) -> &str {
+        if self.connected {
+            "Connected"
+        } else if self.name.is_some() {
+            "Disconnected"
+        } else {
+            "No device"
+        }
+    }
 }
 
 /// Commands sent to the device thread.
@@ -59,35 +126,46 @@ pub enum DeviceCommand {
 
 static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 
-pub fn spawn() -> Sender<DeviceCommand> {
+pub fn spawn() -> (Sender<DeviceCommand>, std::thread::JoinHandle<()>) {
+    let history = super::history::DeviceHistory::load();
+    state::set_device_status(history.disconnected());
     let (tx, rx) = crossbeam_channel::unbounded::<DeviceCommand>();
-    std::thread::Builder::new()
+    let thread = std::thread::Builder::new()
         .name("hid-device".into())
-        .spawn(move || run(rx))
+        .spawn(move || run(rx, history))
         .expect("spawn hid-device thread");
-    tx
+    (tx, thread)
 }
 
 pub fn request_stop() {
     SHUTDOWN.store(true, Ordering::Relaxed);
 }
 
-fn run(rx: Receiver<DeviceCommand>) {
+fn run(rx: Receiver<DeviceCommand>, mut history: super::history::DeviceHistory) {
     tracing::debug!("hid-device thread started");
     while !SHUTDOWN.load(Ordering::Relaxed) {
         match Device::connect() {
             Ok(dev) => {
+                history.observe((*state::device_status()).clone());
                 dev.apply_device_config();
                 dev.apply_diverts();
                 dev.event_loop(&rx);
+                gestures::cancel();
                 if SHUTDOWN.load(Ordering::Relaxed) {
                     dev.restore_diverts();
                 }
-                state::update_device_status(|s| s.connected = false);
+                state::set_device_status(history.disconnected());
             }
             Err(e) => {
                 tracing::debug!("device not connected: {e:#}");
-                state::set_device_status(DeviceStatus::default());
+                state::set_device_status(
+                    history.observe(
+                        HidppTransport::other_mouse_status()
+                            .ok()
+                            .flatten()
+                            .unwrap_or_default(),
+                    ),
+                );
             }
         }
         if SHUTDOWN.load(Ordering::Relaxed) {
@@ -110,9 +188,29 @@ pub struct Device {
     pub(crate) features: FeatureMap,
     /// Reprogrammable controls (0x1B04), read once per connection.
     pub(crate) controls: Vec<ControlInfo>,
+    pub(crate) capabilities: DeviceCapabilities,
+    pub(crate) dpi_values: Vec<u16>,
+    pub(crate) dpi_sensor: Option<u8>,
+    pub(crate) held_controls: std::sync::Mutex<Vec<u16>>,
+    ready: bool,
+    needs_reapply: AtomicBool,
 }
 
 impl Device {
+    pub(crate) fn from_transport(transport: HidppTransport) -> Self {
+        Self {
+            transport,
+            index: 0xFF,
+            features: FeatureMap::default(),
+            controls: Vec::new(),
+            capabilities: DeviceCapabilities::default(),
+            dpi_values: Vec::new(),
+            dpi_sensor: None,
+            held_controls: std::sync::Mutex::new(Vec::new()),
+            ready: false,
+            needs_reapply: AtomicBool::new(false),
+        }
+    }
     /// Try each HID++ interface (receiver first, then Bluetooth) and return the
     /// first on which feature discovery succeeds.
     pub fn connect() -> Result<Device> {
@@ -121,12 +219,7 @@ impl Device {
         for c in &candidates {
             match HidppTransport::open_candidate(c) {
                 Ok(transport) => {
-                    let mut dev = Device {
-                        transport,
-                        index: 0xFF,
-                        features: FeatureMap::default(),
-                        controls: Vec::new(),
-                    };
+                    let mut dev = Self::from_transport(transport);
                     match dev.discover() {
                         Ok(()) => return Ok(dev),
                         Err(e) => {
@@ -144,11 +237,10 @@ impl Device {
         Err(last_err.unwrap_or_else(|| anyhow::anyhow!("no working HID++ interface")))
     }
 
-    fn discover(&mut self) -> Result<()> {
-        self.index = match self.transport.kind {
-            ConnectionKind::Bluetooth => 0xFF,
-            ConnectionKind::Receiver => self.probe_receiver_index()?,
-        };
+    pub(crate) fn discover(&mut self) -> Result<()> {
+        let (index, kind) = select_mouse(self.transport.kind, |index| self.is_mouse_on(index))?;
+        self.index = index;
+        self.transport.kind = kind;
 
         let (maj, min) = self.ping(self.index)?;
         tracing::info!(
@@ -160,52 +252,95 @@ impl Device {
 
         self.features.feature_set = self.lookup(FEAT_FEATURE_SET);
         self.features.device_info = self.lookup(FEAT_DEVICE_INFO);
+        self.features.device_name = self.lookup(FEAT_DEVICE_NAME);
         self.features.battery = self.lookup(FEAT_BATTERY_STATUS);
+        self.features.battery_voltage = self.lookup(FEAT_BATTERY_VOLTAGE);
+        self.features.unified_battery = self.lookup(FEAT_UNIFIED_BATTERY);
         self.features.reprog = self.lookup(FEAT_REPROG_CONTROLS_V4);
         self.features.smartshift = self.lookup(FEAT_SMART_SHIFT);
+        self.features.smartshift_enhanced = self.lookup(FEAT_SMART_SHIFT_ENHANCED);
         self.features.hires_wheel = self.lookup(FEAT_HIRES_WHEEL);
         self.features.dpi = self.lookup(FEAT_ADJUSTABLE_DPI);
+        self.features.extended_dpi = self.lookup(FEAT_EXTENDED_ADJUSTABLE_DPI);
 
         self.enumerate_features();
 
         if self.features.reprog.is_some() {
             self.controls = self.enumerate_controls();
-            if !self.controls.iter().any(|c| c.cid == reprog::CID_GESTURE) {
-                tracing::warn!(
-                    "gesture CID {:#06x} not found; gestures may be unavailable",
-                    reprog::CID_GESTURE
-                );
-            }
         }
 
+        let name = self.device_name_on(self.index).ok().or_else(|| {
+            if self.transport.kind.is_receiver() {
+                None
+            } else {
+                self.transport
+                    .product
+                    .clone()
+                    .filter(|name| !name.trim().is_empty())
+            }
+        });
+        self.discover_capabilities();
         let firmware = self.firmware_string().ok();
         let battery = self.read_battery().ok();
 
         state::set_device_status(DeviceStatus {
             connected: true,
+            name,
             connection: Some(self.transport.kind.label(self.index)),
-            battery_percent: battery.map(|b| b.0),
-            charging: battery.map(|b| b.1).unwrap_or(false),
+            connection_kind: Some(self.transport.kind),
+            capabilities: self.capabilities.clone(),
+            battery_percent: battery.as_ref().and_then(|b| b.percent),
+            battery_voltage_mv: battery.as_ref().and_then(|b| b.voltage_mv),
+            battery_level: battery.as_ref().and_then(|b| b.level.clone()),
+            charging: battery.as_ref().map(|b| b.charging).unwrap_or(false),
             firmware,
             features: self.features.all.clone(),
             ..Default::default()
         });
         self.read_device_settings();
+        self.ready = true;
         Ok(())
     }
 
-    /// Probe receiver device indices 1..=6 and return the first that answers.
-    fn probe_receiver_index(&self) -> Result<u8> {
-        for i in 1..=6u8 {
-            match self.ping(i) {
-                Ok((maj, min)) => {
-                    tracing::info!("receiver slot {i} responded (protocol {maj}.{min})");
-                    return Ok(i);
-                }
-                Err(e) => tracing::debug!("receiver slot {i} silent: {e:#}"),
+    fn is_mouse_on(&self, index: u8) -> Result<bool> {
+        let Ok((major, _)) = self.ping(index) else {
+            return Ok(false);
+        };
+        if major < 2 {
+            return Ok(false);
+        }
+        // DEVICE_NAME kind 3 is a mouse. A known non-mouse kind must not fall
+        // through to DPI-based inference.
+        match self.device_kind_on(index) {
+            Ok(Some(kind)) => Ok(kind == 3),
+            _ => Ok(self.get_feature_on(index, FEAT_ADJUSTABLE_DPI)?.is_some()
+                || self
+                    .get_feature_on(index, FEAT_EXTENDED_ADJUSTABLE_DPI)?
+                    .is_some()),
+        }
+    }
+
+    fn discover_capabilities(&mut self) {
+        self.capabilities.smartshift = self.get_smartshift().is_ok();
+        self.capabilities.smartshift_max_threshold = 50;
+        if let Ok((multiplier, flags)) = self.get_wheel_capability() {
+            if multiplier > 0 && self.get_wheel_mode().is_ok() {
+                self.capabilities.hires_scroll = true;
+                self.capabilities.wheel_multiplier = Some(multiplier);
+                self.capabilities.invert_scroll = flags & 0x08 != 0;
             }
         }
-        bail!("no paired device answered on receiver slots 1..=6")
+        self.capabilities.gesture_control = reprog::gesture_control(&self.controls);
+        self.capabilities.gestures = self.capabilities.gesture_control.is_some();
+        self.capabilities.buttons =
+            reprog::button_choices(&self.controls, self.capabilities.gesture_control);
+        self.dpi_sensor = self.find_dpi_sensor().ok();
+        self.dpi_values = self.get_dpi_list().unwrap_or_default();
+        self.capabilities.dpi = self
+            .get_dpi()
+            .map(|(current, _)| self.dpi_values.contains(&current))
+            .unwrap_or(false);
+        self.capabilities.battery = self.read_battery().is_ok();
     }
 
     fn lookup(&self, feature_id: u16) -> Option<u8> {
@@ -302,24 +437,18 @@ impl Device {
     // ---- Event routing --------------------------------------------------------
 
     fn route_event(&self, rep: &Report) {
+        if !self.ready || rep.device_index() != self.index {
+            return;
+        }
         // Unifying receiver device-connection notification (short, sub-id 0x41):
         // the mouse woke / reconnected. Diverts and volatile settings reset on
         // sleep, so re-apply everything.
         if rep.report_id() == REPORT_ID_SHORT && rep.feature_index() == 0x41 {
-            tracing::info!("receiver connection notification (0x41): re-applying settings");
-            self.apply_device_config();
-            self.apply_diverts();
-            let _ = self.refresh();
+            self.needs_reapply.store(true, Ordering::Relaxed);
             return;
         }
 
-        if Some(rep.feature_index()) == self.features.battery && rep.is_event() {
-            let (pct, charging) = battery::interpret(rep.param(0), rep.param(2));
-            tracing::info!("battery event: {pct}% charging={charging}");
-            state::update_device_status(|s| {
-                s.battery_percent = Some(pct);
-                s.charging = charging;
-            });
+        if rep.is_event() && self.on_battery_event(rep) {
             return;
         }
 
@@ -338,10 +467,17 @@ impl Device {
     }
 
     pub(crate) fn refresh(&self) -> Result<()> {
-        if let Ok((pct, charging)) = self.read_battery() {
+        let reachable = self.ping(self.index).is_ok();
+        state::update_device_status(|s| s.connected = reachable);
+        if !reachable {
+            bail!("mouse is currently unreachable");
+        }
+        if let Ok(battery) = self.read_battery() {
             state::update_device_status(|s| {
-                s.battery_percent = Some(pct);
-                s.charging = charging;
+                s.battery_percent = battery.percent;
+                s.battery_voltage_mv = battery.voltage_mv;
+                s.battery_level = battery.level;
+                s.charging = battery.charging;
             });
         }
         Ok(())
@@ -371,7 +507,9 @@ impl Device {
             // Periodically re-assert diverts/settings so they survive a sleep we
             // did not otherwise observe (they reset when the 2S powers down), and
             // refresh the battery reading in case no broadcast arrived.
-            if last_reapply.elapsed() >= reapply_every {
+            if self.needs_reapply.swap(false, Ordering::Relaxed)
+                || last_reapply.elapsed() >= reapply_every
+            {
                 self.apply_device_config();
                 self.apply_diverts();
                 let _ = self.refresh();
@@ -396,12 +534,16 @@ impl Device {
     pub(crate) fn apply_device_config(&self) {
         let cfg = state::config();
         let d = &cfg.device;
-        if let Err(e) = self.apply_smartshift(d.smartshift, d.smartshift_threshold) {
-            tracing::warn!("apply smartshift failed: {e:#}");
+        if self.capabilities.smartshift {
+            if let Err(e) = self.apply_smartshift(d.smartshift, d.smartshift_threshold) {
+                tracing::warn!("apply smartshift failed: {e:#}");
+            }
         }
         self.apply_wheel_mode();
-        if let Err(e) = self.apply_dpi(d.dpi) {
-            tracing::warn!("apply dpi failed: {e:#}");
+        if self.capabilities.dpi {
+            if let Err(e) = self.apply_dpi(d.dpi) {
+                tracing::warn!("apply dpi failed: {e:#}");
+            }
         }
         self.read_device_settings();
     }
@@ -412,8 +554,10 @@ impl Device {
     pub(crate) fn apply_wheel_mode(&self) {
         let cfg = state::config();
         let d = &cfg.device;
-        let hires = d.hires_scroll && !state::wheel_native_fallback();
-        if let Err(e) = self.apply_hires(hires, d.invert_scroll) {
+        let hires =
+            d.hires_scroll && self.capabilities.hires_scroll && !state::wheel_native_fallback();
+        if let Err(e) = self.apply_hires(hires, d.invert_scroll && self.capabilities.invert_scroll)
+        {
             tracing::warn!("apply hires failed: {e:#}");
         }
     }
@@ -421,12 +565,8 @@ impl Device {
     /// Read current device settings (DPI list/current, SmartShift, hi-res) into
     /// the published status so the GUI can show live values.
     pub(crate) fn read_device_settings(&self) {
-        let dpi_list = if self.features.dpi.is_some() {
-            self.get_dpi_list().unwrap_or_default()
-        } else {
-            Vec::new()
-        };
-        let dpi_current = if self.features.dpi.is_some() {
+        let dpi_list = self.dpi_values.clone();
+        let dpi_current = if self.capabilities.dpi {
             self.get_dpi().ok().map(|(cur, _)| cur)
         } else {
             None
@@ -451,7 +591,12 @@ impl Device {
         if self.features.reprog.is_none() {
             return;
         }
-        self.apply_control_diverts(state::config().gestures.enabled);
+        let gestures_enabled =
+            state::config().gestures.enabled && self.capabilities.gestures && !state::is_paused();
+        if !gestures_enabled {
+            gestures::cancel();
+        }
+        self.apply_control_diverts(gestures_enabled, !state::is_paused());
     }
 
     /// Restore native behavior on every control (called on shutdown).
@@ -461,7 +606,7 @@ impl Device {
     /// simply stop until the mouse power-cycles.
     pub(crate) fn restore_diverts(&self) {
         if self.features.reprog.is_some() {
-            self.apply_control_diverts(false);
+            self.apply_control_diverts(false, false);
         }
         self.restore_wheel();
     }
@@ -469,6 +614,9 @@ impl Device {
     /// Handle a diverted REPROG_CONTROLS_V4 event (button hold or raw XY).
     pub(crate) fn on_reprog_event(&self, rep: &Report) {
         if rep.function() == 0 {
+            if rep.raw.len() < 12 {
+                return;
+            }
             // divertedButtonsEvent: up to 4 currently-held control ids.
             let mut cids = Vec::new();
             let mut gesture_held = false;
@@ -476,19 +624,139 @@ impl Device {
                 let cid = ((rep.param(i * 2) as u16) << 8) | rep.param(i * 2 + 1) as u16;
                 if cid != 0 {
                     cids.push(cid);
-                    if cid == reprog::CID_GESTURE {
+                    if Some(cid) == self.capabilities.gesture_control {
                         gesture_held = true;
                     }
                 }
             }
             tracing::debug!("diverted buttons: {:04x?}", cids);
-            gestures::handle_buttons(gesture_held);
-        } else {
+            let pressed = {
+                let mut held = self.held_controls.lock().unwrap_or_else(|e| e.into_inner());
+                let pressed = newly_pressed(&held, &cids);
+                *held = cids;
+                pressed
+            };
+            if !state::is_paused() {
+                let map = state::active_map();
+                for cid in pressed {
+                    if Some(cid) == self.capabilities.gesture_control {
+                        continue;
+                    }
+                    if self
+                        .capabilities
+                        .buttons
+                        .iter()
+                        .any(|button| button.cid == cid && button.slot.starts_with("control_"))
+                    {
+                        let action = map.control_action(cid);
+                        if action.intercepts() {
+                            state::inject(action);
+                        }
+                    }
+                }
+            }
+            if self.capabilities.gestures && state::config().gestures.enabled && !state::is_paused()
+            {
+                gestures::handle_buttons(gesture_held);
+            }
+        } else if rep.function() == 1
+            && self.capabilities.gestures
+            && state::config().gestures.enabled
+            && !state::is_paused()
+        {
+            if rep.raw.len() < 8 {
+                return;
+            }
             // divertedRawMouseXYEvent: signed big-endian dx, dy.
             let dx = (((rep.param(0) as u16) << 8) | rep.param(1) as u16) as i16 as i32;
             let dy = (((rep.param(2) as u16) << 8) | rep.param(3) as u16) as i16 as i32;
             tracing::debug!("diverted rawXY (event {}): dx={dx} dy={dy}", rep.function());
             gestures::handle_raw_xy(dx, dy);
         }
+    }
+}
+
+fn newly_pressed(previous: &[u16], current: &[u16]) -> Vec<u16> {
+    current
+        .iter()
+        .copied()
+        .filter(|cid| !previous.contains(cid))
+        .collect()
+}
+
+fn select_mouse(
+    kind: ConnectionKind,
+    mut probe: impl FnMut(u8) -> Result<bool>,
+) -> Result<(u8, ConnectionKind)> {
+    if !kind.is_receiver() && probe(0xFF).unwrap_or(false) {
+        return Ok((0xFF, kind));
+    }
+    if kind == ConnectionKind::Bluetooth {
+        bail!("no HID++ 2.0 Bluetooth mouse");
+    }
+    for index in 1..=6 {
+        if probe(index).unwrap_or(false) {
+            return Ok((
+                index,
+                if kind.is_receiver() {
+                    kind
+                } else {
+                    ConnectionKind::OtherReceiver
+                },
+            ));
+        }
+    }
+    bail!("no HID++ 2.0 mouse answered")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn extra_buttons_fire_once_per_press() {
+        assert_eq!(newly_pressed(&[], &[0x00ED]), [0x00ED]);
+        assert!(newly_pressed(&[0x00ED], &[0x00ED]).is_empty());
+        assert!(newly_pressed(&[0x00ED], &[]).is_empty());
+        assert_eq!(newly_pressed(&[0x00ED], &[0x00ED, 0x01A1]), [0x01A1]);
+    }
+    #[test]
+    fn receiver_selection_skips_keyboards_and_empty_slots() {
+        let mut attempts = Vec::new();
+        let selected = select_mouse(ConnectionKind::BoltReceiver, |index| {
+            attempts.push(index);
+            if index == 2 {
+                bail!("asleep");
+            }
+            Ok(index == 3)
+        })
+        .unwrap();
+        assert_eq!(selected, (3, ConnectionKind::BoltReceiver));
+        assert_eq!(attempts, [1, 2, 3]);
+        assert_eq!(
+            select_mouse(ConnectionKind::Usb, |index| Ok(index == 0xFF)).unwrap(),
+            (0xFF, ConnectionKind::Usb)
+        );
+        assert_eq!(
+            select_mouse(ConnectionKind::Usb, |index| Ok(index == 4)).unwrap(),
+            (4, ConnectionKind::OtherReceiver)
+        );
+        assert!(select_mouse(ConnectionKind::Bluetooth, |index| Ok(index == 1)).is_err());
+    }
+    #[test]
+    fn status_uses_the_reported_name_and_neutral_fallbacks() {
+        let mut status = DeviceStatus::default();
+        assert_eq!(status.display_name(), "No device");
+        assert_eq!(status.availability_label(), "No device");
+        status.connected = true;
+        assert_eq!(status.display_name(), "Connected mouse");
+        status.name = Some("MX Vertical".into());
+        assert_eq!(status.display_name(), "MX Vertical");
+        status.connected = false;
+        assert_eq!(status.display_name(), "MX Vertical");
+        assert_eq!(status.availability_label(), "Disconnected");
+        let old = serde_json::json!({ "connected": true, "connection": "Bluetooth" });
+        let status: DeviceStatus = serde_json::from_value(old).unwrap();
+        assert!(!status.capabilities.has_scroll_settings());
+        assert!(!status.capabilities.dpi);
     }
 }

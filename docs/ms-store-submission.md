@@ -27,6 +27,7 @@ The app and Store package have separate versions:
 | --- | --- |
 | `0.0.3` | `1.0.3.0` |
 | `0.0.4` | `1.0.4.0` |
+| `0.0.6` | `1.0.6.0` |
 | `0.1.0` | `1.1.0.0` |
 | `1.0.0` | `2.0.0.0` |
 
@@ -99,7 +100,7 @@ in their numbered order and use `StoreLogo-300x300.png` as the app tile icon.
 The package declares `runFullTrust`. Paste this into the restricted capability
 field:
 
-> Mushak is a Win32 tray utility for the Logitech MX Master 2S. It uses Windows
+> Mushak is a Win32 tray utility for Logitech HID++ mice. It uses Windows
 > HID APIs to communicate with the mouse and a low-level mouse hook to apply
 > user-configured button mappings. It does not install a driver or service,
 > collect data, or run code received from a network.
@@ -108,11 +109,14 @@ field:
 
 Use this note for the reviewer:
 
-> Mushak is designed for the Logitech MX Master 2S over a Unifying receiver or
-> Bluetooth. The settings window opens without the device, but live battery,
-> DPI, wheel settings, and remapping need the mouse. Mushak does not install a
-> driver or service. Please see the restricted capability note for the reason
-> `runFullTrust` is declared.
+> Mushak 0.0.6 adds experimental support for the MX Master family and MX Vertical
+> through HID++ capability discovery over Bluetooth, compatible receivers, and
+> supported wired USB. The settings window opens without a mouse and remembers
+> the last mouse name as disconnected. Live device settings require a connected
+> mouse and appear only when supported. Physical validation across all added
+> models is pending. Mushak does not install a driver or service. The
+> `runFullTrust` capability permits the Win32 tray process, Windows HID APIs,
+> and a low-level mouse hook for user-configured mappings.
 
 ## Final checklist
 

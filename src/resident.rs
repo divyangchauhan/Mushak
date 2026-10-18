@@ -42,8 +42,12 @@ pub fn run() {
     state::init(cfg);
 
     hook::spawn();
-    let device_tx = hidpp::device::spawn();
+    let (device_tx, device_thread) = hidpp::device::spawn();
     state::set_device_tx(device_tx);
+    statusfile::write(&SharedStatus {
+        device: (*state::device_status()).clone(),
+        paused: state::is_paused(),
+    });
 
     let tray = Tray::build(state::config().start_with_windows).expect("build tray icon");
 
@@ -127,8 +131,10 @@ pub fn run() {
     hook::request_stop();
     hidpp::device::request_stop();
     state::device_command(DeviceCommand::Shutdown);
-    // Let the HID thread restore the gesture divert before we exit.
-    std::thread::sleep(Duration::from_millis(300));
+    // Wait for every diverted button and wheel to return to native reporting.
+    if device_thread.join().is_err() {
+        tracing::error!("HID device thread panicked during shutdown");
+    }
 }
 
 fn pump_messages() {
@@ -148,11 +154,12 @@ fn mtime(p: &Path) -> Option<SystemTime> {
 fn update_tray_battery(tray: &Tray) {
     let s = state::device_status();
     let text = match (s.connected, s.battery_percent) {
-        (true, Some(p)) => format!(
-            "Battery: {p}%{}",
+        (true, _) if s.capabilities.battery => format!(
+            "Battery: {}{}",
+            s.battery_label(),
             if s.charging { " (charging)" } else { "" }
         ),
-        (true, None) => "Battery: unknown".to_string(),
+        (true, _) => "Device: connected".to_string(),
         (false, _) => "Device: disconnected".to_string(),
     };
     tray.set_battery(&text);

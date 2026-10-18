@@ -38,6 +38,14 @@ pub enum Section {
 }
 
 impl Section {
+    fn available(self, device: &crate::hidpp::device::DeviceStatus) -> bool {
+        match self {
+            Self::Scroll => device.connected && device.capabilities.has_scroll_settings(),
+            Self::Gestures => device.connected && device.capabilities.gestures,
+            Self::Buttons => !device.connected || !device.capabilities.buttons.is_empty(),
+            _ => true,
+        }
+    }
     const ALL: [Section; 5] = [
         Section::Buttons,
         Section::Scroll,
@@ -118,6 +126,20 @@ pub enum PickerTarget {
     Gesture(String),
 }
 
+impl PickerTarget {
+    fn available(&self, device: &crate::hidpp::device::DeviceStatus) -> bool {
+        match self {
+            Self::Gesture(_) => device.connected && device.capabilities.gestures,
+            Self::Button(slot) if device.connected => device
+                .capabilities
+                .buttons
+                .iter()
+                .any(|button| button.slot == *slot),
+            Self::Button(slot) => matches!(slot.as_str(), "back" | "forward" | "middle"),
+        }
+    }
+}
+
 impl App {
     fn new() -> Self {
         let own_exe = std::env::current_exe()
@@ -175,7 +197,9 @@ impl App {
         // custom combo shows what it already is.
         let current = self.action_for(&target);
         match &current {
-            crate::config::Action::Key { mods, vk } if actions::display(&current).kind == actions::Kind::Custom => {
+            crate::config::Action::Key { mods, vk }
+                if actions::display(&current).kind == actions::Kind::Custom =>
+            {
                 self.custom_mods = mods.clone();
                 self.custom_key = Some(*vk);
             }
@@ -203,7 +227,12 @@ impl App {
                 .map(|p| match slot.as_str() {
                     "back" => p.buttons.back.clone(),
                     "forward" => p.buttons.forward.clone(),
-                    _ => p.buttons.middle.clone(),
+                    "middle" => p.buttons.middle.clone(),
+                    _ => slot
+                        .strip_prefix("control_")
+                        .and_then(|key| p.buttons.controls.get(key))
+                        .cloned()
+                        .unwrap_or_default(),
                 })
                 .unwrap_or_default(),
             PickerTarget::Gesture(slot) => {
@@ -228,7 +257,16 @@ impl App {
                     match slot.as_str() {
                         "back" => p.buttons.back = action,
                         "forward" => p.buttons.forward = action,
-                        _ => p.buttons.middle = action,
+                        "middle" => p.buttons.middle = action,
+                        _ => {
+                            if let Some(key) = slot.strip_prefix("control_") {
+                                if action == crate::config::Action::PassThrough {
+                                    p.buttons.controls.remove(key);
+                                } else {
+                                    p.buttons.controls.insert(key.to_owned(), action);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -320,6 +358,13 @@ impl App {
         }
         if now >= self.status_next_check {
             self.device_view = statusfile::read();
+            if self
+                .picker
+                .as_ref()
+                .is_some_and(|target| !target.available(&self.device_view.device))
+            {
+                self.picker = None;
+            }
             self.status_next_check = now + Duration::from_millis(500);
         }
         if let Some(deadline) = self.pick_deadline {
@@ -390,18 +435,50 @@ pub const DESIGN_H: f32 = 668.0;
 /// Modifiers are deliberately absent: they are read separately so that holding
 /// Ctrl and pressing C captures "Ctrl+C", not "Ctrl".
 const KEY_MAP: [(KeyCode, u16); 44] = [
-    (KeyCode::A, 0x41), (KeyCode::B, 0x42), (KeyCode::C, 0x43), (KeyCode::D, 0x44),
-    (KeyCode::E, 0x45), (KeyCode::F, 0x46), (KeyCode::G, 0x47), (KeyCode::H, 0x48),
-    (KeyCode::I, 0x49), (KeyCode::J, 0x4A), (KeyCode::K, 0x4B), (KeyCode::L, 0x4C),
-    (KeyCode::M, 0x4D), (KeyCode::N, 0x4E), (KeyCode::O, 0x4F), (KeyCode::P, 0x50),
-    (KeyCode::Q, 0x51), (KeyCode::R, 0x52), (KeyCode::S, 0x53), (KeyCode::T, 0x54),
-    (KeyCode::U, 0x55), (KeyCode::V, 0x56), (KeyCode::W, 0x57), (KeyCode::X, 0x58),
-    (KeyCode::Y, 0x59), (KeyCode::Z, 0x5A),
-    (KeyCode::F1, 0x70), (KeyCode::F2, 0x71), (KeyCode::F3, 0x72), (KeyCode::F4, 0x73),
-    (KeyCode::F5, 0x74), (KeyCode::F6, 0x75), (KeyCode::F7, 0x76), (KeyCode::F8, 0x77),
-    (KeyCode::F9, 0x78), (KeyCode::F10, 0x79), (KeyCode::F11, 0x7A), (KeyCode::F12, 0x7B),
-    (KeyCode::Left, 0x25), (KeyCode::Up, 0x26), (KeyCode::Right, 0x27), (KeyCode::Down, 0x28),
-    (KeyCode::Tab, 0x09), (KeyCode::Space, 0x20),
+    (KeyCode::A, 0x41),
+    (KeyCode::B, 0x42),
+    (KeyCode::C, 0x43),
+    (KeyCode::D, 0x44),
+    (KeyCode::E, 0x45),
+    (KeyCode::F, 0x46),
+    (KeyCode::G, 0x47),
+    (KeyCode::H, 0x48),
+    (KeyCode::I, 0x49),
+    (KeyCode::J, 0x4A),
+    (KeyCode::K, 0x4B),
+    (KeyCode::L, 0x4C),
+    (KeyCode::M, 0x4D),
+    (KeyCode::N, 0x4E),
+    (KeyCode::O, 0x4F),
+    (KeyCode::P, 0x50),
+    (KeyCode::Q, 0x51),
+    (KeyCode::R, 0x52),
+    (KeyCode::S, 0x53),
+    (KeyCode::T, 0x54),
+    (KeyCode::U, 0x55),
+    (KeyCode::V, 0x56),
+    (KeyCode::W, 0x57),
+    (KeyCode::X, 0x58),
+    (KeyCode::Y, 0x59),
+    (KeyCode::Z, 0x5A),
+    (KeyCode::F1, 0x70),
+    (KeyCode::F2, 0x71),
+    (KeyCode::F3, 0x72),
+    (KeyCode::F4, 0x73),
+    (KeyCode::F5, 0x74),
+    (KeyCode::F6, 0x75),
+    (KeyCode::F7, 0x76),
+    (KeyCode::F8, 0x77),
+    (KeyCode::F9, 0x78),
+    (KeyCode::F10, 0x79),
+    (KeyCode::F11, 0x7A),
+    (KeyCode::F12, 0x7B),
+    (KeyCode::Left, 0x25),
+    (KeyCode::Up, 0x26),
+    (KeyCode::Right, 0x27),
+    (KeyCode::Down, 0x28),
+    (KeyCode::Tab, 0x09),
+    (KeyCode::Space, 0x20),
 ];
 
 /// Entry point for the `--settings` subprocess.
@@ -537,7 +614,7 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
                 .height(fixed!(15.0))
                 .background_color(pal.line_strong)
                 .empty();
-            ui.text("MX Master 2S", |t| {
+            ui.text(app.device_view.device.display_name(), |t| {
                 t.font(&fonts::SANS).font_size(13).color(pal.muted)
             });
             if paused {
@@ -560,6 +637,9 @@ fn rail(ui: &mut Ui2, app: &mut App) {
         .border(|b| b.right(1).color(pal.line))
         .children(|ui| {
             for s in Section::ALL {
+                if !s.available(&app.device_view.device) {
+                    continue;
+                }
                 if widgets::nav_item(ui, &pal, s, s == current) {
                     clicked = Some(s);
                 }
@@ -574,6 +654,9 @@ fn rail(ui: &mut Ui2, app: &mut App) {
 }
 
 fn content(ui: &mut Ui2, app: &mut App) {
+    if !app.section.available(&app.device_view.device) {
+        app.section = Section::Device;
+    }
     let pal = app.pal;
     ui.element()
         .width(grow!())
@@ -599,4 +682,27 @@ fn content(ui: &mut Ui2, app: &mut App) {
                     Section::Device => device_tab::section(ui, app),
                 });
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::hidpp::device::DeviceStatus;
+    #[test]
+    fn settings_follow_capabilities_instead_of_connection_alone() {
+        let mut device = DeviceStatus {
+            connected: true,
+            ..Default::default()
+        };
+        assert!(!Section::Scroll.available(&device));
+        assert!(!Section::Gestures.available(&device));
+        device.capabilities.hires_scroll = true;
+        assert!(Section::Scroll.available(&device));
+        assert!(!Section::Gestures.available(&device));
+        device.capabilities.gestures = true;
+        assert!(Section::Gestures.available(&device));
+        device.connected = false;
+        assert!(!Section::Scroll.available(&device));
+        assert!(!Section::Gestures.available(&device));
+    }
 }
