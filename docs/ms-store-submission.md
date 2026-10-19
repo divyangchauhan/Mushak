@@ -10,6 +10,8 @@ The following work is in the repository:
 - The Partner Center identity is set in `packaging/msix/AppxManifest.xml`.
 - Packaged startup uses `windows.startupTask` with task ID `MushakStartup`.
 - `build-msix.ps1` rebuilds the executable and inspects the finished package.
+- The x64 MSVC build links the C runtime statically. Package inspection rejects
+  external Visual C++ runtime DLL imports, including delay-loaded imports.
 - `test-msix.ps1` runs the Windows App Certification Kit.
 - Store listing copy, five desktop screenshots, and a 300 by 300 logo are under
   `docs/`.
@@ -117,6 +119,34 @@ Use this note for the reviewer:
 > models is pending. Mushak does not install a driver or service. The
 > `runFullTrust` capability permits the Win32 tray process, Windows HID APIs,
 > and a low-level mouse hook for user-configured mappings.
+
+For the policy 10.2.4.1 resubmission, add this after verifying the replacement
+package:
+
+> The previous package imported VCRUNTIME140.dll without declaring a runtime
+> dependency. This replacement statically links the runtime. The executable
+> extracted from the final MSIX has no external Visual C++ runtime DLL imports
+> and does not require a separate Visual C++ Redistributable installation.
+
+Local WACK verification on 2026-10-19 used kit `10.0.26100.8249` against a
+test-signed copy of the corrected `1.0.6.0` package. The executable, manifest,
+assets, and block map matched the unsigned Store candidate. Overall result was
+`PASS`, with `PARTIAL_RUN=FALSE` and all 13 required tests passing. Of the 24
+checks, 23 passed and one optional check, `Blocked executables`, failed.
+
+Include this explanation with the resubmission notes:
+
+> WACK reports an overall PASS. Its optional Blocked executables check flags
+> CreateProcessW and cmd.exe strings. Mushak's process launch uses Rust's
+> std::process::Command to open its own executable with the fixed --settings
+> argument. It does not launch command scripts or cmd.exe. Rust's Windows
+> process implementation includes cmd.exe support for batch files, which
+> accounts for the strings detected by the static check.
+
+The matching Rust toolchain source implements that batch-file handling in
+[windows.rs](https://github.com/rust-lang/rust/blob/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library/std/src/sys/process/windows.rs#L275-L302).
+Keep the XML report and package hash with the submission record. These local
+results do not establish Partner Center certification or publication.
 
 ## Final checklist
 

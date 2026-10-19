@@ -4,12 +4,14 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - ".cargo/**"
       - ".github/workflows/ms-store.yml"
       - "Cargo.lock"
       - "Cargo.toml"
       - "assets/**"
       - "build.rs"
       - "packaging/msix/**"
+      - "packaging/test-runtime-imports.ps1"
       - "src/**"
 
 permissions:

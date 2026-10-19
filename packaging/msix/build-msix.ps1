@@ -156,6 +156,7 @@ if ($packedIdentity.GetAttribute('Name') -ne $identityName -or
     $packedIdentity.GetAttribute('ProcessorArchitecture') -ne 'x64') {
     throw 'The packed manifest does not match the requested Store identity'
 }
+& (Join-Path $root 'packaging\test-runtime-imports.ps1') -Path (Join-Path $inspection 'mushak.exe')
 Write-Host "Packed: $out"
 
 if ($Sign) {
