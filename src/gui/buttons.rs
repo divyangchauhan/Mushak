@@ -104,6 +104,18 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
 
     ui.element().width(grow!()).height(fixed!(22.0)).empty();
 
+    if super::mouse_view::matches_device(&app.device_view.device) && screen_width() >= 840.0 {
+        if toggle_menu {
+            app.profile_menu_open = !app.profile_menu_open;
+        }
+        if let Some(i) = pick_profile {
+            app.selected_profile = i;
+            app.profile_menu_open = false;
+        }
+        super::mouse_view::section(ui, app);
+        return;
+    }
+
     // The three rows.
     let idx = app.selected_profile;
     let rows: Vec<(String, String, String)> = if app.device_view.device.connected {

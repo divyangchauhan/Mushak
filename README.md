@@ -115,6 +115,14 @@ code-signing certificate is required.
 
 ## Settings
 
+The MX Master 2S has a fixed-angle mouse illustration in the Buttons tab.
+Click a button marker or its action label to open a configuration popover.
+Back, Forward, and Middle mappings use the selected profile. Gesture actions
+apply to every profile. Extra controls appear only when the mouse reports
+support. Other models and windows narrower than 840 logical pixels use the
+button list. A remembered, disconnected 2S still lets you edit the saved
+Back, Forward, and Middle mappings.
+
 The window has five tabs:
 
 - **Buttons** — remap Back / Forward / Middle per profile. Each can be a preset

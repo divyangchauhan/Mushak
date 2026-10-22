@@ -11,9 +11,12 @@ mod device_tab;
 mod fonts;
 mod gestures_tab;
 mod icons;
+mod mouse_view;
 mod picker;
 mod profiles_tab;
 mod scroll;
+#[cfg(debug_assertions)]
+mod smoke;
 mod theme;
 mod uiprefs;
 mod widgets;
@@ -27,6 +30,11 @@ use std::time::{Duration, Instant};
 use theme::{Palette, Theme};
 use uiprefs::UiPrefs;
 use widgets::Ui2;
+
+#[cfg(debug_assertions)]
+pub fn run_ui_smoke() {
+    smoke::run();
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Section {
@@ -111,6 +119,9 @@ pub struct App {
     pub hidpp_expanded: bool,
     /// Action picker state. `None` when closed.
     pub picker: Option<PickerTarget>,
+    /// A mouse marker to attach the action picker to. List pickers stay centered.
+    pub picker_anchor: Option<&'static str>,
+    picker_fresh: bool,
     pub picker_query: String,
     pub custom_mods: Vec<Modifier>,
     pub custom_key: Option<u16>,
@@ -166,6 +177,8 @@ impl App {
             profile_menu_open: false,
             hidpp_expanded: false,
             picker: None,
+            picker_anchor: None,
+            picker_fresh: false,
             picker_query: String::new(),
             custom_mods: Vec::new(),
             custom_key: None,
@@ -209,6 +222,8 @@ impl App {
             }
         }
         self.picker = Some(target);
+        self.picker_anchor = None;
+        self.picker_fresh = true;
         self.picker_query.clear();
         self.capturing_key = false;
         self.profile_menu_open = false;
@@ -216,7 +231,13 @@ impl App {
 
     pub fn close_picker(&mut self) {
         self.picker = None;
+        self.picker_anchor = None;
         self.capturing_key = false;
+    }
+
+    pub fn open_button_popover(&mut self, target: PickerTarget, anchor: &'static str) {
+        self.open_picker(target);
+        self.picker_anchor = Some(anchor);
     }
 
     /// The action currently bound to a picker target.
@@ -363,7 +384,7 @@ impl App {
                 .as_ref()
                 .is_some_and(|target| !target.available(&self.device_view.device))
             {
-                self.picker = None;
+                self.close_picker();
             }
             self.status_next_check = now + Duration::from_millis(500);
         }
@@ -659,6 +680,7 @@ fn content(ui: &mut Ui2, app: &mut App) {
     }
     let pal = app.pal;
     ui.element()
+        .id("settings_content")
         .width(grow!())
         .height(grow!())
         .overflow(|o| {

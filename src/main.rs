@@ -18,6 +18,11 @@ mod statusfile;
 mod tray;
 
 fn main() {
+    #[cfg(debug_assertions)]
+    if std::env::args().any(|a| a == "--ui-smoke") {
+        gui::run_ui_smoke();
+        return;
+    }
     if std::env::args().any(|a| a == "--diagnose-device") {
         // Read-only discovery. Do not load config, start hooks, or apply settings.
         match hidpp::device::Device::connect() {
