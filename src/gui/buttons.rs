@@ -20,7 +20,7 @@ fn row_icon(slot: &str) -> &'static GraphicAsset {
 }
 
 /// Ply's `Id` is built from (&'static str, u32), so slots need a stable index.
-fn slot_index(slot: &str) -> u32 {
+pub(super) fn slot_index(slot: &str) -> u32 {
     match slot {
         "back" => 0,
         "forward" => 1,

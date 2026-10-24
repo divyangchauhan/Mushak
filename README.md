@@ -115,13 +115,17 @@ code-signing certificate is required.
 
 ## Settings
 
-The MX Master 2S has a fixed-angle mouse illustration in the Buttons tab.
+The original MX Master, MX Master 2S, 3, 3S, and 4 have a fixed-angle mouse
+illustration in the Buttons tab, including their Mac and Business variants.
 Click a button marker or its action label to open a configuration popover.
-Back, Forward, and Middle mappings use the selected profile. Gesture actions
-apply to every profile. Extra controls appear only when the mouse reports
-support. Other models and windows narrower than 840 logical pixels use the
-button list. A remembered, disconnected 2S still lets you edit the saved
-Back, Forward, and Middle mappings.
+Back, Forward, Middle, and extra button mappings use the selected profile.
+Gesture actions apply to every profile. The MX Master 4 has a separate
+Haptic Sense Panel marker when the device reports a configurable control.
+Any reported controls without a marker remain available below the diagram.
+Other mice and windows narrower than 840 logical pixels use the button list.
+A remembered, disconnected MX Master still lets you edit the saved Back,
+Forward, and Middle mappings. See [preview notes](docs/mx-master-2s-preview.md)
+for shared artwork and validation details.
 
 The window has five tabs:
 

@@ -121,10 +121,10 @@ async fn check(output: PathBuf) {
     snapshot(&output, "01-mouse-dark");
 
     for (id, slot) in [
-        ("mx2s_middle", "middle"),
-        ("mx2s_back", "back"),
-        ("mx2s_forward", "forward"),
-        ("mx2s_mode", "control_00c4"),
+        ("mouse_middle", "middle"),
+        ("mouse_back", "back"),
+        ("mouse_forward", "forward"),
+        ("mouse_mode", "control_00c4"),
     ] {
         click(&mut ply, &mut app, id).await;
         assert!(
@@ -140,7 +140,7 @@ async fn check(output: PathBuf) {
     click(&mut ply, &mut app, "profile_btn").await;
     click(&mut ply, &mut app, ("profile_opt", 1)).await;
     assert_eq!(app.selected_profile, 1);
-    click(&mut ply, &mut app, ("mx2s_label", 1)).await;
+    click(&mut ply, &mut app, ("mouse_label", 1)).await;
     assert!(app.picker == Some(PickerTarget::Button("back".into())));
     ply.set_text_value("picker_search", "Copy");
     settle(&mut ply, &mut app).await;
@@ -157,7 +157,7 @@ async fn check(output: PathBuf) {
         Action::key(&[Modifier::Ctrl], 0x57)
     );
 
-    click(&mut ply, &mut app, "mx2s_back").await;
+    click(&mut ply, &mut app, "mouse_back").await;
     assert!(
         app.picker_query.is_empty(),
         "Each opening clears the previous search"
@@ -174,7 +174,7 @@ async fn check(output: PathBuf) {
         Action::key(&[Modifier::Alt, Modifier::Shift], 0x4B)
     );
 
-    click(&mut ply, &mut app, "mx2s_gesture").await;
+    click(&mut ply, &mut app, "mouse_gesture").await;
     assert!(app.picker == Some(PickerTarget::Gesture("tap".into())));
     snapshot(&output, "05-gesture-tap");
     // A click outside dismisses without changing the binding.
@@ -186,10 +186,101 @@ async fn check(output: PathBuf) {
     app.pal = Palette::resolve(app.prefs.theme, app.prefs.accent);
     settle(&mut ply, &mut app).await;
     snapshot(&output, "06-mouse-light");
-    click(&mut ply, &mut app, "mx2s_forward").await;
+    click(&mut ply, &mut app, "mouse_forward").await;
     assert_panel_fits(&ply);
     snapshot(&output, "07-popover-light");
     app.close_picker();
+
+    let connected = app.device_view.device.clone();
+    for (name, slug) in [
+        ("MX Master", "original"),
+        ("MX Master 2S", "2s"),
+        ("MX Master 3 for Mac", "3-mac"),
+        ("MX Master 3 for Business", "3-business"),
+        ("MX Master 3S", "3s"),
+        ("MX Master 3S for Mac", "3s-mac"),
+        ("MX Master 3S for Business", "3s-business"),
+        ("MX Master 4", "4"),
+        ("MX Master 4 for Mac", "4-mac"),
+        ("MX Master 4 for Business", "4-business"),
+    ] {
+        app.device_view.device = connected.clone();
+        app.device_view.device.name = Some(name.into());
+        app.device_view.device.capabilities.gesture_control = Some(0x00c3);
+        let master4 = name.starts_with("MX Master 4");
+        if master4 {
+            app.device_view
+                .device
+                .capabilities
+                .buttons
+                .push(ButtonInfo {
+                    cid: 0x01a0,
+                    slot: "control_01a0".into(),
+                    name: "Haptic Sense Panel".into(),
+                });
+        }
+        for theme in [Theme::Dark, Theme::Light] {
+            app.prefs.theme = theme;
+            app.pal = Palette::resolve(theme, app.prefs.accent);
+            settle(&mut ply, &mut app).await;
+            snapshot(&output, &format!("family-{slug}-{theme:?}"));
+            for (id, target) in [
+                ("mouse_middle", PickerTarget::Button("middle".into())),
+                ("mouse_back", PickerTarget::Button("back".into())),
+                ("mouse_forward", PickerTarget::Button("forward".into())),
+                ("mouse_mode", PickerTarget::Button("control_00c4".into())),
+                ("mouse_gesture", PickerTarget::Gesture("tap".into())),
+            ] {
+                click(&mut ply, &mut app, id).await;
+                assert!(app.picker == Some(target), "{name}: {id} mapping");
+                assert_panel_fits(&ply);
+                click(&mut ply, &mut app, "picker_close").await;
+            }
+            if master4 {
+                click(&mut ply, &mut app, "mouse_haptic").await;
+                assert!(app.picker == Some(PickerTarget::Button("control_01a0".into())));
+                assert_panel_fits(&ply);
+                snapshot(&output, &format!("family-{slug}-haptic-{theme:?}"));
+                ply.set_text_value("picker_search", "Copy");
+                settle(&mut ply, &mut app).await;
+                click(&mut ply, &mut app, ("pk", 0)).await;
+                let saved = Config::load_strict().unwrap();
+                assert_eq!(
+                    saved.profiles[0].buttons.controls["01a0"],
+                    Action::key(&[Modifier::Ctrl], 0x43)
+                );
+                assert!(!saved.default_profile.buttons.controls.contains_key("01a0"));
+            }
+        }
+        // Disconnecting removes live-only controls for every model.
+        app.device_view.device.connected = false;
+        app.device_view.device.capabilities = Default::default();
+        settle(&mut ply, &mut app).await;
+        click(&mut ply, &mut app, "mouse_back").await;
+        assert!(app.picker == Some(PickerTarget::Button("back".into())));
+        app.close_picker();
+    }
+
+    // Firmware can expose a new control before it has an artwork marker.
+    app.device_view.device = connected.clone();
+    app.device_view.device.name = Some("MX Master 4".into());
+    app.device_view
+        .device
+        .capabilities
+        .buttons
+        .push(ButtonInfo {
+            cid: 0x01ff,
+            slot: "control_01ff".into(),
+            name: "Additional reported button".into(),
+        });
+    chrome::make_frameless(DESIGN_W, 850.0);
+    settle(&mut ply, &mut app).await;
+    click(&mut ply, &mut app, ("mouse_extra", 0x01ff + 3)).await;
+    assert!(app.picker == Some(PickerTarget::Button("control_01ff".into())));
+    assert_panel_fits(&ply);
+    snapshot(&output, "family-extra-control");
+    app.close_picker();
+    app.device_view.device = connected;
 
     chrome::make_frameless(DESIGN_W, 420.0);
     settle(&mut ply, &mut app).await;
@@ -204,7 +295,7 @@ async fn check(output: PathBuf) {
     app.device_view.device.capabilities = Default::default();
     settle(&mut ply, &mut app).await;
     snapshot(&output, "08-disconnected");
-    click(&mut ply, &mut app, "mx2s_middle").await;
+    click(&mut ply, &mut app, "mouse_middle").await;
     assert!(app.picker == Some(PickerTarget::Button("middle".into())));
     app.close_picker();
 
@@ -214,11 +305,12 @@ async fn check(output: PathBuf) {
     assert_panel_fits(&ply);
     snapshot(&output, "09-small-window");
     app.close_picker();
-    app.device_view.device.name = Some("MX Master 3S".into());
+    app.device_view.device.name = Some("MX Anywhere 3S".into());
+    chrome::make_frameless(DESIGN_W, DESIGN_H);
     settle(&mut ply, &mut app).await;
     snapshot(&output, "10-other-mouse-list");
 
-    std::fs::write(output.join("result.txt"), "PASS: marker and label selection, correct mappings, anchored layout, close and outside dismissal, profile isolation and persistence, custom shortcuts, search reset, gestures, themes, disconnected editing, small-window bounds.\n").unwrap();
+    std::fs::write(output.join("result.txt"), "PASS: all five MX Master generations and Mac/Business variants; marker and label selection, correct mappings, haptic panel mapping and profile isolation, additional reported controls, anchored layout, close and outside dismissal, persistence, custom shortcuts, search reset, gestures, both themes, disconnected editing, small-window bounds and other-mouse fallback.\n").unwrap();
     println!("UI smoke checks passed. Screenshots: {}", output.display());
     std::process::exit(0);
 }

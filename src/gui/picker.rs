@@ -181,7 +181,11 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                             let label = if app.picker_anchor.is_some()
                                 && matches!(target, PickerTarget::Gesture(_))
                             {
-                                "Gesture button tap"
+                                if app.picker_anchor == Some("mouse_haptic") {
+                                    "Haptic Sense Panel tap"
+                                } else {
+                                    "Gesture button tap"
+                                }
                             } else {
                                 target.label(&app.device_view.device)
                             };
