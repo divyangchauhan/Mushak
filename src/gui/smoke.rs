@@ -284,8 +284,19 @@ async fn check(output: PathBuf) {
 
     chrome::make_frameless(DESIGN_W, 420.0);
     settle(&mut ply, &mut app).await;
-    ply.set_scroll_position("settings_content", (0.0, -180.0));
+    let stage_before_scroll = ply.bounding_box("mouse_stage").unwrap();
+    let marker_before_scroll = ply.bounding_box("mouse_mode").unwrap();
+    // Ply takes a positive distance from the top, then negates it internally.
+    ply.set_scroll_position("settings_content", (0.0, 180.0));
     settle(&mut ply, &mut app).await;
+    let stage_after_scroll = ply.bounding_box("mouse_stage").unwrap();
+    let marker_after_scroll = ply.bounding_box("mouse_mode").unwrap();
+    let scrolled = stage_before_scroll.y - stage_after_scroll.y;
+    assert!(scrolled > 100.0, "The short window must actually scroll");
+    assert!(
+        ((marker_before_scroll.y - marker_after_scroll.y) - scrolled).abs() < 1.0,
+        "Floating markers must move with the diagram"
+    );
     snapshot(&output, "07-scrolled-short-window");
     ply.set_scroll_position("settings_content", (0.0, 0.0));
     chrome::make_frameless(DESIGN_W, DESIGN_H);
