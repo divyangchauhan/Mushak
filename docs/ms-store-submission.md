@@ -30,6 +30,7 @@ The app and Store package have separate versions:
 | `0.0.3` | `1.0.3.0` |
 | `0.0.4` | `1.0.4.0` |
 | `0.0.6` | `1.0.6.0` |
+| `0.0.8` | `1.0.8.0` |
 | `0.1.0` | `1.1.0.0` |
 | `1.0.0` | `2.0.0.0` |
 
@@ -111,14 +112,17 @@ field:
 
 Use this note for the reviewer:
 
-> Mushak 0.0.6 adds experimental support for the MX Master family and MX Vertical
-> through HID++ capability discovery over Bluetooth, compatible receivers, and
-> supported wired USB. The settings window opens without a mouse and remembers
-> the last mouse name as disconnected. Live device settings require a connected
-> mouse and appear only when supported. Physical validation across all added
-> models is pending. Mushak does not install a driver or service. The
-> `runFullTrust` capability permits the Win32 tray process, Windows HID APIs,
-> and a low-level mouse hook for user-configured mappings.
+> Mushak 0.0.8 adds visual button configuration for the original MX Master,
+> 2S, 3, 3S, and 4, including Mac and Business variants. Controls appear only
+> when the mouse reports support. The diagram and action popovers can be
+> opened without connected hardware using the remembered device identity;
+> disconnected editing is limited to saved Back, Forward, and Middle mappings.
+> The Visual C++ runtime is statically linked. Mushak installs no driver or
+> service and collects no data. Physical validation across all models remains
+> pending. `runFullTrust` permits the Win32 tray process, Windows HID APIs, and
+> a low-level mouse hook for user-configured mappings.
+
+## Previous runtime rejection and validation
 
 For the policy 10.2.4.1 resubmission, add this after verifying the replacement
 package:

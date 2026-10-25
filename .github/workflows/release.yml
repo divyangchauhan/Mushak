@@ -83,7 +83,14 @@ jobs:
           Copy-Item LICENSE "$stage/LICENSE"
           Copy-Item README.md "$stage/README.md"
           $zip = "mushak-$version-x64.zip"
-          Compress-Archive -Path "$stage/*" -DestinationPath $zip -Force
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip }
+          [IO.Compression.ZipFile]::CreateFromDirectory(
+            (Join-Path (Get-Location) $stage),
+            (Join-Path (Get-Location) $zip),
+            [IO.Compression.CompressionLevel]::Optimal,
+            $false
+          )
           # SHA256 for the portable exe (Scoop/winget), the zip, and the MSI.
           $exeHash = (Get-FileHash target/release/mushak.exe -Algorithm SHA256).Hash
           $zipHash = (Get-FileHash $zip -Algorithm SHA256).Hash

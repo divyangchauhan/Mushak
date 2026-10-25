@@ -22,6 +22,7 @@ in the system tray and opens its settings window only when needed.
 
 Use Mushak to:
 
+- Click controls on an MX Master mouse diagram to open an action popover.
 - Remap the back, forward, middle, and supported extra buttons to keyboard
   shortcuts, media keys, or custom key combinations.
 - Choose ratchet, free-spin, or SmartShift wheel mode and adjust flick
@@ -38,7 +39,7 @@ and wired USB where the mouse supports it. It shows only settings supported by
 the connected mouse. Movement gestures require a gesture control with raw XY.
 It restores configured settings when the mouse reconnects or wakes from sleep.
 
-Version 0.0.6 adds experimental support for the original MX Master, MX Master 2S,
+The app includes experimental support for the original MX Master, MX Master 2S,
 MX Master 3, MX Master 3S, MX Master 4, their Mac and business variants, and MX
 Vertical. Protocol tests cover these families. Physical validation across all
 models and connections is pending. MX Vertical does not have the Master family's
@@ -103,7 +104,8 @@ app tile icon.
 - Privacy URL: <https://github.com/divyangchauhan/Mushak/blob/main/PRIVACY.md>
 - Copyright: Copyright 2026 Divyang Chauhan
 - License: MIT, <https://github.com/divyangchauhan/Mushak/blob/main/LICENSE>
-- What's new: Experimental MX Master family and MX Vertical support, dynamic
-  device names, supported settings and DPI choices, extra button mappings, and
-  remembered mouse identity. Fixes false connections from built-in touchpads
-  and empty receivers. Physical validation across the added models is pending.
+- What's new: Visual button configuration for the original MX Master, 2S, 3,
+  3S, and 4, including Mac and Business variants. Click a marker or label to
+  choose an action. Extra controls appear only when reported by the mouse.
+  Includes the Store runtime fix. Physical validation across all models and
+  connections remains pending.
