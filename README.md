@@ -15,9 +15,9 @@ It discovers the connected mouse and shows the settings that mouse can use.
 - A Logitech HID++ 2.0 mouse connected by Bluetooth, Unifying, Bolt, another
   compatible receiver, or wired USB where the mouse supports it.
 
-Version 0.0.6 includes support for the original MX Master, MX Master 2S,
-MX Master 3, MX Master 3S, MX Master 4, their Mac and business variants, and MX
-Vertical. Detection uses reported device kind and capabilities, with no model-name
+Version 0.0.8 includes visual button configuration for the MX Master family.
+Device support covers the original MX Master, MX Master 2S, MX Master 3,
+MX Master 3S, MX Master 4, their Mac and business variants, and MX Vertical. Detection uses reported device kind and capabilities, with no model-name
 whitelist. The added model and connection paths are experimental. Physical
 validation across those models is pending. See
 [requirements and validation](docs/mx-family-support.md).
