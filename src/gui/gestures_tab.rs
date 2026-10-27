@@ -44,8 +44,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     ui.element().width(grow!()).height(fixed!(22.0)).empty();
 
     if !app.mouse_awake() {
-        widgets::asleep_card(ui, &pal, &app.device_view.device);
-        return;
+        ui.text(
+            "Mouse disconnected. These saved actions will apply when a supported mouse connects.",
+            |t| t.font(&fonts::SANS).font_size(13).color(pal.muted),
+        );
+        ui.element().height(fixed!(14.0)).empty();
     }
 
     let enabled = app.draft.gestures.enabled;
@@ -65,9 +68,17 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         toggle_enabled = true;
     }
 
+    if !enabled {
+        ui.element().height(fixed!(10.0)).empty();
+        ui.text(
+            "Gestures are off. Edit saved actions below, then turn on Button gestures to use them.",
+            |t| t.font(&fonts::SANS).font_size(12).color(pal.muted),
+        );
+    }
+
     ui.element().width(grow!()).height(fixed!(10.0)).empty();
 
-    // Everything below is inert while gestures are off; the design dims it.
+    // Keep saved actions editable while input recognition is turned off.
     let body_text = if enabled { pal.text } else { pal.muted };
 
     widgets::card(ui, &pal)
@@ -104,25 +115,8 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     ui.text("10", |t| {
                         t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
                     });
-                    if enabled {
-                        if let Some(v) =
-                            widgets::slider(ui, &pal, "threshold", threshold, 10, 400, 5)
-                        {
-                            new_threshold = Some(v);
-                        }
-                    } else {
-                        ui.element()
-                            .width(grow!())
-                            .height(fixed!(20.0))
-                            .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
-                            .children(|ui| {
-                                ui.element()
-                                    .width(grow!())
-                                    .height(fixed!(4.0))
-                                    .corner_radius(2.0)
-                                    .background_color(pal.s2)
-                                    .empty();
-                            });
+                    if let Some(v) = widgets::slider(ui, &pal, "threshold", threshold, 10, 400, 5) {
+                        new_threshold = Some(v);
                     }
                     ui.text("400", |t| {
                         t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
@@ -173,7 +167,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             });
                         });
                         let id: Id = ("g_chip", slot_index(slot)).into();
-                        if widgets::action_chip(ui, &pal, id, disp) && enabled {
+                        if widgets::action_chip(ui, &pal, id, disp) {
                             open_picker = Some(PickerTarget::Gesture(slot.clone()));
                         }
                     });

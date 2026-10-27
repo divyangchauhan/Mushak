@@ -199,6 +199,44 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
             }
         });
 
+    let gesture_target = PickerTarget::Gesture("tap".into());
+    if gesture_target.available(&app.device_view.device) {
+        ui.element().height(fixed!(10.0)).empty();
+        let display = actions::display(&app.action_for(&gesture_target));
+        widgets::card(ui, &pal)
+            .layout(|l| {
+                l.direction(LeftToRight)
+                    .align(Left, CenterY)
+                    .gap(16)
+                    .padding((15, 17, 15, 17))
+            })
+            .children(|ui| {
+                widgets::icon(ui, &icons::G_TAP, 26.0, pal.muted);
+                ui.element().width(grow!()).height(fit!()).children(|ui| {
+                    let label =
+                        if app.device_view.device.capabilities.gesture_control == Some(0x01a0) {
+                            "Haptic Sense Panel tap"
+                        } else {
+                            "Gesture button tap"
+                        };
+                    ui.text(label, |t| {
+                        t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                    });
+                    let note = if app.draft.gestures.enabled {
+                        "Applies to every profile. Configure swipes in Gestures."
+                    } else {
+                        "Gestures are off. Saved actions remain editable."
+                    };
+                    ui.text(note, |t| {
+                        t.font(&fonts::SANS).font_size(12).color(pal.muted)
+                    });
+                });
+                if widgets::action_chip(ui, &pal, "gesture_chip".into(), &display) {
+                    open_picker = Some(gesture_target);
+                }
+            });
+    }
+
     ui.element().width(grow!()).height(fixed!(16.0)).empty();
     ui.text(
         "Left-click and scroll can't be remapped — Windows needs them. Changes apply the \

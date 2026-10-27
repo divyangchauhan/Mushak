@@ -49,8 +49,13 @@ impl Section {
     fn available(self, device: &crate::hidpp::device::DeviceStatus) -> bool {
         match self {
             Self::Scroll => device.connected && device.capabilities.has_scroll_settings(),
-            Self::Gestures => device.connected && device.capabilities.gestures,
-            Self::Buttons => !device.connected || !device.capabilities.buttons.is_empty(),
+            // Gesture actions are saved software mappings and can be edited offline.
+            Self::Gestures => !device.connected || device.capabilities.gestures,
+            Self::Buttons => {
+                !device.connected
+                    || !device.capabilities.buttons.is_empty()
+                    || device.capabilities.gestures
+            }
             _ => true,
         }
     }
@@ -140,7 +145,7 @@ pub enum PickerTarget {
 impl PickerTarget {
     fn available(&self, device: &crate::hidpp::device::DeviceStatus) -> bool {
         match self {
-            Self::Gesture(_) => device.connected && device.capabilities.gestures,
+            Self::Gesture(_) => Section::Gestures.available(device),
             Self::Button(slot) if device.connected => device
                 .capabilities
                 .buttons
@@ -355,8 +360,8 @@ impl App {
         self.prefs.save();
     }
 
-    /// True while the mouse is reachable. Scroll / Gestures / Device all read
-    /// live device values, so they dim to an "asleep" card without it.
+    /// True while the mouse is reachable. Hardware settings need a live device;
+    /// saved gesture actions can be edited without one.
     pub fn mouse_awake(&self) -> bool {
         self.device_view.device.connected
     }
@@ -711,6 +716,31 @@ mod tests {
     use super::*;
     use crate::hidpp::device::DeviceStatus;
     #[test]
+    fn disconnected_mouse_keeps_saved_gesture_configuration_editable() {
+        for name in [
+            "Wireless Mouse MX Master 2S",
+            "MX Master 3S",
+            "MX Master 4",
+            "Other mouse",
+        ] {
+            let device = DeviceStatus {
+                name: Some(name.into()),
+                ..Default::default()
+            };
+            assert!(
+                Section::Gestures.available(&device),
+                "{name}: gesture settings must remain visible offline"
+            );
+            for slot in ["tap", "up", "down", "left", "right"] {
+                assert!(
+                    PickerTarget::Gesture(slot.into()).available(&device),
+                    "{name}: saved {slot} must be configurable offline"
+                );
+            }
+        }
+    }
+
+    #[test]
     fn settings_follow_capabilities_instead_of_connection_alone() {
         let mut device = DeviceStatus {
             connected: true,
@@ -718,13 +748,15 @@ mod tests {
         };
         assert!(!Section::Scroll.available(&device));
         assert!(!Section::Gestures.available(&device));
+        assert!(!PickerTarget::Gesture("tap".into()).available(&device));
         device.capabilities.hires_scroll = true;
         assert!(Section::Scroll.available(&device));
         assert!(!Section::Gestures.available(&device));
         device.capabilities.gestures = true;
         assert!(Section::Gestures.available(&device));
+        assert!(Section::Buttons.available(&device));
         device.connected = false;
         assert!(!Section::Scroll.available(&device));
-        assert!(!Section::Gestures.available(&device));
+        assert!(Section::Gestures.available(&device));
     }
 }

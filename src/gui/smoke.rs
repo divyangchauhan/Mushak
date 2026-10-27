@@ -259,6 +259,13 @@ async fn check(output: PathBuf) {
         click(&mut ply, &mut app, "mouse_back").await;
         assert!(app.picker == Some(PickerTarget::Button("back".into())));
         app.close_picker();
+        settle(&mut ply, &mut app).await;
+        click(&mut ply, &mut app, "mouse_gesture").await;
+        assert!(
+            app.picker == Some(PickerTarget::Gesture("tap".into())),
+            "{name}: offline gesture marker"
+        );
+        app.close_picker();
     }
 
     // Firmware can expose a new control before it has an artwork marker.
@@ -321,7 +328,94 @@ async fn check(output: PathBuf) {
     settle(&mut ply, &mut app).await;
     snapshot(&output, "10-other-mouse-list");
 
-    std::fs::write(output.join("result.txt"), "PASS: all five MX Master generations and Mac/Business variants; marker and label selection, correct mappings, haptic panel mapping and profile isolation, additional reported controls, anchored layout, close and outside dismissal, persistence, custom shortcuts, search reset, gestures, both themes, disconnected editing, small-window bounds and other-mouse fallback.\n").unwrap();
+    // Generic and narrow lists must expose the same gesture mapping as artwork.
+    for (name, width, connected) in [
+        ("Future HID++ Mouse", DESIGN_W, true),
+        ("MX Master 2S", 720.0, true),
+        ("MX Master 3S", 720.0, true),
+        ("MX Master 4", 720.0, true),
+        ("Other mouse", DESIGN_W, false),
+    ] {
+        app.device_view.device.name = Some(name.into());
+        app.device_view.device.connected = connected;
+        app.device_view.device.capabilities = Default::default();
+        app.device_view.device.capabilities.gestures = connected;
+        app.device_view.device.capabilities.gesture_control = connected.then_some(0x00c3);
+        chrome::make_frameless(width, 850.0);
+        settle(&mut ply, &mut app).await;
+        click(&mut ply, &mut app, "gesture_chip").await;
+        assert!(
+            app.picker == Some(PickerTarget::Gesture("tap".into())),
+            "{name}: list gesture action"
+        );
+        app.close_picker();
+    }
+
+    // All five saved actions remain editable offline with recognition disabled.
+    app.device_view.device = DeviceStatus {
+        name: Some("Wireless Mouse MX Master 2S".into()),
+        ..Default::default()
+    };
+    app.draft.gestures.enabled = false;
+    app.commit_config();
+    chrome::make_frameless(DESIGN_W, 1000.0);
+    app.section = Section::Buttons;
+    settle(&mut ply, &mut app).await;
+    snapshot(&output, "11-offline-gesture-marker");
+    click(&mut ply, &mut app, "mouse_gestures").await;
+    assert_eq!(app.section, Section::Gestures);
+    snapshot(&output, "12-offline-gesture-settings");
+    let back_before = app.draft.profiles[0].buttons.back.clone();
+    for (index, slot) in ["tap", "up", "down", "left", "right"]
+        .into_iter()
+        .enumerate()
+    {
+        click(&mut ply, &mut app, ("g_chip", index as u32)).await;
+        assert!(app.picker == Some(PickerTarget::Gesture(slot.into())));
+        assert_panel_fits(&ply);
+        ply.set_text_value("picker_search", "Copy");
+        settle(&mut ply, &mut app).await;
+        click(&mut ply, &mut app, ("pk", 0)).await;
+        assert!(app.picker.is_none());
+    }
+    let saved = Config::load_strict().unwrap();
+    for action in [
+        &saved.gestures.tap,
+        &saved.gestures.up,
+        &saved.gestures.down,
+        &saved.gestures.left,
+        &saved.gestures.right,
+    ] {
+        assert_eq!(*action, Action::key(&[Modifier::Ctrl], 0x43));
+    }
+    assert!(
+        !saved.gestures.enabled,
+        "Editing does not enable gesture input"
+    );
+    assert_eq!(saved.profiles[0].buttons.back, back_before);
+
+    app.section = Section::Buttons;
+    app.device_view.device.connected = true;
+    app.device_view.device.capabilities = Default::default();
+    app.device_view
+        .device
+        .capabilities
+        .buttons
+        .push(ButtonInfo {
+            cid: 0x0052,
+            slot: "middle".into(),
+            name: "Middle click".into(),
+        });
+    settle(&mut ply, &mut app).await;
+    snapshot(&output, "13-unsupported-gesture-hidden");
+    // Ply retains old bounds for removed elements. Their former positions must
+    // no longer open gesture configuration after an unsupported mouse connects.
+    click(&mut ply, &mut app, "mouse_gesture").await;
+    assert!(app.picker.is_none());
+    click(&mut ply, &mut app, "nav_gestures").await;
+    assert_ne!(app.section, Section::Gestures);
+
+    std::fs::write(output.join("result.txt"), "PASS: all MX Master generations and Mac/Business variants; markers, popovers, both themes, profile isolation, gesture markers offline, gesture actions in generic/narrow lists, all five gesture actions saved while offline and disabled, capability gating for connected mice, scrolling and window bounds.\n").unwrap();
     println!("UI smoke checks passed. Screenshots: {}", output.display());
     std::process::exit(0);
 }

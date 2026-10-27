@@ -24,7 +24,13 @@ the global tap action according to the reported gesture control. This change
 does not add haptic feedback effects or Actions Ring support. Controls without
 an artwork marker remain editable in a list below the diagram.
 
-Disconnected devices retain offline editing of Back, Forward, and Middle.
+Disconnected devices retain offline editing of Back, Forward, Middle, and all
+five saved gesture actions. The gesture marker remains visible on every Master
+diagram while offline, and Configure gestures opens the saved tap and swipe
+mappings. The fallback button list also includes Gesture button tap for every
+connected mouse reporting gesture support, including unnamed future models.
+Tap and swipe mappings and the threshold remain editable while gesture input
+is disabled. Saving these settings does not enable gesture recognition.
 Other mice, unknown future Master generations, and narrow windows retain the
 button list. Live hardware settings always require a connected device.
 
@@ -41,7 +47,8 @@ and does not write the user's settings. Release builds omit this command.
 The smoke check clicks every generation's markers in both themes, including
 Mac and Business names. It checks the panel's saved mapping and profile
 isolation, additional reported controls, presets and custom shortcuts,
-search reset, disconnected editing, narrow windows, and other-mouse fallback.
+search reset, disconnected editing, narrow windows, other-mouse fallback,
+gesture-only devices, and all five gesture actions while offline and disabled.
 Device status comes from fixtures. Physical button behavior, real device
 reconnection, and Windows UI Automation remain separate manual checks.
 

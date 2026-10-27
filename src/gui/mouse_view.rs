@@ -184,9 +184,10 @@ pub fn matches_device(device: &DeviceStatus) -> bool {
 impl Part {
     fn target(&self, device: &DeviceStatus) -> Option<PickerTarget> {
         let haptic_gesture = device.capabilities.gesture_control == Some(0x01a0);
-        let target = if device.capabilities.gestures
-            && ((self.slot == "tap" && !haptic_gesture)
-                || (self.slot == "control_01a0" && haptic_gesture))
+        let target = if (self.slot == "tap" && !device.connected)
+            || device.capabilities.gestures
+                && ((self.slot == "tap" && !haptic_gesture)
+                    || (self.slot == "control_01a0" && haptic_gesture))
         {
             PickerTarget::Gesture("tap".into())
         } else if self.slot == "tap" {
@@ -435,7 +436,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     let note = if app.mouse_awake() {
         "Button mappings use the selected profile. Gesture actions apply to every profile."
     } else {
-        "Mouse disconnected. You can still edit the saved Back, Forward, and Middle mappings."
+        "Mouse disconnected. You can edit saved button mappings and gesture actions."
     };
     ui.text(note, |t| {
         t.font(&fonts::SANS).font_size(12).color(pal.faint)
@@ -470,7 +471,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
             });
     }
 
-    if app.device_view.device.connected && app.device_view.device.capabilities.gestures {
+    if Section::Gestures.available(&app.device_view.device) {
         ui.element().height(fixed!(14.0)).empty();
         let mut gestures = false;
         ui.element()
@@ -585,7 +586,7 @@ mod tests {
                 .filter(|p| p.target(&device).is_some())
                 .map(|p| p.slot)
                 .collect();
-            assert_eq!(slots, ["middle", "back", "forward"]);
+            assert_eq!(slots, ["middle", "back", "forward", "tap"]);
             for part in model.parts() {
                 let (x, y) = part.point_on_stage(model);
                 assert!((12.0..STAGE_WIDTH - 12.0).contains(&x));
