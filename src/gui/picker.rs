@@ -17,6 +17,9 @@ impl PickerTarget {
                 "back" => "Back button",
                 "forward" => "Forward button",
                 "middle" => "Middle click",
+                "control_00c4" => "Wheel mode button",
+                "control_00ed" => "DPI change button",
+                "control_00fd" => "DPI switch button",
                 _ => device
                     .capabilities
                     .buttons

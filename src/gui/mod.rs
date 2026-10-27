@@ -136,7 +136,7 @@ pub struct App {
 /// What the action picker is currently editing.
 #[derive(Clone, PartialEq, Eq)]
 pub enum PickerTarget {
-    /// Slot name: back / forward / middle.
+    /// Slot name: back / forward / middle / control_<four-digit HID++ ID>.
     Button(String),
     /// Slot name: tap / up / down / left / right.
     Gesture(String),
@@ -151,7 +151,13 @@ impl PickerTarget {
                 .buttons
                 .iter()
                 .any(|button| button.slot == *slot),
-            Self::Button(slot) => matches!(slot.as_str(), "back" | "forward" | "middle"),
+            Self::Button(slot) => {
+                matches!(slot.as_str(), "back" | "forward" | "middle")
+                    || slot
+                        .strip_prefix("control_")
+                        .and_then(buttons::control_id)
+                        .is_some()
+            }
         }
     }
 }

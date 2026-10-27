@@ -349,6 +349,68 @@ fn extra_button_diversion_is_temporary_and_restored_on_pause_or_exit() {
 }
 
 #[test]
+fn dpi_and_mode_buttons_restore_native_behavior_for_default_and_profile_switches() {
+    for cid in [0x00c4u16, 0x00ed, 0x00fd] {
+        let mut input = fixture(
+            "Configurable mouse",
+            ConnectionKind::Bluetooth,
+            FEAT_BATTERY_STATUS,
+            false,
+            true,
+        );
+        input.controls = vec![(cid, true)];
+        let (mut mouse, writes) = simulated_mouse(input);
+        mouse.discover().unwrap();
+        assert_eq!(mouse.capabilities.buttons[0].cid, cid);
+        assert!(!mouse.capabilities.gestures);
+        let mut mapped = crate::config::ButtonMap::default();
+        mapped
+            .controls
+            .insert(format!("{cid:04x}"), crate::config::Action::key(&[], 0x41));
+        let native = crate::config::ButtonMap::default();
+        let last_flags = || {
+            let trace = writes.lock().unwrap();
+            trace
+                .iter()
+                .rev()
+                .find(|r| {
+                    r[2] == mouse.features.reprog.unwrap()
+                        && r[3] >> 4 == 3
+                        && r[4..6] == cid.to_be_bytes()
+                })
+                .unwrap()[6]
+        };
+        mouse.apply_control_diverts_with_map(false, true, &mapped);
+        assert_eq!(
+            last_flags(),
+            0x23,
+            "{cid:04x}: temporary button diversion without raw XY"
+        );
+        mouse.apply_control_diverts_with_map(false, true, &native);
+        assert_eq!(
+            last_flags(),
+            0x22,
+            "{cid:04x}: Default or unmapped profile restores native behavior"
+        );
+        mouse.apply_control_diverts_with_map(false, true, &mapped);
+        assert_eq!(last_flags(), 0x23);
+        mouse.apply_control_diverts_with_map(false, false, &mapped);
+        assert_eq!(
+            last_flags(),
+            0x22,
+            "{cid:04x}: pause restores native behavior"
+        );
+        mouse.apply_control_diverts_with_map(false, true, &mapped);
+        mouse.restore_diverts();
+        assert_eq!(
+            last_flags(),
+            0x22,
+            "{cid:04x}: exit restores native behavior"
+        );
+    }
+}
+
+#[test]
 fn invalid_dpi_choices_hide_the_setting_and_prevent_writes() {
     let mut input = fixture(
         "Unavailable DPI Mouse",

@@ -27,6 +27,12 @@ button mappings appear only when the mouse reports the required capability.
 Software movement gestures require a gesture control that supports raw XY.
 An older gesture button without raw XY can still be mapped as a button.
 
+The Buttons page also remaps DPI Change and DPI Switch buttons when the mouse
+reports them as configurable. On MX Master models, use the Wheel mode button
+marker for the top button behind the scroll wheel. These mappings use the selected
+profile. Choose Pass through to restore the button's native action. The Master's
+top-button mapping and saved extra-button mappings remain editable offline.
+
 When a mouse disconnects, Mushak remembers its name across app restarts and shows
 it as disconnected. Before the first mouse connects, it shows "No device".
 Built-in touchpads and receivers without a responding mouse do not count as

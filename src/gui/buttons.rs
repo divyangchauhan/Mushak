@@ -1,15 +1,73 @@
-//! Buttons section: per-profile remapping of back / forward / middle.
+//! Buttons section: per-profile remapping of standard and HID++ buttons.
 
 use super::widgets::{self, Ui2};
 use super::{actions, fonts, icons, App, PickerTarget};
+use crate::config::Config;
+use crate::hidpp::{
+    device::DeviceStatus,
+    features::reprog::{control_name, ButtonInfo},
+};
 use ply_engine::prelude::*;
 
 /// The three physical buttons, as the design names them.
-const ROWS: [(&str, &str, &str); 3] = [
-    ("back", "Back button", "Side button"),
-    ("forward", "Forward button", "Side button"),
-    ("middle", "Middle click", "Press the scroll wheel"),
+const ROWS: [(&str, &str); 3] = [
+    ("back", "Back button"),
+    ("forward", "Forward button"),
+    ("middle", "Middle click"),
 ];
+
+/// Offline rows edit saved actions only. Connected rows always use the mouse's
+/// reported controls, so saved mappings cannot invent hardware support.
+pub(super) fn editable_buttons(device: &DeviceStatus, saved: &Config) -> Vec<ButtonInfo> {
+    if device.connected {
+        return device.capabilities.buttons.clone();
+    }
+    let mut buttons: Vec<_> = ROWS
+        .iter()
+        .map(|(slot, name)| ButtonInfo {
+            cid: match *slot {
+                "middle" => 0x0052,
+                "back" => 0x0053,
+                _ => 0x0056,
+            },
+            slot: (*slot).into(),
+            name: (*name).into(),
+        })
+        .collect();
+    // Every known Master body has the top wheel-mode button. Keep its saved
+    // mapping available even before the first assignment.
+    let mut controls = std::collections::BTreeSet::new();
+    if super::mouse_view::matches_device(device) {
+        controls.insert(0x00c4);
+    }
+    // A saved control remains available when switching to a profile where it
+    // has no assignment yet.
+    for profile in std::iter::once(&saved.default_profile).chain(saved.profiles.iter()) {
+        controls.extend(
+            profile
+                .buttons
+                .controls
+                .keys()
+                .filter_map(|key| control_id(key)),
+        );
+    }
+    buttons.extend(controls.into_iter().map(|cid| ButtonInfo {
+        cid,
+        slot: format!("control_{cid:04x}"),
+        name: control_name(cid),
+    }));
+    buttons
+}
+
+pub(super) fn control_id(key: &str) -> Option<u16> {
+    (key.len() == 4
+        && key
+            .bytes()
+            .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c)))
+    .then(|| u16::from_str_radix(key, 16).ok())
+    .flatten()
+    .filter(|cid| !matches!(cid, 0 | 0x0050..=0x0056))
+}
 
 fn row_icon(slot: &str) -> &'static GraphicAsset {
     match slot {
@@ -116,27 +174,23 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         return;
     }
 
-    // The three rows.
+    // Standard buttons and any extra controls reported by the mouse.
     let idx = app.selected_profile;
-    let rows: Vec<(String, String, String)> = if app.device_view.device.connected {
-        app.device_view
-            .device
-            .capabilities
-            .buttons
-            .iter()
-            .map(|button| {
-                (
-                    button.slot.clone(),
-                    button.name.clone(),
-                    "Choose an action for this button.".to_owned(),
-                )
-            })
-            .collect()
-    } else {
-        ROWS.iter()
-            .map(|(slot, name, desc)| (slot.to_string(), name.to_string(), desc.to_string()))
-            .collect()
-    };
+    let rows: Vec<(String, String, String)> = editable_buttons(&app.device_view.device, &app.draft)
+        .into_iter()
+        .map(|button| {
+            (
+                button.slot.clone(),
+                button.name.clone(),
+                if button.slot.starts_with("control_") {
+                    "Pass through keeps its normal action."
+                } else {
+                    "Choose an action for this button."
+                }
+                .to_owned(),
+            )
+        })
+        .collect();
     let bindings: Vec<(String, String, String, actions::Display)> = rows
         .iter()
         .map(|(slot, name, desc)| {
@@ -320,4 +374,55 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
                     });
             }
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Action;
+
+    #[test]
+    fn offline_controls_include_master_top_button_and_saved_dpi_mappings() {
+        let device = DeviceStatus {
+            name: Some("MX Master 2S".into()),
+            ..Default::default()
+        };
+        let mut saved = Config::default();
+        for key in ["00c4", "00ed", "00fd", "0050", "not-a-control"] {
+            saved
+                .default_profile
+                .buttons
+                .controls
+                .insert(key.into(), Action::Disabled);
+        }
+        saved.profiles.push(crate::config::Profile {
+            name: "Mapped app".into(),
+            match_processes: vec!["mapped.exe".into()],
+            buttons: std::mem::take(&mut saved.default_profile.buttons),
+        });
+        let buttons = editable_buttons(&device, &saved);
+        let slots: Vec<_> = buttons.iter().map(|b| b.slot.as_str()).collect();
+        assert_eq!(
+            slots,
+            [
+                "back",
+                "forward",
+                "middle",
+                "control_00c4",
+                "control_00ed",
+                "control_00fd"
+            ]
+        );
+        assert_eq!(buttons[4].name, "DPI change button");
+        assert_eq!(buttons[5].name, "DPI switch button");
+        let mut connected = device.clone();
+        connected.connected = true;
+        assert!(
+            editable_buttons(&connected, &saved).is_empty(),
+            "Saved mappings cannot create connected capabilities"
+        );
+        connected.capabilities.buttons.push(buttons[4].clone());
+        assert_eq!(editable_buttons(&connected, &saved).len(), 1);
+        assert_eq!(editable_buttons(&connected, &saved)[0].cid, 0x00ed);
+    }
 }

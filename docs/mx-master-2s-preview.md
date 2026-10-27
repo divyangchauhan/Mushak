@@ -24,8 +24,16 @@ the global tap action according to the reported gesture control. This change
 does not add haptic feedback effects or Actions Ring support. Controls without
 an artwork marker remain editable in a list below the diagram.
 
-Disconnected devices retain offline editing of Back, Forward, Middle, and all
-five saved gesture actions. The gesture marker remains visible on every Master
+The top button behind the scroll wheel is labeled Wheel mode button on Master
+diagrams. It uses the per-profile action picker, including while disconnected.
+Dedicated DPI Change and DPI Switch controls use named rows in the generic list
+or below the diagram when the connected mouse reports them as configurable.
+Choose Pass through to restore the native wheel-mode or DPI action. Pausing
+Mushak or quitting also restores native behavior.
+
+Disconnected devices retain offline editing of saved extra-button mappings,
+Back, Forward, Middle, and all five saved gesture actions. The gesture marker
+remains visible on every Master
 diagram while offline, and Configure gestures opens the saved tap and swipe
 mappings. The fallback button list also includes Gesture button tap for every
 connected mouse reporting gesture support, including unnamed future models.
@@ -48,7 +56,9 @@ The smoke check clicks every generation's markers in both themes, including
 Mac and Business names. It checks the panel's saved mapping and profile
 isolation, additional reported controls, presets and custom shortcuts,
 search reset, disconnected editing, narrow windows, other-mouse fallback,
-gesture-only devices, and all five gesture actions while offline and disabled.
+gesture-only devices, all five gesture actions while offline and disabled,
+DPI Change and DPI Switch mappings, the offline top button, saved extra controls,
+and restoring Pass through without changing another profile.
 Device status comes from fixtures. Physical button behavior, real device
 reconnection, and Windows UI Automation remain separate manual checks.
 

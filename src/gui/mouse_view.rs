@@ -183,6 +183,9 @@ pub fn matches_device(device: &DeviceStatus) -> bool {
 
 impl Part {
     fn target(&self, device: &DeviceStatus) -> Option<PickerTarget> {
+        if !device.connected && self.slot.starts_with("control_") && self.slot != "control_00c4" {
+            return None;
+        }
         let haptic_gesture = device.capabilities.gesture_control == Some(0x01a0);
         let target = if (self.slot == "tap" && !device.connected)
             || device.capabilities.gestures
@@ -217,17 +220,13 @@ impl Part {
     }
 }
 
-fn extra_buttons<'a>(
+fn extra_buttons(
     model: Model,
-    device: &'a DeviceStatus,
-) -> Vec<&'a crate::hidpp::features::reprog::ButtonInfo> {
-    if !device.connected {
-        return Vec::new();
-    }
-    device
-        .capabilities
-        .buttons
-        .iter()
+    device: &DeviceStatus,
+    saved: &crate::config::Config,
+) -> Vec<crate::hidpp::features::reprog::ButtonInfo> {
+    super::buttons::editable_buttons(device, saved)
+        .into_iter()
         .filter(|button| {
             !model
                 .parts()
@@ -443,7 +442,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     });
 
     // Keep newly discovered controls editable even without an artwork marker.
-    let extras: Vec<_> = extra_buttons(model, &app.device_view.device)
+    let extras: Vec<_> = extra_buttons(model, &app.device_view.device, &app.draft)
         .into_iter()
         .map(|button| (button.slot.clone(), button.name.clone()))
         .collect();
@@ -586,7 +585,7 @@ mod tests {
                 .filter(|p| p.target(&device).is_some())
                 .map(|p| p.slot)
                 .collect();
-            assert_eq!(slots, ["middle", "back", "forward", "tap"]);
+            assert_eq!(slots, ["middle", "back", "forward", "tap", "control_00c4"]);
             for part in model.parts() {
                 let (x, y) = part.point_on_stage(model);
                 assert!((12.0..STAGE_WIDTH - 12.0).contains(&x));
@@ -639,7 +638,7 @@ mod tests {
             Model::Master3S,
             Model::Master4,
         ] {
-            let extras = extra_buttons(model, &device);
+            let extras = extra_buttons(model, &device, &crate::config::Config::default());
             assert_eq!(
                 extras.iter().filter(|b| b.slot == "control_01ff").count(),
                 1
@@ -647,6 +646,8 @@ mod tests {
             assert_eq!(extras.len(), if model == Model::Master4 { 1 } else { 2 });
         }
         device.connected = false;
-        assert!(extra_buttons(Model::Master4, &device).is_empty());
+        assert!(
+            extra_buttons(Model::Master4, &device, &crate::config::Config::default()).is_empty()
+        );
     }
 }

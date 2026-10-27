@@ -252,7 +252,7 @@ async fn check(output: PathBuf) {
                 assert!(!saved.default_profile.buttons.controls.contains_key("01a0"));
             }
         }
-        // Disconnecting removes live-only controls for every model.
+        // Saved software mappings remain editable when a mouse disconnects.
         app.device_view.device.connected = false;
         app.device_view.device.capabilities = Default::default();
         settle(&mut ply, &mut app).await;
@@ -265,6 +265,14 @@ async fn check(output: PathBuf) {
             app.picker == Some(PickerTarget::Gesture("tap".into())),
             "{name}: offline gesture marker"
         );
+        app.close_picker();
+        settle(&mut ply, &mut app).await;
+        click(&mut ply, &mut app, "mouse_mode").await;
+        assert!(
+            app.picker == Some(PickerTarget::Button("control_00c4".into())),
+            "{name}: offline top button mapping"
+        );
+        assert_panel_fits(&ply);
         app.close_picker();
     }
 
@@ -394,6 +402,130 @@ async fn check(output: PathBuf) {
     );
     assert_eq!(saved.profiles[0].buttons.back, back_before);
 
+    // DPI Change, DPI Switch and Master wheel-mode controls share the normal
+    // profile picker, including on generic mice and narrow Master layouts.
+    app.section = Section::Buttons;
+    for (name, width, cid) in [
+        ("MX Vertical", DESIGN_W, 0x00edu16),
+        ("Future HID++ Mouse", DESIGN_W, 0x00fd),
+        ("MX Master 2S", 720.0, 0x00c4),
+        ("MX Master 3S", 720.0, 0x00c4),
+        ("MX Master 4", 720.0, 0x00c4),
+    ] {
+        app.device_view.device = DeviceStatus {
+            name: Some(name.into()),
+            connected: true,
+            ..Default::default()
+        };
+        let slot = format!("control_{cid:04x}");
+        app.device_view
+            .device
+            .capabilities
+            .buttons
+            .push(ButtonInfo {
+                cid,
+                slot: slot.clone(),
+                name: crate::hidpp::features::reprog::control_name(cid),
+            });
+        chrome::make_frameless(width, 1000.0);
+        app.selected_profile = 1;
+        settle(&mut ply, &mut app).await;
+        click(&mut ply, &mut app, ("btn_chip", buttons::slot_index(&slot))).await;
+        assert!(app.picker == Some(PickerTarget::Button(slot.clone())));
+        assert_panel_fits(&ply);
+        ply.set_text_value("picker_search", "Copy");
+        settle(&mut ply, &mut app).await;
+        click(&mut ply, &mut app, ("pk", 0)).await;
+        let saved = Config::load_strict().unwrap();
+        assert_eq!(
+            saved.profiles[0].buttons.control_action(cid),
+            Action::key(&[Modifier::Ctrl], 0x43)
+        );
+        assert_eq!(
+            saved.default_profile.buttons.control_action(cid),
+            Action::PassThrough
+        );
+        assert!(!saved.gestures.enabled);
+
+        app.device_view.device.connected = false;
+        app.device_view.device.capabilities = Default::default();
+        // A control saved in an application profile can also be configured in
+        // the previously unmapped default profile while offline.
+        app.selected_profile = 0;
+        settle(&mut ply, &mut app).await;
+        click(&mut ply, &mut app, ("btn_chip", buttons::slot_index(&slot))).await;
+        assert!(app.picker == Some(PickerTarget::Button(slot.clone())));
+        assert_eq!(
+            app.action_for(app.picker.as_ref().unwrap()),
+            Action::PassThrough
+        );
+        app.close_picker();
+        app.selected_profile = 1;
+        settle(&mut ply, &mut app).await;
+        click(&mut ply, &mut app, ("btn_chip", buttons::slot_index(&slot))).await;
+        assert!(app.picker == Some(PickerTarget::Button(slot.clone())));
+        snapshot(&output, &format!("dpi-{cid:04x}-offline-popover"));
+        ply.set_text_value("picker_search", "Disabled");
+        settle(&mut ply, &mut app).await;
+        click(&mut ply, &mut app, ("pk", 0)).await;
+        assert_eq!(
+            Config::load_strict().unwrap().profiles[0]
+                .buttons
+                .control_action(cid),
+            Action::Disabled
+        );
+        click(&mut ply, &mut app, ("btn_chip", buttons::slot_index(&slot))).await;
+        ply.set_text_value("picker_search", "Pass through");
+        settle(&mut ply, &mut app).await;
+        click(&mut ply, &mut app, ("pk", 0)).await;
+        let saved = Config::load_strict().unwrap();
+        assert_eq!(
+            saved.profiles[0].buttons.control_action(cid),
+            Action::PassThrough
+        );
+        assert!(!saved.profiles[0]
+            .buttons
+            .controls
+            .contains_key(&format!("{cid:04x}")));
+    }
+
+    // A dedicated DPI button without a marker stays configurable below artwork.
+    chrome::make_frameless(DESIGN_W, 1000.0);
+    app.device_view.device = DeviceStatus {
+        name: Some("MX Master 2S".into()),
+        connected: true,
+        ..Default::default()
+    };
+    app.device_view
+        .device
+        .capabilities
+        .buttons
+        .push(ButtonInfo {
+            cid: 0x00ed,
+            slot: "control_00ed".into(),
+            name: "DPI change button".into(),
+        });
+    settle(&mut ply, &mut app).await;
+    click(&mut ply, &mut app, ("mouse_extra", 0x00ed + 3)).await;
+    assert!(app.picker == Some(PickerTarget::Button("control_00ed".into())));
+    app.close_picker();
+
+    app.device_view.device.connected = false;
+    app.device_view.device.capabilities = Default::default();
+    settle(&mut ply, &mut app).await;
+    click(&mut ply, &mut app, "mouse_mode").await;
+    assert!(app.picker == Some(PickerTarget::Button("control_00c4".into())));
+    ply.set_text_value("picker_search", "Copy");
+    settle(&mut ply, &mut app).await;
+    click(&mut ply, &mut app, ("pk", 0)).await;
+    snapshot(&output, "14-offline-top-button");
+    assert_eq!(
+        Config::load_strict().unwrap().profiles[0]
+            .buttons
+            .control_action(0x00c4),
+        Action::key(&[Modifier::Ctrl], 0x43)
+    );
+
     app.section = Section::Buttons;
     app.device_view.device.connected = true;
     app.device_view.device.capabilities = Default::default();
@@ -412,10 +544,15 @@ async fn check(output: PathBuf) {
     // no longer open gesture configuration after an unsupported mouse connects.
     click(&mut ply, &mut app, "mouse_gesture").await;
     assert!(app.picker.is_none());
+    click(&mut ply, &mut app, "mouse_mode").await;
+    assert!(
+        app.picker.is_none(),
+        "Saved top-button mapping cannot override connected capability gating"
+    );
     click(&mut ply, &mut app, "nav_gestures").await;
     assert_ne!(app.section, Section::Gestures);
 
-    std::fs::write(output.join("result.txt"), "PASS: all MX Master generations and Mac/Business variants; markers, popovers, both themes, profile isolation, gesture markers offline, gesture actions in generic/narrow lists, all five gesture actions saved while offline and disabled, capability gating for connected mice, scrolling and window bounds.\n").unwrap();
+    std::fs::write(output.join("result.txt"), "PASS: all MX Master generations and Mac/Business variants; markers, popovers, both themes, profile isolation, gesture markers offline, gesture actions in generic/narrow lists, all five gesture actions saved while offline and disabled, DPI Change/Switch and wheel-mode remapping, offline saved controls, pass-through reset, capability gating for connected mice, scrolling and window bounds.\n").unwrap();
     println!("UI smoke checks passed. Screenshots: {}", output.display());
     std::process::exit(0);
 }

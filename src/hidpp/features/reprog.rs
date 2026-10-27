@@ -41,6 +41,19 @@ pub struct ButtonInfo {
     pub name: String,
 }
 
+/// Physical control names from Logitech's HID++ control IDs.
+/// https://github.com/pwr-Solaar/Solaar/blob/master/lib/logitech_receiver/special_keys.py
+pub(crate) fn control_name(cid: u16) -> String {
+    match cid {
+        0x00C3 | 0x00D0 => "Gesture button".to_owned(),
+        0x00C4 => "Wheel mode button".to_owned(),
+        0x00ED => "DPI change button".to_owned(),
+        0x00FD => "DPI switch button".to_owned(),
+        0x01A0 => "Haptic panel".to_owned(),
+        _ => format!("Button {cid:#06x}"),
+    }
+}
+
 pub(crate) fn gesture_control(controls: &[ControlInfo]) -> Option<u16> {
     // A DPI button's raw XY adjusts sensitivity. Do not make it a gesture pad.
     controls
@@ -62,13 +75,7 @@ pub(crate) fn button_choices(controls: &[ControlInfo], gesture: Option<u16>) -> 
                 0x0053 | 0x0054 => ("back".to_owned(), "Back button".to_owned()),
                 0x0055 | 0x0056 => ("forward".to_owned(), "Forward button".to_owned()),
                 _ if c.divertable() && !matches!(c.cid, 0x0050 | 0x0051) => {
-                    let name = match c.cid {
-                        0x00C3 | 0x00D0 => "Gesture button".to_owned(),
-                        0x00C4 => "Wheel mode button".to_owned(),
-                        0x00ED => "DPI button".to_owned(),
-                        0x01A0 => "Haptic panel".to_owned(),
-                        _ => format!("Button {:#06x}", c.cid),
-                    };
+                    let name = control_name(c.cid);
                     (format!("control_{:04x}", c.cid), name)
                 }
                 _ => return None,
@@ -275,7 +282,7 @@ mod tests {
         let choices = button_choices(&controls, None);
         assert_eq!(choices.len(), 4);
         assert_eq!(choices[3].slot, "control_00ed");
-        assert_eq!(choices[3].name, "DPI button");
+        assert_eq!(choices[3].name, "DPI change button");
     }
     #[test]
     fn raw_xy_capabilities_choose_gestures_and_leave_extra_buttons_remappable() {
@@ -289,5 +296,19 @@ mod tests {
         assert_eq!(choices.len(), 2);
         let haptic = [control(0x01A0, true)];
         assert_eq!(gesture_control(&haptic), Some(0x01A0));
+    }
+
+    #[test]
+    fn dpi_controls_are_named_and_require_physical_diversion_support() {
+        let mut unsupported = control(0x00ED, true);
+        unsupported.flags = 0;
+        let mut virtual_button = control(0x00FD, true);
+        virtual_button.flags |= KEY_VIRTUAL;
+        assert!(button_choices(&[unsupported, virtual_button], None).is_empty());
+        let controls = [control(0x00ED, true), control(0x00FD, true)];
+        assert_eq!(gesture_control(&controls), None);
+        let buttons = button_choices(&controls, None);
+        assert_eq!(buttons[0].name, "DPI change button");
+        assert_eq!(buttons[1].name, "DPI switch button");
     }
 }
