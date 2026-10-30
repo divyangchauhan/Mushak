@@ -53,6 +53,21 @@ impl DeviceCapabilities {
     }
 }
 
+/// Saved mappings can outlive the mouse for which they were created.
+pub(crate) fn action_supported(
+    action: &crate::config::Action,
+    caps: &DeviceCapabilities,
+    dpi: &[u16],
+) -> bool {
+    match action {
+        crate::config::Action::ShiftWheelMode => caps.smartshift,
+        crate::config::Action::ChangePointerSpeed { first, second } => {
+            caps.dpi && first != second && dpi.contains(first) && dpi.contains(second)
+        }
+        _ => true,
+    }
+}
+
 /// Snapshot of device state published to the GUI/tray (via `state`) and to the
 /// settings subprocess (via the status file).
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
@@ -120,6 +135,8 @@ pub enum DeviceCommand {
     ApplyWheelMode,
     /// Re-assert every control's divert state per `config.gestures`.
     ApplyControlDiverts,
+    /// Execute a hardware action on this worker.
+    PerformAction(crate::config::Action),
     /// Stop the thread.
     Shutdown,
 }
@@ -146,6 +163,10 @@ fn run(rx: Receiver<DeviceCommand>, mut history: super::history::DeviceHistory) 
     while !SHUTDOWN.load(Ordering::Relaxed) {
         match Device::connect() {
             Ok(dev) => {
+                // Never replay button presses from the previous connection.
+                while let Ok(cmd) = rx.try_recv() {
+                    if matches!(cmd, DeviceCommand::Shutdown) { return; }
+                }
                 history.observe((*state::device_status()).clone());
                 dev.apply_device_config();
                 dev.apply_diverts();
@@ -192,6 +213,8 @@ pub struct Device {
     pub(crate) dpi_values: Vec<u16>,
     pub(crate) dpi_sensor: Option<u8>,
     pub(crate) held_controls: std::sync::Mutex<Vec<u16>>,
+    runtime_dpi: std::cell::Cell<Option<u16>>,
+    runtime_wheel: std::cell::Cell<Option<crate::config::SmartShiftMode>>,
     ready: bool,
     needs_reapply: AtomicBool,
 }
@@ -207,6 +230,8 @@ impl Device {
             dpi_values: Vec::new(),
             dpi_sensor: None,
             held_controls: std::sync::Mutex::new(Vec::new()),
+            runtime_dpi: Default::default(),
+            runtime_wheel: Default::default(),
             ready: false,
             needs_reapply: AtomicBool::new(false),
         }
@@ -498,7 +523,18 @@ impl Device {
             while let Ok(cmd) = rx.try_recv() {
                 match cmd {
                     DeviceCommand::Shutdown => return,
-                    DeviceCommand::ApplyDeviceConfig => self.apply_device_config(),
+                    DeviceCommand::ApplyDeviceConfig => {
+                        self.runtime_dpi.set(None);
+                        self.runtime_wheel.set(None);
+                        self.apply_device_config();
+                    }
+                    DeviceCommand::PerformAction(action) => {
+                        if !state::is_paused() {
+                            if let Err(e) = self.perform_action(&action) {
+                                tracing::warn!("device action failed: {e:#}");
+                            }
+                        }
+                    }
                     DeviceCommand::ApplyWheelMode => self.apply_wheel_mode(),
                     DeviceCommand::ApplyControlDiverts => self.apply_diverts(),
                 }
@@ -529,19 +565,51 @@ impl Device {
 
     // ---- Orchestration hooks --------------------------------------------------
 
+    /// Actions are temporary and never rewrite the user's saved device defaults.
+    pub(crate) fn perform_action(&self, action: &crate::config::Action) -> Result<()> {
+        use crate::config::{Action, SmartShiftMode};
+        match action {
+            Action::ShiftWheelMode if self.capabilities.smartshift => {
+                let mode = if self.get_smartshift()?.0 == 1 {
+                    SmartShiftMode::AlwaysRatchet
+                } else {
+                    SmartShiftMode::AlwaysFreespin
+                };
+                self.apply_smartshift(mode, 1)?;
+                self.runtime_wheel.set(Some(mode));
+            }
+            Action::ChangePointerSpeed { first, second } if self.capabilities.dpi => {
+                let next = super::features::dpi::toggle_target(
+                    &self.dpi_values,
+                    self.get_dpi()?.0,
+                    *first,
+                    *second,
+                )?;
+                self.apply_dpi(next)?;
+                self.runtime_dpi.set(Some(next));
+            }
+            _ => bail!("action is unavailable on this mouse"),
+        }
+        self.read_device_settings();
+        Ok(())
+    }
+
     /// Apply `config.device` (SmartShift, DPI, hi-res) and refresh the published
     /// settings snapshot.
     pub(crate) fn apply_device_config(&self) {
         let cfg = state::config();
         let d = &cfg.device;
         if self.capabilities.smartshift {
-            if let Err(e) = self.apply_smartshift(d.smartshift, d.smartshift_threshold) {
+            if let Err(e) = self.apply_smartshift(
+                self.runtime_wheel.get().unwrap_or(d.smartshift),
+                d.smartshift_threshold,
+            ) {
                 tracing::warn!("apply smartshift failed: {e:#}");
             }
         }
         self.apply_wheel_mode();
         if self.capabilities.dpi {
-            if let Err(e) = self.apply_dpi(d.dpi) {
+            if let Err(e) = self.apply_dpi(self.runtime_dpi.get().unwrap_or(d.dpi)) {
                 tracing::warn!("apply dpi failed: {e:#}");
             }
         }

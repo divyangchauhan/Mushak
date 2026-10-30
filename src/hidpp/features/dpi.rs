@@ -173,3 +173,26 @@ mod tests {
         assert!(decode_dpi_list(&[800, 0xE064, 400]).is_err());
     }
 }
+
+/// Reject stale mappings on another mouse instead of silently changing their speeds.
+pub(crate) fn toggle_target(list: &[u16], current: u16, first: u16, second: u16) -> Result<u16> {
+    if first == second || !list.contains(&first) || !list.contains(&second) {
+        bail!("choose two different supported DPI values");
+    }
+    Ok(if current == first { second } else { first })
+}
+
+#[cfg(test)]
+mod toggle_tests {
+    use super::*;
+    #[test]
+    fn toggles_from_live_dpi_and_rejects_stale_or_identical_choices() {
+        let values = [400, 800, 1600];
+        assert_eq!(toggle_target(&values, 800, 800, 1600).unwrap(), 1600);
+        assert_eq!(toggle_target(&values, 1600, 800, 1600).unwrap(), 800);
+        assert_eq!(toggle_target(&values, 400, 800, 1600).unwrap(), 800);
+        assert!(toggle_target(&values, 800, 800, 800).is_err());
+        assert!(toggle_target(&values, 800, 800, 1500).is_err());
+        assert!(toggle_target(&[], 800, 800, 1600).is_err());
+    }
+}

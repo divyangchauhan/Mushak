@@ -99,6 +99,7 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                         app.picker_fresh = false;
                     }
                     let query = app.picker_query.to_lowercase();
+                    device_actions(ui, app, &query, &mut chosen);
                     results(ui, app, &query, &current, &mut chosen);
                     custom_footer(ui, app, &mut chosen);
                 });
@@ -255,6 +256,112 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
     }
 }
 
+fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<Action>) {
+    let d = &app.device_view.device;
+    if !d.connected {
+        return;
+    }
+    let wheel = d.capabilities.smartshift
+        && (query.is_empty() || "shift wheel mode ratchet free spin".contains(query));
+    let dpi = d.capabilities.dpi
+        && d.dpi_list.len() > 1
+        && (query.is_empty() || "change pointer speed dpi".contains(query));
+    if !wheel && !dpi {
+        return;
+    }
+    let pal = app.pal;
+    let choices = d.dpi_list.clone();
+    ui.element()
+        .width(grow!())
+        .height(fit!())
+        .layout(|l| l.direction(TopToBottom).gap(6).padding((8, 16, 8, 16)))
+        .children(|ui| {
+            if wheel {
+                ui.element()
+                    .id("picker_wheel_action")
+                    .width(grow!())
+                    .height(fixed!(30.0))
+                    .background_color(pal.s2)
+                    .corner_radius(6.0)
+                    .accessibility(|a| a.button("Shift wheel mode"))
+                    .layout(|l| l.align(Left, CenterY).padding((0, 8, 0, 8)))
+                    .children(|ui| {
+                        ui.text("Shift wheel mode", |t| {
+                            t.font(&fonts::SANS).font_size(13).color(pal.text)
+                        });
+                        if ui.just_pressed() {
+                            *chosen = Some(Action::ShiftWheelMode);
+                        }
+                    });
+            }
+            if dpi {
+                for (i, id) in ["picker_dpi_first", "picker_dpi_second"].iter().enumerate() {
+                    let selected = choices
+                        .iter()
+                        .enumerate()
+                        .min_by_key(|(_, v)| {
+                            (i32::from(**v) - i32::from(app.picker_dpi[i])).unsigned_abs()
+                        })
+                        .map(|(i, _)| i)
+                        .unwrap_or(0);
+                    app.picker_dpi[i] = choices[selected];
+                    ui.element()
+                        .width(grow!())
+                        .height(fixed!(25.0))
+                        .layout(|l| l.direction(LeftToRight).gap(10).align(Left, CenterY))
+                        .children(|ui| {
+                            ui.text(
+                                &format!("Speed {}: {} DPI", i + 1, app.picker_dpi[i]),
+                                |t| t.font(&fonts::SANS).font_size(12).color(pal.text),
+                            );
+                            if let Some(v) = widgets::slider(
+                                ui,
+                                &pal,
+                                *id,
+                                selected as i64,
+                                0,
+                                (choices.len() - 1) as i64,
+                                1,
+                            ) {
+                                app.picker_dpi[i] = choices[v as usize];
+                            }
+                        });
+                }
+                let distinct = app.picker_dpi[0] != app.picker_dpi[1];
+                ui.element()
+                    .id("picker_dpi_action")
+                    .width(grow!())
+                    .height(fixed!(30.0))
+                    .background_color(pal.s2)
+                    .corner_radius(6.0)
+                    .accessibility(|a| a.button("Change pointer speed"))
+                    .layout(|l| l.align(Left, CenterY).padding((0, 8, 0, 8)))
+                    .children(|ui| {
+                        ui.text(
+                            if distinct {
+                                "Change pointer speed"
+                            } else {
+                                "Choose two different speeds"
+                            },
+                            |t| {
+                                t.font(&fonts::SANS).font_size(13).color(if distinct {
+                                    pal.text
+                                } else {
+                                    pal.muted
+                                })
+                            },
+                        );
+                        if distinct && ui.just_pressed() {
+                            *chosen = Some(Action::ChangePointerSpeed {
+                                first: app.picker_dpi[0],
+                                second: app.picker_dpi[1],
+                            });
+                        }
+                    });
+            }
+        });
+}
+
 fn results(ui: &mut Ui2, app: &App, query: &str, current: &Action, chosen: &mut Option<Action>) {
     let pal = app.pal;
     let presets = actions::presets();
@@ -262,11 +369,11 @@ fn results(ui: &mut Ui2, app: &App, query: &str, current: &Action, chosen: &mut 
     // "Quick" group: pass-through and disabled.
     let quick: Vec<(&str, &str, Action, &'static GraphicAsset, &str)> = vec![
         (
-            "Pass through",
+            "Native action",
             "Keep the button's normal behavior",
             Action::PassThrough,
             &icons::PASSTHROUGH,
-            "pass through leave normal default",
+            "native pass through leave normal default",
         ),
         (
             "Disabled",

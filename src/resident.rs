@@ -106,8 +106,11 @@ pub fn run() {
                         Ok(new_cfg) => {
                             config_mtime = m;
                             tray.set_startup(new_cfg.start_with_windows);
+                            let device_changed = state::config().device != new_cfg.device;
                             state::set_config(new_cfg);
-                            state::device_command(DeviceCommand::ApplyDeviceConfig);
+                            if device_changed {
+                                state::device_command(DeviceCommand::ApplyDeviceConfig);
+                            }
                             state::device_command(DeviceCommand::ApplyControlDiverts);
                             tracing::info!("reloaded config after external edit");
                         }

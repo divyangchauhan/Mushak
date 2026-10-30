@@ -138,8 +138,17 @@ pub fn set_inject_tx(tx: Sender<Action>) {
     let _ = INJECT_TX.set(tx);
 }
 
-/// Queue an action for the injector thread. Never blocks the hook callback.
+/// Queue an action for the keyboard injector or device worker without blocking.
 pub fn inject(action: Action) {
+    if matches!(
+        action,
+        Action::ShiftWheelMode | Action::ChangePointerSpeed { .. }
+    ) {
+        if device_status().connected && !is_paused() {
+            device_command(DeviceCommand::PerformAction(action));
+        }
+        return;
+    }
     if let Some(tx) = INJECT_TX.get() {
         if tx.try_send(action).is_err() {
             tracing::warn!("injector queue full/closed; dropped action");

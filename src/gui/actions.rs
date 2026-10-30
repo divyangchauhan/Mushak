@@ -131,9 +131,19 @@ pub fn key_name(code: u16) -> String {
 pub fn display(action: &Action) -> Display {
     match action {
         Action::PassThrough => Display {
-            label: "Pass through".into(),
+            label: "Native action".into(),
             keys: vec![],
             kind: Kind::PassThrough,
+        },
+        Action::ShiftWheelMode => Display {
+            label: "Shift wheel mode".into(),
+            keys: vec![],
+            kind: Kind::Preset,
+        },
+        Action::ChangePointerSpeed { first, second } => Display {
+            label: format!("Pointer speed: {first} / {second} DPI"),
+            keys: vec![],
+            kind: Kind::Preset,
         },
         Action::Disabled => Display {
             label: "Disabled".into(),

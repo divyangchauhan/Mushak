@@ -56,17 +56,17 @@ fn run() {
             }
         };
 
-        let mouse_hook = match SetWindowsHookExW(WH_MOUSE_LL, Some(low_level_mouse_proc), hinstance, 0)
-        {
-            Ok(h) => {
-                tracing::info!("installed WH_MOUSE_LL hook");
-                Some(h)
-            }
-            Err(e) => {
-                tracing::error!("SetWindowsHookExW failed: {e}");
-                None
-            }
-        };
+        let mouse_hook =
+            match SetWindowsHookExW(WH_MOUSE_LL, Some(low_level_mouse_proc), hinstance, 0) {
+                Ok(h) => {
+                    tracing::info!("installed WH_MOUSE_LL hook");
+                    Some(h)
+                }
+                Err(e) => {
+                    tracing::error!("SetWindowsHookExW failed: {e}");
+                    None
+                }
+            };
 
         // Out-of-context WinEvent hook for foreground changes. hmod must be null
         // for out-of-context hooks.
@@ -153,6 +153,19 @@ unsafe extern "system" fn low_level_mouse_proc(
                     Action::PassThrough => {}
                     Action::Disabled => return LRESULT(1),
                     action => {
+                        let device = state::device_status();
+                        if !crate::hidpp::device::action_supported(
+                            action,
+                            &device.capabilities,
+                            &device.dpi_list,
+                        ) {
+                            return CallNextHookEx(
+                                HHOOK(std::ptr::null_mut()),
+                                code,
+                                wparam,
+                                lparam,
+                            );
+                        }
                         if is_down {
                             state::inject(action.clone());
                         }

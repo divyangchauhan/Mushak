@@ -456,3 +456,91 @@ fn extended_dpi_reads_every_page_of_discrete_choices() {
     );
     assert!(mouse.capabilities.dpi);
 }
+
+#[test]
+fn device_actions_write_validated_dpi_and_preserve_wheel_default_or_torque() {
+    use crate::config::Action;
+    for enhanced in [false, true] {
+        let (mut dev, writes) = simulated_mouse(fixture(
+            "Action test mouse",
+            ConnectionKind::Bluetooth,
+            FEAT_BATTERY_STATUS,
+            enhanced,
+            false,
+        ));
+        dev.discover().unwrap();
+        writes.lock().unwrap().clear();
+        dev.perform_action(&Action::ShiftWheelMode).unwrap();
+        let wheel = if enhanced {
+            dev.features.smartshift_enhanced.unwrap()
+        } else {
+            dev.features.smartshift.unwrap()
+        };
+        assert!(writes.lock().unwrap().iter().any(|r| r[2] == wheel
+            && r[3] >> 4 == if enhanced { 2 } else { 1 }
+            && r[4..7] == [1, 1, if enhanced { 60 } else { 20 }]));
+        dev.perform_action(&Action::ChangePointerSpeed {
+            first: 1000,
+            second: 1600,
+        })
+        .unwrap();
+        let dpi = dev.features.dpi.unwrap();
+        assert!(writes
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|r| r[2] == dpi && r[3] >> 4 == 3 && r[4..7] == [0, 6, 64]));
+        writes.lock().unwrap().clear();
+        assert!(dev
+            .perform_action(&Action::ChangePointerSpeed {
+                first: 1000,
+                second: 1650
+            })
+            .is_err());
+        assert!(!writes
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|r| r[2] == dpi && r[3] >> 4 == 3));
+        // Periodic reapplication retains temporary values.
+        dev.apply_device_config();
+        assert!(writes
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|r| r[2] == dpi && r[3] >> 4 == 3 && r[4..7] == [0, 6, 64]));
+    }
+}
+
+#[test]
+fn unsupported_wheel_action_does_not_write_to_vertical_mouse() {
+    let (mut dev, writes) = simulated_mouse(fixture(
+        "MX Vertical",
+        ConnectionKind::Usb,
+        FEAT_BATTERY_STATUS,
+        false,
+        true,
+    ));
+    dev.discover().unwrap();
+    writes.lock().unwrap().clear();
+    assert!(dev
+        .perform_action(&crate::config::Action::ShiftWheelMode)
+        .is_err());
+    assert!(writes.lock().unwrap().is_empty());
+}
+
+#[test]
+fn saved_device_actions_require_current_capabilities_and_dpi_values() {
+    use super::device::{action_supported, DeviceCapabilities};
+    use crate::config::Action;
+    let mut caps = DeviceCapabilities::default();
+    assert!(!action_supported(&Action::ShiftWheelMode, &caps, &[]));
+    caps.smartshift = true;
+    assert!(action_supported(&Action::ShiftWheelMode, &caps, &[]));
+    let speed = Action::ChangePointerSpeed { first: 800, second: 1600 };
+    assert!(!action_supported(&speed, &caps, &[800, 1600]));
+    caps.dpi = true;
+    assert!(action_supported(&speed, &caps, &[800, 1600]));
+    assert!(!action_supported(&speed, &caps, &[800, 1200]));
+    assert!(action_supported(&Action::PassThrough, &caps, &[]));
+}

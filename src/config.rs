@@ -20,9 +20,7 @@ pub enum Modifier {
 
 /// What a button / gesture outcome does when triggered.
 ///
-/// Every concrete action ultimately reduces to a synthesized key chord, so a
-/// single `Key` variant models plain shortcuts, media keys, volume keys,
-/// virtual-desktop switches and task view. `mods` may be empty.
+/// Keyboard actions go to the injector; hardware actions go to the device worker.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum Action {
@@ -30,6 +28,10 @@ pub enum Action {
     PassThrough,
     /// Swallow the event and do nothing.
     Disabled,
+    /// Toggle ratchet/free-spin for the current connection.
+    ShiftWheelMode,
+    /// Toggle two sensor DPI values for the current connection.
+    ChangePointerSpeed { first: u16, second: u16 },
     /// Synthesize a key chord (`mods` held while `vk` is tapped).
     Key {
         #[serde(default)]
@@ -350,5 +352,24 @@ pub mod vk {
     /// 'A'..='Z' == 0x41..=0x5A, '0'..='9' == 0x30..=0x39.
     pub const fn letter(c: u8) -> u16 {
         c.to_ascii_uppercase() as u16
+    }
+}
+
+#[cfg(test)]
+mod device_action_tests {
+    use super::*;
+    #[test]
+    fn hardware_actions_round_trip_without_changing_legacy_bindings() {
+        let mut cfg = Config::default();
+        cfg.default_profile.buttons.back = Action::ShiftWheelMode;
+        cfg.default_profile.buttons.forward = Action::ChangePointerSpeed {
+            first: 800,
+            second: 1600,
+        };
+        let encoded = toml::to_string(&cfg).unwrap();
+        let decoded: Config = toml::from_str(&encoded).unwrap();
+        assert_eq!(decoded.default_profile.buttons, cfg.default_profile.buttons);
+        let old: Action = toml::from_str("kind = 'PassThrough'").unwrap();
+        assert_eq!(old, Action::PassThrough);
     }
 }

@@ -242,7 +242,12 @@ impl Device {
                 .iter()
                 .any(|button| button.cid == ci.cid && button.slot.starts_with("control_"))
                 && mappings_enabled
-                && buttons.control_action(ci.cid).intercepts();
+                && buttons.control_action(ci.cid).intercepts()
+                && crate::hidpp::device::action_supported(
+                    &buttons.control_action(ci.cid),
+                    &self.capabilities,
+                    &self.dpi_values,
+                );
             let want = gesture || mapped;
             match self.set_divert(ci, want, gesture) {
                 Ok(()) => {

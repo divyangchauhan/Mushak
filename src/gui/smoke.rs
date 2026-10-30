@@ -552,6 +552,28 @@ async fn check(output: PathBuf) {
     click(&mut ply, &mut app, "nav_gestures").await;
     assert_ne!(app.section, Section::Gestures);
 
+    app.section = Section::Buttons;
+    app.device_view.device.capabilities.smartshift = true;
+    app.device_view.device.capabilities.dpi = true;
+    app.device_view.device.dpi_list = vec![400, 800, 1000, 1600, 3200];
+    app.open_picker(PickerTarget::Button("middle".into()));
+    settle(&mut ply, &mut app).await;
+    assert_panel_fits(&ply);
+    snapshot(&output, "15-device-actions");
+    click(&mut ply, &mut app, "picker_wheel_action").await;
+    assert_eq!(app.action_for(&PickerTarget::Button("middle".into())), Action::ShiftWheelMode);
+    app.open_picker(PickerTarget::Button("middle".into()));
+    settle(&mut ply, &mut app).await;
+    click(&mut ply, &mut app, "picker_dpi_action").await;
+    assert_eq!(app.action_for(&PickerTarget::Button("middle".into())), Action::ChangePointerSpeed { first: 800, second: 1600 });
+    app.open_picker(PickerTarget::Button("middle".into()));
+    settle(&mut ply, &mut app).await;
+    assert_eq!(app.picker_dpi, [800, 1600]);
+    ply.set_text_value("picker_search", "Native action");
+    settle(&mut ply, &mut app).await;
+    click(&mut ply, &mut app, ("pk", 0)).await;
+    assert_eq!(app.action_for(&PickerTarget::Button("middle".into())), Action::PassThrough);
+
     std::fs::write(output.join("result.txt"), "PASS: all MX Master generations and Mac/Business variants; markers, popovers, both themes, profile isolation, gesture markers offline, gesture actions in generic/narrow lists, all five gesture actions saved while offline and disabled, DPI Change/Switch and wheel-mode remapping, offline saved controls, pass-through reset, capability gating for connected mice, scrolling and window bounds.\n").unwrap();
     println!("UI smoke checks passed. Screenshots: {}", output.display());
     std::process::exit(0);

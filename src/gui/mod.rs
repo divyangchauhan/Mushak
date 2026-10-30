@@ -21,7 +21,7 @@ mod theme;
 mod uiprefs;
 mod widgets;
 
-use crate::config::{Config, Modifier};
+use crate::config::{Action, Config, Modifier};
 use crate::statusfile::{self, SharedStatus};
 use crate::{conflicts, state};
 use conflicts::KillOutcome;
@@ -128,6 +128,7 @@ pub struct App {
     pub picker_anchor: Option<&'static str>,
     picker_fresh: bool,
     pub picker_query: String,
+    picker_dpi: [u16; 2],
     pub custom_mods: Vec<Modifier>,
     pub custom_key: Option<u16>,
     pub capturing_key: bool,
@@ -191,6 +192,7 @@ impl App {
             picker_anchor: None,
             picker_fresh: false,
             picker_query: String::new(),
+            picker_dpi: [800, 1600],
             custom_mods: Vec::new(),
             custom_key: None,
             capturing_key: false,
@@ -232,6 +234,10 @@ impl App {
                 self.custom_key = None;
             }
         }
+        self.picker_dpi = match current {
+            Action::ChangePointerSpeed { first, second } => [first, second],
+            _ => [800, 1600],
+        };
         self.picker = Some(target);
         self.picker_anchor = None;
         self.picker_fresh = true;
