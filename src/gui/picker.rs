@@ -259,6 +259,9 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
 }
 
 fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<Action>) {
+    if !matches!(&app.picker, Some(PickerTarget::Button(slot)) if slot == "control_00c4") {
+        return;
+    }
     let d = &app.device_view.device;
     if !d.connected {
         return;

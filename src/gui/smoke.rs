@@ -556,36 +556,36 @@ async fn check(output: PathBuf) {
     app.device_view.device.capabilities.smartshift = true;
     app.device_view.device.capabilities.dpi = true;
     app.device_view.device.dpi_list = vec![400, 800, 1000, 1600, 3200];
-    app.open_picker(PickerTarget::Button("middle".into()));
+    app.open_picker(PickerTarget::Button("control_00c4".into()));
     settle(&mut ply, &mut app).await;
     assert_panel_fits(&ply);
     snapshot(&output, "15-device-actions");
     click(&mut ply, &mut app, "picker_wheel_action").await;
     assert_eq!(
-        app.action_for(&PickerTarget::Button("middle".into())),
+        app.action_for(&PickerTarget::Button("control_00c4".into())),
         Action::ShiftWheelMode
     );
-    app.open_picker(PickerTarget::Button("middle".into()));
+    app.open_picker(PickerTarget::Button("control_00c4".into()));
     settle(&mut ply, &mut app).await;
     click(&mut ply, &mut app, "picker_speed_setup").await;
     assert!(app.picker_speed_editor);
     snapshot(&output, "16-pointer-speed-editor");
     click(&mut ply, &mut app, "picker_dpi_action").await;
     assert_eq!(
-        app.action_for(&PickerTarget::Button("middle".into())),
+        app.action_for(&PickerTarget::Button("control_00c4".into())),
         Action::ChangePointerSpeed {
             first: 800,
             second: 1600
         }
     );
-    app.open_picker(PickerTarget::Button("middle".into()));
+    app.open_picker(PickerTarget::Button("control_00c4".into()));
     settle(&mut ply, &mut app).await;
     assert_eq!(app.picker_dpi, [800, 1600]);
     ply.set_text_value("picker_search", "Native action");
     settle(&mut ply, &mut app).await;
     click(&mut ply, &mut app, ("pk", 0)).await;
     assert_eq!(
-        app.action_for(&PickerTarget::Button("middle".into())),
+        app.action_for(&PickerTarget::Button("control_00c4".into())),
         Action::PassThrough
     );
 

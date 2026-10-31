@@ -1,14 +1,14 @@
 # Device button actions preview
 
-The button picker offers Shift wheel mode when the mouse reports working
+The wheel-mode button picker offers Shift wheel mode when the mouse reports working
 SmartShift support. It switches between fixed ratchet and free-spin modes.
 Change pointer speed appears when the sensor reports at least two DPI values.
 Select Switch pointer speed to open its editor, choose two different speeds,
 then select Save pointer speed action. Back to actions cancels the editor.
 Native action removes the remap and restores the physical button default.
 
-Hardware actions can also be assigned to gesture outcomes. Native action on a
-gesture outcome means no injected action, as with the previous Pass through option.
+These two hardware actions are offered only for the wheel-mode button.
+Other buttons and gestures retain their existing action choices.
 
 Bindings belong to the selected button profile. Gesture outcomes retain their
 existing global scope. The actions use the live mouse state, so the first press
