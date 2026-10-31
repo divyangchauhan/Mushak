@@ -10,8 +10,7 @@ Native action removes the remap and restores the physical button default.
 These two hardware actions are offered only for the wheel-mode button.
 Other buttons and gestures retain their existing action choices.
 
-Bindings belong to the selected button profile. Gesture outcomes retain their
-existing global scope. The actions use the live mouse state, so the first press
+Bindings belong to the selected button profile. Gesture outcomes can now be customized per application profile in Gestures. The actions use the live mouse state, so the first press
 selects speed one if the current DPI matches neither configured speed.
 
 Temporary hardware values survive profile switches and periodic device refresh.

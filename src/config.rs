@@ -121,6 +121,8 @@ pub struct Profile {
     pub match_processes: Vec<String>,
     #[serde(default)]
     pub buttons: ButtonMap,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gestures: Option<GestureConfig>,
 }
 
 impl Profile {
@@ -194,6 +196,8 @@ impl Default for DeviceConfig {
 pub struct GestureConfig {
     /// Master enable for the gesture button divert.
     pub enabled: bool,
+    /// None uses the mouse default gesture button.
+    pub trigger: Option<u16>,
     /// Movement (in accumulated raw units) below which a press counts as a tap.
     pub tap_threshold: i32,
     pub tap: Action,
@@ -209,6 +213,7 @@ impl Default for GestureConfig {
         // up/down = volume.
         GestureConfig {
             enabled: true,
+            trigger: None,
             tap_threshold: 60,
             tap: Action::key(&[Modifier::Win], vk::TAB),
             up: Action::key(&[], vk::VOLUME_UP),
@@ -237,6 +242,7 @@ impl Default for Config {
                 name: "Default".to_string(),
                 match_processes: Vec::new(),
                 buttons: ButtonMap::default(),
+                gestures: None,
             },
             profiles: Vec::new(),
             device: DeviceConfig::default(),
@@ -371,5 +377,38 @@ mod device_action_tests {
         assert_eq!(decoded.default_profile.buttons, cfg.default_profile.buttons);
         let old: Action = toml::from_str("kind = 'PassThrough'").unwrap();
         assert_eq!(old, Action::PassThrough);
+    }
+}
+
+impl Config {
+    pub fn gestures_for(&self, process: Option<&str>) -> &GestureConfig {
+        let profile = process
+            .and_then(|name| self.profiles.iter().find(|p| p.matches(name)))
+            .unwrap_or(&self.default_profile);
+        profile.gestures.as_ref().unwrap_or(&self.gestures)
+    }
+}
+
+#[cfg(test)]
+mod gesture_profile_tests {
+    use super::*;
+    #[test]
+    fn old_profiles_inherit_and_overrides_round_trip() {
+        let mut cfg = Config::default();
+        cfg.profiles.push(Profile {
+            name: "Editor".into(),
+            match_processes: vec!["editor.exe".into()],
+            buttons: Default::default(),
+            gestures: None,
+        });
+        assert_eq!(cfg.gestures_for(Some("EDITOR.EXE")), &cfg.gestures);
+        let mut custom = cfg.gestures.clone();
+        custom.tap = Action::Disabled;
+        custom.trigger = Some(0x52);
+        cfg.profiles[0].gestures = Some(custom.clone());
+        assert_eq!(cfg.gestures_for(Some("editor.exe")), &custom);
+        assert_eq!(cfg.gestures_for(Some("other.exe")), &cfg.gestures);
+        let decoded: Config = toml::from_str(&toml::to_string(&cfg).unwrap()).unwrap();
+        assert_eq!(decoded, cfg);
     }
 }

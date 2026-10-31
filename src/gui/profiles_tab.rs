@@ -296,6 +296,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
             name: "New profile".to_string(),
             match_processes: Vec::new(),
             buttons: Default::default(),
+            gestures: None,
         });
         app.commit_config();
     }

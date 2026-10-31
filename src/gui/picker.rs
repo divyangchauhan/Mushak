@@ -198,9 +198,7 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                             ui.text(label, |t| {
                                 t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
                             });
-                            let profile = if matches!(target, PickerTarget::Gesture(_)) {
-                                "All profiles"
-                            } else {
+                            let profile = {
                                 app.profile_at(app.selected_profile)
                                     .map(|p| p.name.as_str())
                                     .unwrap_or("Default")

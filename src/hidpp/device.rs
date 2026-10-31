@@ -43,6 +43,7 @@ pub struct DeviceCapabilities {
     pub battery: bool,
     pub wheel_multiplier: Option<u8>,
     pub gesture_control: Option<u16>,
+    pub gesture_buttons: Vec<super::features::reprog::ButtonInfo>,
     pub smartshift_max_threshold: u8,
     pub buttons: Vec<super::features::reprog::ButtonInfo>,
 }
@@ -165,7 +166,9 @@ fn run(rx: Receiver<DeviceCommand>, mut history: super::history::DeviceHistory) 
             Ok(dev) => {
                 // Never replay button presses from the previous connection.
                 while let Ok(cmd) = rx.try_recv() {
-                    if matches!(cmd, DeviceCommand::Shutdown) { return; }
+                    if matches!(cmd, DeviceCommand::Shutdown) {
+                        return;
+                    }
                 }
                 history.observe((*state::device_status()).clone());
                 dev.apply_device_config();
@@ -356,7 +359,17 @@ impl Device {
             }
         }
         self.capabilities.gesture_control = reprog::gesture_control(&self.controls);
-        self.capabilities.gestures = self.capabilities.gesture_control.is_some();
+        self.capabilities.gesture_buttons = self
+            .controls
+            .iter()
+            .filter(|c| c.supports_gestures() && !matches!(c.cid, 0x0050 | 0x0051))
+            .map(|c| reprog::ButtonInfo {
+                cid: c.cid,
+                slot: format!("control_{:04x}", c.cid),
+                name: reprog::control_name(c.cid),
+            })
+            .collect();
+        self.capabilities.gestures = !self.capabilities.gesture_buttons.is_empty();
         self.capabilities.buttons =
             reprog::button_choices(&self.controls, self.capabilities.gesture_control);
         self.dpi_sensor = self.find_dpi_sensor().ok();
@@ -654,13 +667,17 @@ impl Device {
         });
     }
 
+    pub(crate) fn active_gesture_control(&self) -> Option<u16> {
+        reprog::selected_gesture_control(&self.controls, state::active_gestures().trigger)
+    }
+
     /// Re-assert the divert state of every control per config.
     pub(crate) fn apply_diverts(&self) {
         if self.features.reprog.is_none() {
             return;
         }
         let gestures_enabled =
-            state::config().gestures.enabled && self.capabilities.gestures && !state::is_paused();
+            state::active_gestures().enabled && self.capabilities.gestures && !state::is_paused();
         if !gestures_enabled {
             gestures::cancel();
         }
@@ -692,7 +709,7 @@ impl Device {
                 let cid = ((rep.param(i * 2) as u16) << 8) | rep.param(i * 2 + 1) as u16;
                 if cid != 0 {
                     cids.push(cid);
-                    if Some(cid) == self.capabilities.gesture_control {
+                    if Some(cid) == self.active_gesture_control() {
                         gesture_held = true;
                     }
                 }
@@ -707,7 +724,7 @@ impl Device {
             if !state::is_paused() {
                 let map = state::active_map();
                 for cid in pressed {
-                    if Some(cid) == self.capabilities.gesture_control {
+                    if Some(cid) == self.active_gesture_control() {
                         continue;
                     }
                     if self
@@ -723,13 +740,13 @@ impl Device {
                     }
                 }
             }
-            if self.capabilities.gestures && state::config().gestures.enabled && !state::is_paused()
+            if self.capabilities.gestures && state::active_gestures().enabled && !state::is_paused()
             {
                 gestures::handle_buttons(gesture_held);
             }
         } else if rep.function() == 1
             && self.capabilities.gestures
-            && state::config().gestures.enabled
+            && state::active_gestures().enabled
             && !state::is_paused()
         {
             if rep.raw.len() < 8 {

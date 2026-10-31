@@ -276,8 +276,8 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     ui.text(label, |t| {
                         t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
                     });
-                    let note = if app.draft.gestures.enabled {
-                        "Applies to every profile. Configure swipes in Gestures."
+                    let note = if app.selected_gestures().enabled {
+                        "Uses the selected profile. Configure swipes in Gestures."
                     } else {
                         "Gestures are off. Saved actions remain editable."
                     };
@@ -399,6 +399,7 @@ mod tests {
             name: "Mapped app".into(),
             match_processes: vec!["mapped.exe".into()],
             buttons: std::mem::take(&mut saved.default_profile.buttons),
+            gestures: None,
         });
         let buttons = editable_buttons(&device, &saved);
         let slots: Vec<_> = buttons.iter().map(|b| b.slot.as_str()).collect();

@@ -45,6 +45,9 @@ pub struct ButtonInfo {
 /// https://github.com/pwr-Solaar/Solaar/blob/master/lib/logitech_receiver/special_keys.py
 pub(crate) fn control_name(cid: u16) -> String {
     match cid {
+        0x0052 => "Middle click".to_owned(),
+        0x0053 | 0x0054 => "Back button".to_owned(),
+        0x0055 | 0x0056 => "Forward button".to_owned(),
         0x00C3 | 0x00D0 => "Gesture button".to_owned(),
         0x00C4 => "Wheel mode button".to_owned(),
         0x00ED => "DPI change button".to_owned(),
@@ -235,7 +238,7 @@ impl Device {
             if ci.virtual_control() || !ci.divertable() {
                 continue;
             }
-            let gesture = Some(ci.cid) == self.capabilities.gesture_control && gestures_enabled;
+            let gesture = Some(ci.cid) == self.active_gesture_control() && gestures_enabled;
             let mapped = self
                 .capabilities
                 .buttons
@@ -315,5 +318,42 @@ mod tests {
         let buttons = button_choices(&controls, None);
         assert_eq!(buttons[0].name, "DPI change button");
         assert_eq!(buttons[1].name, "DPI switch button");
+    }
+}
+
+pub(crate) fn selected_gesture_control(
+    controls: &[ControlInfo],
+    preferred: Option<u16>,
+) -> Option<u16> {
+    match preferred {
+        Some(cid) => controls
+            .iter()
+            .find(|c| c.cid == cid && c.supports_gestures() && !matches!(cid, 0x0050 | 0x0051))
+            .map(|c| c.cid),
+        None => gesture_control(controls),
+    }
+}
+
+#[cfg(test)]
+mod selection_tests {
+    use super::*;
+    #[test]
+    fn selection_requires_physical_raw_motion_and_never_captures_primary_clicks() {
+        let controls = [0x0050, 0x0052, 0x00c3].map(|cid| ControlInfo {
+            cid,
+            tid: 0,
+            flags: KEY_DIVERTABLE,
+            additional_flags: KEY_RAW_XY,
+        });
+        assert_eq!(selected_gesture_control(&controls, None), Some(0x00c3));
+        assert_eq!(
+            selected_gesture_control(&controls, Some(0x0052)),
+            Some(0x0052)
+        );
+        assert_eq!(selected_gesture_control(&controls, Some(0x0050)), None);
+        assert_eq!(selected_gesture_control(&controls, Some(0x00ed)), None);
+        let mut ordinary = controls[1];
+        ordinary.additional_flags = 0;
+        assert_eq!(selected_gesture_control(&[ordinary], Some(0x0052)), None);
     }
 }

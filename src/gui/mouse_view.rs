@@ -408,7 +408,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             t.font(&fonts::SANS_SEMIBOLD).font_size(12).color(pal.text)
                         });
                         let label = if matches!(target, PickerTarget::Gesture(_))
-                            && !app.draft.gestures.enabled
+                            && !app.selected_gestures().enabled
                         {
                             "Gestures off"
                         } else {

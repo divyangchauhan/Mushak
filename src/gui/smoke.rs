@@ -17,6 +17,7 @@ pub fn run() {
         name: "Preview app".into(),
         match_processes: vec!["preview.exe".into()],
         buttons: ButtonMap::default(),
+        gestures: None,
     });
     state::init(config);
     macroquad::Window::from_config(
@@ -388,11 +389,11 @@ async fn check(output: PathBuf) {
     }
     let saved = Config::load_strict().unwrap();
     for action in [
-        &saved.gestures.tap,
-        &saved.gestures.up,
-        &saved.gestures.down,
-        &saved.gestures.left,
-        &saved.gestures.right,
+        &saved.profiles[0].gestures.as_ref().unwrap().tap,
+        &saved.profiles[0].gestures.as_ref().unwrap().up,
+        &saved.profiles[0].gestures.as_ref().unwrap().down,
+        &saved.profiles[0].gestures.as_ref().unwrap().left,
+        &saved.profiles[0].gestures.as_ref().unwrap().right,
     ] {
         assert_eq!(*action, Action::key(&[Modifier::Ctrl], 0x43));
     }

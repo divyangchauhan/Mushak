@@ -236,7 +236,7 @@ fn mx_family_discovers_by_capability_across_connections_and_skips_receiver_keybo
         let (mut mouse, writes) = simulated_mouse(input);
         mouse.discover().unwrap();
         assert_eq!(mouse.device_name_on(mouse.index).unwrap(), name);
-        assert_eq!(mouse.capabilities.gestures, !vertical && !original);
+        assert_eq!(mouse.capabilities.gestures, !original);
         assert_eq!(mouse.capabilities.smartshift, !vertical);
         assert_eq!(mouse.capabilities.hires_scroll, !vertical);
         assert_eq!(
@@ -362,7 +362,8 @@ fn dpi_and_mode_buttons_restore_native_behavior_for_default_and_profile_switches
         let (mut mouse, writes) = simulated_mouse(input);
         mouse.discover().unwrap();
         assert_eq!(mouse.capabilities.buttons[0].cid, cid);
-        assert!(!mouse.capabilities.gestures);
+        assert!(mouse.capabilities.gestures);
+        assert!(mouse.capabilities.gesture_control.is_none());
         let mut mapped = crate::config::ButtonMap::default();
         mapped
             .controls
@@ -424,7 +425,8 @@ fn invalid_dpi_choices_hide_the_setting_and_prevent_writes() {
     mouse.discover().unwrap();
     assert!(!mouse.capabilities.dpi);
     assert!(!mouse.capabilities.has_scroll_settings());
-    assert!(!mouse.capabilities.gestures);
+    assert!(mouse.capabilities.gestures);
+    assert!(mouse.capabilities.gesture_control.is_none());
     mouse.apply_dpi(1000).unwrap();
     assert!(!writes
         .lock()
@@ -537,7 +539,10 @@ fn saved_device_actions_require_current_capabilities_and_dpi_values() {
     assert!(!action_supported(&Action::ShiftWheelMode, &caps, &[]));
     caps.smartshift = true;
     assert!(action_supported(&Action::ShiftWheelMode, &caps, &[]));
-    let speed = Action::ChangePointerSpeed { first: 800, second: 1600 };
+    let speed = Action::ChangePointerSpeed {
+        first: 800,
+        second: 1600,
+    };
     assert!(!action_supported(&speed, &caps, &[800, 1600]));
     caps.dpi = true;
     assert!(action_supported(&speed, &caps, &[800, 1600]));

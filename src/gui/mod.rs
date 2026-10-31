@@ -277,7 +277,7 @@ impl App {
                 })
                 .unwrap_or_default(),
             PickerTarget::Gesture(slot) => {
-                let g = &self.draft.gestures;
+                let g = self.selected_gestures();
                 match slot.as_str() {
                     "tap" => g.tap.clone(),
                     "up" => g.up.clone(),
@@ -312,7 +312,7 @@ impl App {
                 }
             }
             PickerTarget::Gesture(slot) => {
-                let g = &mut self.draft.gestures;
+                let g = self.selected_gestures_mut();
                 match slot.as_str() {
                     "tap" => g.tap = action,
                     "up" => g.up = action,
@@ -773,5 +773,22 @@ mod tests {
         device.connected = false;
         assert!(!Section::Scroll.available(&device));
         assert!(Section::Gestures.available(&device));
+    }
+}
+
+impl App {
+    fn selected_gestures(&self) -> &crate::config::GestureConfig {
+        self.profile_at(self.selected_profile)
+            .and_then(|p| p.gestures.as_ref())
+            .unwrap_or(&self.draft.gestures)
+    }
+    fn selected_gestures_mut(&mut self) -> &mut crate::config::GestureConfig {
+        if self.selected_profile == 0 {
+            return &mut self.draft.gestures;
+        }
+        let defaults = self.draft.gestures.clone();
+        self.draft.profiles[self.selected_profile - 1]
+            .gestures
+            .get_or_insert(defaults)
     }
 }
