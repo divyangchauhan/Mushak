@@ -3,7 +3,8 @@
 The button picker offers Shift wheel mode when the mouse reports working
 SmartShift support. It switches between fixed ratchet and free-spin modes.
 Change pointer speed appears when the sensor reports at least two DPI values.
-Choose two different speeds, then select Change pointer speed to save the binding.
+Select Switch pointer speed to open its editor, choose two different speeds,
+then select Save pointer speed action. Back to actions cancels the editor.
 Native action removes the remap and restores the physical button default.
 
 Hardware actions can also be assigned to gesture outcomes. Native action on a

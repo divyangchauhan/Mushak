@@ -561,18 +561,33 @@ async fn check(output: PathBuf) {
     assert_panel_fits(&ply);
     snapshot(&output, "15-device-actions");
     click(&mut ply, &mut app, "picker_wheel_action").await;
-    assert_eq!(app.action_for(&PickerTarget::Button("middle".into())), Action::ShiftWheelMode);
+    assert_eq!(
+        app.action_for(&PickerTarget::Button("middle".into())),
+        Action::ShiftWheelMode
+    );
     app.open_picker(PickerTarget::Button("middle".into()));
     settle(&mut ply, &mut app).await;
+    click(&mut ply, &mut app, "picker_speed_setup").await;
+    assert!(app.picker_speed_editor);
+    snapshot(&output, "16-pointer-speed-editor");
     click(&mut ply, &mut app, "picker_dpi_action").await;
-    assert_eq!(app.action_for(&PickerTarget::Button("middle".into())), Action::ChangePointerSpeed { first: 800, second: 1600 });
+    assert_eq!(
+        app.action_for(&PickerTarget::Button("middle".into())),
+        Action::ChangePointerSpeed {
+            first: 800,
+            second: 1600
+        }
+    );
     app.open_picker(PickerTarget::Button("middle".into()));
     settle(&mut ply, &mut app).await;
     assert_eq!(app.picker_dpi, [800, 1600]);
     ply.set_text_value("picker_search", "Native action");
     settle(&mut ply, &mut app).await;
     click(&mut ply, &mut app, ("pk", 0)).await;
-    assert_eq!(app.action_for(&PickerTarget::Button("middle".into())), Action::PassThrough);
+    assert_eq!(
+        app.action_for(&PickerTarget::Button("middle".into())),
+        Action::PassThrough
+    );
 
     std::fs::write(output.join("result.txt"), "PASS: all MX Master generations and Mac/Business variants; markers, popovers, both themes, profile isolation, gesture markers offline, gesture actions in generic/narrow lists, all five gesture actions saved while offline and disabled, DPI Change/Switch and wheel-mode remapping, offline saved controls, pass-through reset, capability gating for connected mice, scrolling and window bounds.\n").unwrap();
     println!("UI smoke checks passed. Screenshots: {}", output.display());

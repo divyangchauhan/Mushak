@@ -129,6 +129,7 @@ pub struct App {
     picker_fresh: bool,
     pub picker_query: String,
     picker_dpi: [u16; 2],
+    picker_speed_editor: bool,
     pub custom_mods: Vec<Modifier>,
     pub custom_key: Option<u16>,
     pub capturing_key: bool,
@@ -193,6 +194,7 @@ impl App {
             picker_fresh: false,
             picker_query: String::new(),
             picker_dpi: [800, 1600],
+            picker_speed_editor: false,
             custom_mods: Vec::new(),
             custom_key: None,
             capturing_key: false,
@@ -234,6 +236,7 @@ impl App {
                 self.custom_key = None;
             }
         }
+        self.picker_speed_editor = false;
         self.picker_dpi = match current {
             Action::ChangePointerSpeed { first, second } => [first, second],
             _ => [800, 1600],

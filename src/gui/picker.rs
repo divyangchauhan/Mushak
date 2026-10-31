@@ -100,8 +100,10 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                     }
                     let query = app.picker_query.to_lowercase();
                     device_actions(ui, app, &query, &mut chosen);
-                    results(ui, app, &query, &current, &mut chosen);
-                    custom_footer(ui, app, &mut chosen);
+                    if !app.picker_speed_editor {
+                        results(ui, app, &query, &current, &mut chosen);
+                        custom_footer(ui, app, &mut chosen);
+                    }
                 });
         });
 
@@ -261,11 +263,13 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
     if !d.connected {
         return;
     }
-    let wheel = d.capabilities.smartshift
+    let editing = app.picker_speed_editor;
+    let wheel = !editing
+        && d.capabilities.smartshift
         && (query.is_empty() || "shift wheel mode ratchet free spin".contains(query));
     let dpi = d.capabilities.dpi
         && d.dpi_list.len() > 1
-        && (query.is_empty() || "change pointer speed dpi".contains(query));
+        && (editing || query.is_empty() || "change pointer speed dpi".contains(query));
     if !wheel && !dpi {
         return;
     }
@@ -276,25 +280,70 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
         .height(fit!())
         .layout(|l| l.direction(TopToBottom).gap(6).padding((8, 16, 8, 16)))
         .children(|ui| {
+            if editing {
+                ui.element()
+                    .id("picker_speed_back")
+                    .width(grow!())
+                    .height(fixed!(30.0))
+                    .accessibility(|a| a.button("Back to actions"))
+                    .children(|ui| {
+                        ui.text("< Back to actions", |t| {
+                            t.font(&fonts::SANS).font_size(13).color(pal.accent)
+                        });
+                        if ui.just_pressed() {
+                            app.picker_speed_editor = false;
+                        }
+                    });
+                ui.text("Switch between two pointer speeds", |t| {
+                    t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
+                });
+                ui.text("Each button press switches to the other speed.", |t| {
+                    t.font(&fonts::SANS).font_size(12).color(pal.muted)
+                });
+            }
             if wheel {
                 ui.element()
                     .id("picker_wheel_action")
                     .width(grow!())
-                    .height(fixed!(30.0))
+                    .height(fixed!(52.0))
                     .background_color(pal.s2)
                     .corner_radius(6.0)
                     .accessibility(|a| a.button("Shift wheel mode"))
-                    .layout(|l| l.align(Left, CenterY).padding((0, 8, 0, 8)))
+                    .layout(|l| l.direction(TopToBottom).gap(4).padding((8, 10, 8, 10)))
                     .children(|ui| {
-                        ui.text("Shift wheel mode", |t| {
+                        ui.text("Switch wheel mode", |t| {
                             t.font(&fonts::SANS).font_size(13).color(pal.text)
+                        });
+                        ui.text("Toggle between ratchet and free-spin scrolling", |t| {
+                            t.font(&fonts::SANS).font_size(11).color(pal.muted)
                         });
                         if ui.just_pressed() {
                             *chosen = Some(Action::ShiftWheelMode);
                         }
                     });
             }
-            if dpi {
+            if dpi && !editing {
+                ui.element()
+                    .id("picker_speed_setup")
+                    .width(grow!())
+                    .height(fixed!(52.0))
+                    .background_color(pal.s2)
+                    .corner_radius(6.0)
+                    .accessibility(|a| a.button("Switch pointer speed"))
+                    .layout(|l| l.direction(TopToBottom).gap(4).padding((8, 10, 8, 10)))
+                    .children(|ui| {
+                        ui.text("Switch pointer speed", |t| {
+                            t.font(&fonts::SANS).font_size(13).color(pal.text)
+                        });
+                        ui.text("Choose two speeds to toggle between...", |t| {
+                            t.font(&fonts::SANS).font_size(11).color(pal.muted)
+                        });
+                        if ui.just_pressed() {
+                            app.picker_speed_editor = true;
+                        }
+                    });
+            }
+            if dpi && editing {
                 for (i, id) in ["picker_dpi_first", "picker_dpi_second"].iter().enumerate() {
                     let selected = choices
                         .iter()
@@ -339,7 +388,7 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                     .children(|ui| {
                         ui.text(
                             if distinct {
-                                "Change pointer speed"
+                                "Save pointer speed action"
                             } else {
                                 "Choose two different speeds"
                             },
