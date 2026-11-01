@@ -262,6 +262,40 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
     }
     let d = &app.device_view.device;
     if !d.connected {
+        app.picker_speed_editor = false;
+        let pal = app.pal;
+        ui.element()
+            .width(grow!())
+            .height(fit!())
+            .layout(|l| l.direction(TopToBottom).gap(6).padding((8, 16, 8, 16)))
+            .children(|ui| {
+                for (label, search) in [
+                    (
+                        "Switch wheel mode",
+                        "switch shift wheel mode ratchet free spin",
+                    ),
+                    ("Switch pointer speed", "switch change pointer speed dpi"),
+                ] {
+                    if !query.is_empty() && !search.contains(query) {
+                        continue;
+                    }
+                    ui.element()
+                        .width(grow!())
+                        .height(fit!())
+                        .corner_radius(6.0)
+                        .background_color(pal.s2)
+                        .layout(|l| l.direction(TopToBottom).gap(4).padding((8, 10, 8, 10)))
+                        .children(|ui| {
+                            ui.text(label, |t| {
+                                t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                            });
+                            ui.text(
+                                "Reconnect the mouse to check availability and configure.",
+                                |t| t.font(&fonts::SANS).font_size(11).color(pal.muted),
+                            );
+                        });
+                }
+            });
         return;
     }
     let editing = app.picker_speed_editor;
