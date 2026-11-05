@@ -10,6 +10,8 @@ use crate::config::{Action, Modifier};
 use ply_engine::layout::Sizing;
 use ply_engine::prelude::*;
 
+const SELECTION_FEEDBACK_SECONDS: f32 = 0.12;
+
 impl PickerTarget {
     pub fn label<'a>(&self, device: &'a crate::hidpp::device::DeviceStatus) -> &'a str {
         match self {
@@ -108,7 +110,7 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
         });
 
     if let Some(started) = app.picker_feedback {
-        if started.elapsed().as_secs_f32() >= 0.24 {
+        if started.elapsed().as_secs_f32() >= SELECTION_FEEDBACK_SECONDS {
             app.picker_feedback = None;
             app.close_picker();
         }
@@ -473,7 +475,7 @@ fn hardware_row(
 ) -> bool {
     let hover = ui.pointer_over(id);
     let pressed = ui.is_pressed(id);
-    let progress = feedback.map(|t| (t.elapsed().as_secs_f32() / 0.24).clamp(0.0, 1.0));
+    let progress = feedback.map(|t| (t.elapsed().as_secs_f32() / SELECTION_FEEDBACK_SECONDS).clamp(0.0, 1.0));
     let pulse = progress.map(|t| (1.0 - t) * (1.0 - t)).unwrap_or(0.0);
     let mut clicked = false;
     ui.element()
@@ -923,7 +925,7 @@ pub fn save_notice(ui: &mut Ui2, app: &mut App) {
 fn feedback_pulse(app: &App) -> f32 {
     app.picker_feedback
         .map(|t| {
-            let progress = (t.elapsed().as_secs_f32() / 0.24).clamp(0.0, 1.0);
+            let progress = (t.elapsed().as_secs_f32() / SELECTION_FEEDBACK_SECONDS).clamp(0.0, 1.0);
             (1.0 - progress).powi(2)
         })
         .unwrap_or(0.0)
