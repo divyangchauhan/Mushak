@@ -113,9 +113,8 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
             app.close_picker();
         }
     } else if let Some(a) = chosen {
-        let animate = a == Action::ShiftWheelMode;
         app.assign_action(&target, a);
-        if animate && app.save_notice.is_none() {
+        if app.save_notice.is_none() {
             app.picker_feedback = Some(std::time::Instant::now());
         } else {
             app.close_picker();
@@ -325,6 +324,7 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
     }
     let pal = app.pal;
     let choices = d.dpi_list.clone();
+    let pulse = feedback_pulse(app);
     ui.element()
         .width(grow!())
         .height(fit!())
@@ -360,7 +360,11 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                     "Toggle between ratchet and free-spin scrolling",
                     &icons::NAV_SCROLL,
                     wheel_selected,
-                    app.picker_feedback,
+                    if wheel_selected {
+                        app.picker_feedback
+                    } else {
+                        None
+                    },
                 )
             {
                 *chosen = Some(Action::ShiftWheelMode);
@@ -418,14 +422,22 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                     .id("picker_dpi_action")
                     .width(grow!())
                     .height(fixed!(30.0))
-                    .background_color(pal.s2)
+                    .background_color(if app.picker_feedback.is_some() {
+                        super::theme::Palette::mix(pal.accent, 12.0 + 24.0 * pulse, pal.pop)
+                    } else {
+                        pal.s2
+                    })
                     .corner_radius(6.0)
                     .accessibility(|a| a.button("Change pointer speed"))
                     .layout(|l| l.align(Left, CenterY).padding((0, 8, 0, 8)))
                     .children(|ui| {
                         ui.text(
                             if distinct {
-                                "Save pointer speed action"
+                                if app.picker_feedback.is_some() {
+                                    "Selected"
+                                } else {
+                                    "Save pointer speed action"
+                                }
                             } else {
                                 "Choose two different speeds"
                             },
@@ -635,6 +647,7 @@ fn results(ui: &mut Ui2, app: &App, query: &str, current: &Action, chosen: &mut 
                     let id: Id = ("pk", (gi * 100 + n) as u32).into();
                     let hov = ui.pointer_over(id.clone());
                     let is_current = action == current;
+                    let pulse = if is_current { feedback_pulse(app) } else { 0.0 };
                     ui.element()
                         .id(id)
                         .accessibility(|a| a.button(label))
@@ -642,7 +655,7 @@ fn results(ui: &mut Ui2, app: &App, query: &str, current: &Action, chosen: &mut 
                         .height(fit!())
                         .corner_radius(9.0)
                         .background_color(if is_current {
-                            super::theme::Palette::mix(pal.accent, 12.0, pal.pop)
+                            super::theme::Palette::mix(pal.accent, 12.0 + 24.0 * pulse, pal.pop)
                         } else if hov {
                             pal.s2
                         } else {
@@ -668,7 +681,7 @@ fn results(ui: &mut Ui2, app: &App, query: &str, current: &Action, chosen: &mut 
                                     widgets::icon(
                                         ui,
                                         glyph,
-                                        16.0,
+                                        16.0 - 2.0 * pulse,
                                         if label == "Disabled" { pal.danger } else { pal.muted },
                                     );
                                 });
@@ -692,7 +705,7 @@ fn results(ui: &mut Ui2, app: &App, query: &str, current: &Action, chosen: &mut 
                                 widgets::keycap(ui, &pal, k);
                             }
                             if is_current {
-                                widgets::icon(ui, &icons::CHECK, 15.0, pal.accent);
+                                widgets::icon(ui, &icons::CHECK, 15.0 - 3.0 * pulse, pal.accent);
                             }
                         });
                 }
@@ -706,6 +719,7 @@ fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
     let mods = app.custom_mods.clone();
     let key = app.custom_key;
     let capturing = app.capturing_key;
+    let pulse = feedback_pulse(app);
     let mut toggle_mod: Option<Modifier> = None;
     let mut start_capture = false;
     let mut assign = false;
@@ -812,7 +826,11 @@ fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
                         .accessibility(|a| a.button("Assign shortcut"))
                         .height(fixed!(32.0))
                         .corner_radius(8.0)
-                        .background_color(if can_assign { pal.accent } else { pal.s2 })
+                        .background_color(if can_assign {
+                            super::theme::Palette::mix(pal.pop, 30.0 * pulse, pal.accent)
+                        } else {
+                            pal.s2
+                        })
                         .layout(|l| l.align(CenterX, CenterY).padding((0, 16, 0, 16)))
                         .children(|ui| {
                             if ui.just_pressed() && can_assign {
@@ -900,4 +918,13 @@ pub fn save_notice(ui: &mut Ui2, app: &mut App) {
                 t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
             });
         });
+}
+
+fn feedback_pulse(app: &App) -> f32 {
+    app.picker_feedback
+        .map(|t| {
+            let progress = (t.elapsed().as_secs_f32() / 0.24).clamp(0.0, 1.0);
+            (1.0 - progress).powi(2)
+        })
+        .unwrap_or(0.0)
 }

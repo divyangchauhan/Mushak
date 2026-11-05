@@ -62,6 +62,16 @@ async fn click(ply: &mut Ply<()>, app: &mut App, id: impl Into<Id>) {
     draw(ply, app, Some((x, y, true))).await;
     draw(ply, app, Some((x, y, false))).await;
     settle(ply, app).await;
+    for _ in 0..120 {
+        if app.picker_feedback.is_none() {
+            break;
+        }
+        draw(ply, app, None).await;
+    }
+    assert!(
+        app.picker_feedback.is_none(),
+        "Selection animation must finish"
+    );
 }
 
 fn snapshot(output: &std::path::Path, name: &str) {
