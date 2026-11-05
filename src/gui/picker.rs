@@ -298,6 +298,11 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
             });
         return;
     }
+    let wheel_selected = app
+        .picker
+        .as_ref()
+        .map(|target| app.action_for(target) == Action::ShiftWheelMode)
+        .unwrap_or(false);
     let editing = app.picker_speed_editor;
     let wheel = !editing
         && d.capabilities.smartshift
@@ -346,12 +351,18 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                     .accessibility(|a| a.button("Shift wheel mode"))
                     .layout(|l| l.direction(TopToBottom).gap(4).padding((8, 10, 8, 10)))
                     .children(|ui| {
-                        ui.text("Switch wheel mode", |t| {
-                            t.font(&fonts::SANS).font_size(13).color(pal.text)
-                        });
-                        ui.text("Toggle between ratchet and free-spin scrolling", |t| {
-                            t.font(&fonts::SANS).font_size(11).color(pal.muted)
-                        });
+                        ui.text(
+                            if wheel_selected {
+                                "Switch wheel mode - selected"
+                            } else {
+                                "Switch wheel mode"
+                            },
+                            |t| t.font(&fonts::SANS).font_size(13).color(pal.text),
+                        );
+                        ui.text(
+                            "Assign ratchet/free-spin switching to this mouse button",
+                            |t| t.font(&fonts::SANS).font_size(11).color(pal.muted),
+                        );
                         if ui.just_pressed() {
                             *chosen = Some(Action::ShiftWheelMode);
                         }
@@ -795,4 +806,35 @@ mod tests {
             }
         }
     }
+}
+
+/// Assignment feedback remains visible after the picker closes.
+pub fn save_notice(ui: &mut Ui2, app: &mut App) {
+    let Some((message, since)) = &app.save_notice else {
+        return;
+    };
+    if since.elapsed().as_secs() >= 7 {
+        app.save_notice = None;
+        return;
+    }
+    let pal = app.pal;
+    let width = 540.0_f32.min(screen_width() - 32.0);
+    ui.element()
+        .id("action_saved_notice")
+        .width(fixed!(width))
+        .height(fit!())
+        .floating(|f| {
+            f.attach_root()
+                .offset(((screen_width() - width) / 2.0, screen_height() - 110.0))
+                .z_index(150)
+        })
+        .background_color(pal.pop)
+        .corner_radius(10.0)
+        .border(|b| b.all(1).color(pal.accent))
+        .layout(|l| l.padding(16))
+        .children(|ui| {
+            ui.text(message, |t| {
+                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+            });
+        });
 }
