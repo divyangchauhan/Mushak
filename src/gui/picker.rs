@@ -107,9 +107,19 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                 });
         });
 
-    if let Some(a) = chosen {
+    if let Some(started) = app.picker_feedback {
+        if started.elapsed().as_secs_f32() >= 0.24 {
+            app.picker_feedback = None;
+            app.close_picker();
+        }
+    } else if let Some(a) = chosen {
+        let animate = a == Action::ShiftWheelMode;
         app.assign_action(&target, a);
-        app.close_picker();
+        if animate && app.save_notice.is_none() {
+            app.picker_feedback = Some(std::time::Instant::now());
+        } else {
+            app.close_picker();
+        }
     } else if is_key_pressed(KeyCode::Escape) {
         // While capturing, Escape backs out of the capture rather than
         // discarding the whole palette.
@@ -341,53 +351,34 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                     t.font(&fonts::SANS).font_size(12).color(pal.muted)
                 });
             }
-            if wheel {
-                ui.element()
-                    .id("picker_wheel_action")
-                    .width(grow!())
-                    .height(fixed!(52.0))
-                    .background_color(pal.s2)
-                    .corner_radius(6.0)
-                    .accessibility(|a| a.button("Shift wheel mode"))
-                    .layout(|l| l.direction(TopToBottom).gap(4).padding((8, 10, 8, 10)))
-                    .children(|ui| {
-                        ui.text(
-                            if wheel_selected {
-                                "Switch wheel mode - selected"
-                            } else {
-                                "Switch wheel mode"
-                            },
-                            |t| t.font(&fonts::SANS).font_size(13).color(pal.text),
-                        );
-                        ui.text(
-                            "Assign ratchet/free-spin switching to this mouse button",
-                            |t| t.font(&fonts::SANS).font_size(11).color(pal.muted),
-                        );
-                        if ui.just_pressed() {
-                            *chosen = Some(Action::ShiftWheelMode);
-                        }
-                    });
+            if wheel
+                && hardware_row(
+                    ui,
+                    &pal,
+                    "picker_wheel_action",
+                    "Switch wheel mode",
+                    "Toggle between ratchet and free-spin scrolling",
+                    &icons::NAV_SCROLL,
+                    wheel_selected,
+                    app.picker_feedback,
+                )
+            {
+                *chosen = Some(Action::ShiftWheelMode);
             }
-            if dpi && !editing {
-                ui.element()
-                    .id("picker_speed_setup")
-                    .width(grow!())
-                    .height(fixed!(52.0))
-                    .background_color(pal.s2)
-                    .corner_radius(6.0)
-                    .accessibility(|a| a.button("Switch pointer speed"))
-                    .layout(|l| l.direction(TopToBottom).gap(4).padding((8, 10, 8, 10)))
-                    .children(|ui| {
-                        ui.text("Switch pointer speed", |t| {
-                            t.font(&fonts::SANS).font_size(13).color(pal.text)
-                        });
-                        ui.text("Choose two speeds to toggle between...", |t| {
-                            t.font(&fonts::SANS).font_size(11).color(pal.muted)
-                        });
-                        if ui.just_pressed() {
-                            app.picker_speed_editor = true;
-                        }
-                    });
+            if dpi
+                && !editing
+                && hardware_row(
+                    ui,
+                    &pal,
+                    "picker_speed_setup",
+                    "Switch pointer speed",
+                    "Choose two speeds to toggle between",
+                    &icons::CAT_SYSTEM,
+                    false,
+                    None,
+                )
+            {
+                app.picker_speed_editor = true;
             }
             if dpi && editing {
                 for (i, id) in ["picker_dpi_first", "picker_dpi_second"].iter().enumerate() {
@@ -455,6 +446,78 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                     });
             }
         });
+}
+
+/// Match the preset rows, including their icon tile, hover fill and selected check.
+fn hardware_row(
+    ui: &mut Ui2,
+    pal: &super::theme::Palette,
+    id: &'static str,
+    label: &str,
+    description: &str,
+    glyph: &'static GraphicAsset,
+    selected: bool,
+    feedback: Option<std::time::Instant>,
+) -> bool {
+    let hover = ui.pointer_over(id);
+    let pressed = ui.is_pressed(id);
+    let progress = feedback.map(|t| (t.elapsed().as_secs_f32() / 0.24).clamp(0.0, 1.0));
+    let pulse = progress.map(|t| (1.0 - t) * (1.0 - t)).unwrap_or(0.0);
+    let mut clicked = false;
+    ui.element()
+        .id(id)
+        .accessibility(|a| a.button(label))
+        .width(grow!())
+        .height(fit!())
+        .corner_radius(9.0)
+        .background_color(if selected || feedback.is_some() {
+            super::theme::Palette::mix(pal.accent, 12.0 + 24.0 * pulse, pal.pop)
+        } else if hover || pressed {
+            pal.s2
+        } else {
+            super::theme::TRANSPARENT
+        })
+        .layout(|l| {
+            l.direction(LeftToRight)
+                .align(Left, CenterY)
+                .gap(11)
+                .padding((9, 10, 9, 10))
+        })
+        .children(|ui| {
+            clicked = ui.just_pressed();
+            ui.element()
+                .width(fixed!(30.0))
+                .height(fixed!(30.0))
+                .corner_radius(8.0)
+                .background_color(pal.s2)
+                .layout(|l| l.align(CenterX, CenterY))
+                .children(|ui| {
+                    widgets::icon(
+                        ui,
+                        glyph,
+                        if pressed { 14.0 } else { 16.0 - 2.0 * pulse },
+                        pal.muted,
+                    );
+                });
+            ui.element()
+                .width(grow!())
+                .height(fit!())
+                .layout(|l| l.direction(TopToBottom).gap(1))
+                .children(|ui| {
+                    ui.text(label, |t| {
+                        t.font(&fonts::SANS_SEMIBOLD)
+                            .font_size(widgets::px(13.5))
+                            .color(pal.text)
+                    });
+                    ui.text(description, |t| {
+                        t.font(&fonts::SANS).font_size(12).color(pal.muted)
+                    });
+                });
+            if selected || feedback.is_some() {
+                widgets::icon(ui, &icons::CHECK, 15.0 - 3.0 * pulse, pal.accent);
+            }
+        });
+    clicked
 }
 
 fn results(ui: &mut Ui2, app: &App, query: &str, current: &Action, chosen: &mut Option<Action>) {

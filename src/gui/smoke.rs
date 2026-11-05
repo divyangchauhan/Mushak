@@ -562,13 +562,13 @@ async fn check(output: PathBuf) {
     assert_panel_fits(&ply);
     snapshot(&output, "15-device-actions");
     click(&mut ply, &mut app, "picker_wheel_action").await;
-    assert!(app
-        .save_notice
-        .as_ref()
-        .unwrap()
-        .0
-        .starts_with("Saved. Press"));
-    snapshot(&output, "17-wheel-action-confirmation");
+    assert!(app.save_notice.is_none());
+    if app.picker_feedback.is_some() {
+        snapshot(&output, "17-wheel-action-feedback");
+        while app.picker.is_some() {
+            draw(&mut ply, &mut app, None).await;
+        }
+    }
     assert_eq!(
         app.action_for(&PickerTarget::Button("control_00c4".into())),
         Action::ShiftWheelMode

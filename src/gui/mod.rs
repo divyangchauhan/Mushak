@@ -131,6 +131,7 @@ pub struct App {
     picker_dpi: [u16; 2],
     picker_speed_editor: bool,
     save_notice: Option<(String, Instant)>,
+    picker_feedback: Option<Instant>,
     pub custom_mods: Vec<Modifier>,
     pub custom_key: Option<u16>,
     pub capturing_key: bool,
@@ -197,6 +198,7 @@ impl App {
             picker_dpi: [800, 1600],
             picker_speed_editor: false,
             save_notice: None,
+            picker_feedback: None,
             custom_mods: Vec::new(),
             custom_key: None,
             capturing_key: false,
@@ -238,6 +240,7 @@ impl App {
                 self.custom_key = None;
             }
         }
+        self.picker_feedback = None;
         self.picker_speed_editor = false;
         self.picker_dpi = match current {
             Action::ChangePointerSpeed { first, second } => [first, second],
@@ -292,13 +295,6 @@ impl App {
     }
 
     pub fn assign_action(&mut self, target: &PickerTarget, action: crate::config::Action) {
-        let confirmation = match &action {
-            Action::ShiftWheelMode => {
-                "Saved. Press the mouse wheel-mode button to switch between ratchet and free-spin."
-                    .to_string()
-            }
-            _ => "Button action saved.".to_string(),
-        };
         match target {
             PickerTarget::Button(slot) => {
                 let idx = self.selected_profile;
@@ -334,14 +330,18 @@ impl App {
         let message = match self.draft.save() {
             Ok(()) => {
                 state::set_config(self.draft.clone());
-                confirmation
+                String::new()
             }
             Err(e) => {
                 tracing::error!("saving action failed: {e:#}");
                 "Could not save the action. Please try again.".to_string()
             }
         };
-        self.save_notice = Some((message, Instant::now()));
+        self.save_notice = if message.is_empty() {
+            None
+        } else {
+            Some((message, Instant::now()))
+        };
     }
 
     /// While the picker is capturing, the next key press becomes the custom key.
