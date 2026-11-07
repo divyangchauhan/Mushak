@@ -204,6 +204,14 @@ impl Device {
             tracing::debug!("wheel ratchet event: {}", crate::logging::hex(&rep.raw));
             return;
         }
+        if crate::hook::click_blocks_scroll() {
+            // Discard click movement instead of carrying it into the next scroll.
+            PENDING.store(0, Ordering::Relaxed);
+            DIRECTION.store(0, Ordering::Relaxed);
+            REMAINDER.store(0, Ordering::Relaxed);
+            *LAST_EVENT.lock().unwrap_or_else(|e| e.into_inner()) = None;
+            return;
+        }
         let delta = (((rep.param(1) as u16) << 8) | rep.param(2) as u16) as i16 as i32;
         if delta == 0 {
             return;

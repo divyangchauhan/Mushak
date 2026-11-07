@@ -10,6 +10,8 @@ use crate::config::{Action, MouseButton};
 use crate::injector::INJECT_SIGNATURE;
 use crate::state;
 use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HINSTANCE, HMODULE, LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
@@ -19,11 +21,58 @@ use windows::Win32::UI::WindowsAndMessaging::{
     CallNextHookEx, DispatchMessageW, GetMessageW, PostThreadMessageW, SetWindowsHookExW,
     TranslateMessage, UnhookWindowsHookEx, EVENT_SYSTEM_FOREGROUND, HC_ACTION, HHOOK, MSG,
     MSLLHOOKSTRUCT, WH_MOUSE_LL, WINEVENT_OUTOFCONTEXT, WINEVENT_SKIPOWNPROCESS, WM_MBUTTONDOWN,
-    WM_MBUTTONUP, WM_QUIT, WM_XBUTTONDOWN, WM_XBUTTONUP,
+    WM_MBUTTONUP, WM_MOUSEWHEEL, WM_QUIT, WM_XBUTTONDOWN, WM_XBUTTONUP,
 };
 
 /// Thread id of the hook thread, used to post `WM_QUIT` at shutdown.
 static HOOK_THREAD_ID: AtomicU32 = AtomicU32::new(0);
+
+// Keep release jitter out of both native and diverted wheel input.
+static CLICK_GUARD: Mutex<ClickGuard> = Mutex::new(ClickGuard {
+    down: false,
+    released: None,
+});
+const RELEASE_GUARD: Duration = Duration::from_millis(150);
+
+struct ClickGuard {
+    down: bool,
+    released: Option<Instant>,
+}
+
+impl ClickGuard {
+    fn update(&mut self, msg: u32, now: Instant) {
+        match msg {
+            WM_MBUTTONDOWN => self.down = true,
+            WM_MBUTTONUP => {
+                self.down = false;
+                self.released = Some(now);
+            }
+            _ => {}
+        }
+    }
+
+    fn blocks(&self, now: Instant) -> bool {
+        self.down
+            || self
+                .released
+                .is_some_and(|released| now.duration_since(released) < RELEASE_GUARD)
+    }
+}
+
+pub(crate) fn click_blocks_scroll() -> bool {
+    !state::is_paused()
+        && CLICK_GUARD
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .blocks(Instant::now())
+}
+
+fn suppress_click_scroll(msg: u32, paused: bool) -> bool {
+    let mut guard = CLICK_GUARD.lock().unwrap_or_else(|e| e.into_inner());
+    let now = Instant::now();
+    guard.update(msg, now);
+    msg == WM_MOUSEWHEEL && !paused && guard.blocks(now)
+}
 
 /// Spawn the hook thread. It installs the hooks and pumps messages until
 /// [`request_stop`] is called.
@@ -142,6 +191,9 @@ unsafe extern "system" fn low_level_mouse_proc(
     wparam: WPARAM,
     lparam: LPARAM,
 ) -> LRESULT {
+    if code == HC_ACTION as i32 && suppress_click_scroll(wparam.0 as u32, state::is_paused()) {
+        return LRESULT(1);
+    }
     if code == HC_ACTION as i32 && !state::is_paused() {
         let info = &*(lparam.0 as *const MSLLHOOKSTRUCT);
 
@@ -179,4 +231,26 @@ unsafe extern "system" fn low_level_mouse_proc(
     }
 
     CallNextHookEx(HHOOK(std::ptr::null_mut()), code, wparam, lparam)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn click_and_release_jitter_are_suppressed() {
+        let now = Instant::now();
+        let mut guard = ClickGuard {
+            down: false,
+            released: None,
+        };
+        assert!(!guard.blocks(now));
+        guard.update(WM_MBUTTONDOWN, now);
+        assert!(guard.blocks(now + Duration::from_secs(1)));
+        let release = now + Duration::from_secs(1);
+        guard.update(WM_MBUTTONUP, release);
+        assert!(guard.blocks(release + Duration::from_millis(20)));
+        assert!(guard.blocks(release + Duration::from_millis(149)));
+        assert!(!guard.blocks(release + RELEASE_GUARD));
+    }
 }

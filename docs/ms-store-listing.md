@@ -104,8 +104,4 @@ app tile icon.
 - Privacy URL: <https://github.com/divyangchauhan/Mushak/blob/main/PRIVACY.md>
 - Copyright: Copyright 2026 Divyang Chauhan
 - License: MIT, <https://github.com/divyangchauhan/Mushak/blob/main/LICENSE>
-- What's new: Visual button configuration for the original MX Master, 2S, 3,
-  3S, and 4, including Mac and Business variants. Click a marker or label to
-  choose an action. Extra controls appear only when reported by the mouse.
-  Includes the Store runtime fix. Physical validation across all models and
-  connections remains pending.
+- What's new: Reduce accidental scrolling when pressing the wheel for a middle click. Wheel movement is ignored while the button is held and for 150 milliseconds after release. High-resolution click movement is discarded so it cannot accumulate into a later scroll jump. Normal scrolling resumes after the guard; pausing Mushak disables it. Your existing settings are preserved.

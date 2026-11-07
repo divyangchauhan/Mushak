@@ -1,0 +1,5 @@
+Reduce accidental scrolling when pressing the wheel for a middle click.
+Wheel movement is ignored while the button is held and for 150 milliseconds
+after release. High-resolution click movement is discarded so it cannot
+accumulate into a later scroll jump. Normal scrolling resumes after the guard;
+pausing Mushak disables it. Your existing settings are preserved.
