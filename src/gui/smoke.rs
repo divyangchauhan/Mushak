@@ -36,6 +36,7 @@ pub fn run() {
 
 async fn draw(ply: &mut Ply<()>, app: &mut App, input: Option<(f32, f32, bool)>) {
     next_frame().await;
+    app.poll_key_capture();
     clear_background(app.pal.win.into());
     let (x, y, down) = input.unwrap_or((-100.0, -100.0, false));
     ply.set_layout_dimensions((screen_width(), screen_height()).into());
@@ -64,10 +65,15 @@ async fn click(ply: &mut Ply<()>, app: &mut App, id: impl Into<Id>) {
 }
 
 fn snapshot(output: &std::path::Path, name: &str) {
+    if let Ok(states) = std::env::var("MUSHAK_CAPTURE_STATES") {
+        if !states.split(',').any(|state| state == name) {
+            return;
+        }
+    }
     get_screen_data().export_png(output.join(format!("{name}.png")).to_str().unwrap());
 }
 
-fn assert_panel_fits(ply: &Ply<()>) {
+fn assert_panel_fits(ply: &Ply<()>, app: &App) {
     let p = ply.bounding_box("picker_panel").expect("picker panel");
     assert!(
         p.x >= 0.0
@@ -75,7 +81,12 @@ fn assert_panel_fits(ply: &Ply<()>) {
             && p.x + p.width <= screen_width()
             && p.y + p.height <= screen_height()
     );
-    for id in ["picker_search", "capture", "assign", "picker_close"] {
+    let editor = if app.shortcut_editor {
+        "assign"
+    } else {
+        "picker_search"
+    };
+    for id in [editor, "shortcut_tab", "preset_tab", "picker_close"] {
         let b = ply.bounding_box(id).unwrap();
         assert!(
             b.x >= p.x
@@ -85,6 +96,103 @@ fn assert_panel_fits(ply: &Ply<()>) {
             "{id} must fit in the popover: {b:?} in {p:?}"
         );
     }
+}
+
+/// Capture real layout bounds across input transitions. A still image cannot catch a
+/// field moving away from the pointer after the first character.
+async fn check_editor_sizing(ply: &mut Ply<()>, app: &mut App, output: &std::path::Path) {
+    let mut failures = Vec::new();
+    let prefs = app.prefs;
+    for (name, width, height, control) in [
+        ("diagram", DESIGN_W, DESIGN_H, "mouse_middle"),
+        ("light", DESIGN_W, DESIGN_H, "mouse_middle"),
+        ("thumb", DESIGN_W, DESIGN_H, "mouse_back"),
+        ("compact", 720.0, 540.0, "btn_chip"),
+    ] {
+        app.prefs.theme = if name == "light" {
+            Theme::Light
+        } else {
+            Theme::Dark
+        };
+        app.pal = Palette::resolve(app.prefs.theme, app.prefs.accent);
+        chrome::make_frameless(width, height);
+        settle(ply, app).await;
+        if control == "btn_chip" {
+            click(ply, app, ("btn_chip", 2)).await;
+        } else {
+            click(ply, app, control).await;
+        }
+        if app.shortcut_editor {
+            click(ply, app, "preset_tab").await;
+        }
+        let mut ids = vec!["picker_panel", "picker_close", "preset_tab", "shortcut_tab"];
+        if name == "thumb" {
+            ids.push("thumb_picture");
+        } else if control == "mouse_middle" {
+            ids.push(control);
+        }
+        let original: Vec<_> = ids
+            .iter()
+            .map(|id| ply.bounding_box(*id).unwrap())
+            .collect();
+        let search = ply.bounding_box("picker_search").unwrap();
+        for state in ["actions", "search", "shortcut", "record", "back"] {
+            match state {
+                "search" => {
+                    ply.set_text_value("picker_search", "Copy");
+                    settle(ply, app).await;
+                    assert_eq!(app.picker_query, "Copy");
+                }
+                "shortcut" => click(ply, app, "shortcut_tab").await,
+                "record" => {
+                    click(ply, app, "capture").await;
+                    assert!(app.capturing_key);
+                }
+                "back" => {
+                    click(ply, app, "preset_tab").await;
+                    assert!(!app.capturing_key && !app.shortcut_editor);
+                }
+                _ => (),
+            }
+            assert_panel_fits(ply, app);
+            snapshot(output, &format!("sizing-{name}-{state}"));
+            for (id, before) in ids.iter().zip(&original) {
+                let after = ply.bounding_box(*id).unwrap();
+                if (after.x - before.x).abs() > 1.0
+                    || (after.y - before.y).abs() > 1.0
+                    || (after.width - before.width).abs() > 1.0
+                    || ((state != "search" || *id != "picker_panel")
+                        && (after.height - before.height).abs() > 1.0)
+                {
+                    failures.push(format!("{name}/{state}/{id}: {before:?} -> {after:?}"));
+                }
+            }
+            if state == "search" {
+                let after = ply.bounding_box("picker_search").unwrap();
+                if (after.y - search.y).abs() > 1.0 {
+                    failures.push(format!(
+                        "{name} search moved from {} to {}",
+                        search.y, after.y
+                    ));
+                }
+            }
+        }
+        click(ply, app, "shortcut_tab").await;
+        let target = app.picker.clone().unwrap();
+        let before = app.action_for(&target);
+        click(ply, app, ("mod", 0)).await;
+        click(ply, app, "cancel_shortcut").await;
+        assert!(app.picker.is_none());
+        assert_eq!(app.action_for(&target), before);
+    }
+    app.prefs = prefs;
+    app.pal = Palette::resolve(prefs.theme, prefs.accent);
+    chrome::make_frameless(DESIGN_W, DESIGN_H);
+    settle(ply, app).await;
+    assert!(
+        failures.is_empty(),
+        "Editor geometry changed during input: {failures:#?}"
+    );
 }
 
 async fn check(output: PathBuf) {
@@ -100,11 +208,11 @@ async fn check(output: PathBuf) {
         ..Default::default()
     };
     app.device_view.device.capabilities.gestures = true;
-    for (slot, cid) in [
-        ("middle", 0x0052),
-        ("back", 0x0053),
-        ("forward", 0x0056),
-        ("control_00c4", 0x00c4),
+    for (slot, name, cid) in [
+        ("middle", "Middle click", 0x0052),
+        ("back", "Back button", 0x0053),
+        ("forward", "Forward button", 0x0056),
+        ("control_00c4", "Wheel mode shift", 0x00c4),
     ] {
         app.device_view
             .device
@@ -113,12 +221,26 @@ async fn check(output: PathBuf) {
             .push(ButtonInfo {
                 cid,
                 slot: slot.into(),
-                name: slot.into(),
+                name: name.into(),
             });
     }
     chrome::make_frameless(DESIGN_W, DESIGN_H);
     settle(&mut ply, &mut app).await;
     snapshot(&output, "01-mouse-dark");
+
+    if std::env::args().any(|arg| arg == "--review-tray") {
+        crate::tray::preview_menu(
+            miniquad::window::windows_hwnd() as isize,
+            std::env::args().any(|arg| arg == "--paused"),
+        );
+        std::process::exit(0);
+    }
+    if std::env::args().any(|arg| arg == "--review-gallery") {
+        review_gallery(&mut ply, &mut app, output).await;
+        std::process::exit(0);
+    }
+
+    check_editor_sizing(&mut ply, &mut app, &output).await;
 
     for (id, slot) in [
         ("mouse_middle", "middle"),
@@ -131,7 +253,7 @@ async fn check(output: PathBuf) {
             app.picker == Some(PickerTarget::Button(slot.into())),
             "{id} opens its own mapping"
         );
-        assert_panel_fits(&ply);
+        assert_panel_fits(&ply, &app);
         snapshot(&output, &format!("02-popover-{slot}"));
         click(&mut ply, &mut app, "picker_close").await;
         assert!(app.picker.is_none(), "Close dismisses the popover");
@@ -162,8 +284,27 @@ async fn check(output: PathBuf) {
         app.picker_query.is_empty(),
         "Each opening clears the previous search"
     );
-    app.custom_mods = vec![Modifier::Alt, Modifier::Shift];
-    app.custom_key = Some(0x4B);
+    click(&mut ply, &mut app, "shortcut_tab").await;
+    click(&mut ply, &mut app, ("mod", 2)).await;
+    click(&mut ply, &mut app, ("mod", 3)).await;
+    click(&mut ply, &mut app, "capture").await;
+    assert!(app.capturing_key);
+    // Post K only to this test window, through miniquad's Win32 input handler.
+    use windows::Win32::Foundation::{HWND, LPARAM, WPARAM};
+    use windows::Win32::UI::WindowsAndMessaging::{PostMessageW, WM_KEYDOWN, WM_KEYUP};
+    let hwnd = HWND(miniquad::window::windows_hwnd());
+    unsafe {
+        PostMessageW(hwnd, WM_KEYDOWN, WPARAM(0x4b), LPARAM(0x0025_0001)).unwrap();
+        PostMessageW(
+            hwnd,
+            WM_KEYUP,
+            WPARAM(0x4b),
+            LPARAM(0xc025_0001_u32 as isize),
+        )
+        .unwrap();
+    }
+    settle(&mut ply, &mut app).await;
+    assert_eq!(app.custom_key, Some(0x4b));
     settle(&mut ply, &mut app).await;
     snapshot(&output, "04-custom-shortcut");
     click(&mut ply, &mut app, "assign").await;
@@ -172,6 +313,24 @@ async fn check(output: PathBuf) {
     assert_eq!(
         saved.profiles[0].buttons.back,
         Action::key(&[Modifier::Alt, Modifier::Shift], 0x4B)
+    );
+
+    // Recreate the settings UI from the persisted file, as settings_main does.
+    state::set_config(Config::load_strict().unwrap());
+    let mut reopened = App::new();
+    reopened.device_view = app.device_view.clone();
+    reopened.selected_profile = 1;
+    reopened.conflict_dismissed = true;
+    settle(&mut ply, &mut reopened).await;
+    click(&mut ply, &mut reopened, "mouse_back").await;
+    assert!(reopened.shortcut_editor);
+    assert_eq!(reopened.custom_key, Some(0x4B));
+    let prior = reopened.action_for(&PickerTarget::Button("back".into()));
+    reopened.custom_key = Some(0x4D);
+    click(&mut ply, &mut reopened, "picker_close").await;
+    assert_eq!(
+        Config::load_strict().unwrap().profiles[0].buttons.back,
+        prior
     );
 
     click(&mut ply, &mut app, "mouse_gesture").await;
@@ -187,7 +346,7 @@ async fn check(output: PathBuf) {
     settle(&mut ply, &mut app).await;
     snapshot(&output, "06-mouse-light");
     click(&mut ply, &mut app, "mouse_forward").await;
-    assert_panel_fits(&ply);
+    assert_panel_fits(&ply, &app);
     snapshot(&output, "07-popover-light");
     app.close_picker();
 
@@ -233,13 +392,13 @@ async fn check(output: PathBuf) {
             ] {
                 click(&mut ply, &mut app, id).await;
                 assert!(app.picker == Some(target), "{name}: {id} mapping");
-                assert_panel_fits(&ply);
+                assert_panel_fits(&ply, &app);
                 click(&mut ply, &mut app, "picker_close").await;
             }
             if master4 {
                 click(&mut ply, &mut app, "mouse_haptic").await;
                 assert!(app.picker == Some(PickerTarget::Button("control_01a0".into())));
-                assert_panel_fits(&ply);
+                assert_panel_fits(&ply, &app);
                 snapshot(&output, &format!("family-{slug}-haptic-{theme:?}"));
                 ply.set_text_value("picker_search", "Copy");
                 settle(&mut ply, &mut app).await;
@@ -277,7 +436,7 @@ async fn check(output: PathBuf) {
     settle(&mut ply, &mut app).await;
     click(&mut ply, &mut app, ("mouse_extra", 0x01ff + 3)).await;
     assert!(app.picker == Some(PickerTarget::Button("control_01ff".into())));
-    assert_panel_fits(&ply);
+    assert_panel_fits(&ply, &app);
     snapshot(&output, "family-extra-control");
     app.close_picker();
     app.device_view.device = connected;
@@ -313,7 +472,7 @@ async fn check(output: PathBuf) {
     chrome::make_frameless(720.0, 540.0);
     settle(&mut ply, &mut app).await;
     click(&mut ply, &mut app, ("btn_chip", 0)).await;
-    assert_panel_fits(&ply);
+    assert_panel_fits(&ply, &app);
     snapshot(&output, "09-small-window");
     app.close_picker();
     app.device_view.device.name = Some("MX Anywhere 3S".into());
@@ -324,4 +483,235 @@ async fn check(output: PathBuf) {
     std::fs::write(output.join("result.txt"), "PASS: all five MX Master generations and Mac/Business variants; marker and label selection, correct mappings, haptic panel mapping and profile isolation, additional reported controls, anchored layout, close and outside dismissal, persistence, custom shortcuts, search reset, gestures, both themes, disconnected editing, small-window bounds and other-mouse fallback.\n").unwrap();
     println!("UI smoke checks passed. Screenshots: {}", output.display());
     std::process::exit(0);
+}
+
+/// Capture the same production layouts for visual review, using a recorded
+/// device report and isolated settings. This path never starts the resident.
+async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../docs/validation/mx-master-2s-bluetooth.json"
+    ))
+    .unwrap();
+    let connected: DeviceStatus = serde_json::from_value(fixture["status"].clone()).unwrap();
+    let gallery = output.join("gallery");
+    std::fs::create_dir_all(&gallery).unwrap();
+    for theme in [Theme::Dark, Theme::Light] {
+        app.prefs.theme = theme;
+        app.pal = Palette::resolve(theme, app.prefs.accent);
+        let dir = gallery.join(format!("{theme:?}"));
+        std::fs::create_dir_all(&dir).unwrap();
+        app.device_view.device = connected.clone();
+        if std::env::args().any(|arg| arg == "--more-states") {
+            let dir = gallery.join(format!("{theme:?}"));
+            std::fs::create_dir_all(&dir).unwrap();
+            extra_states(ply, app, &connected, &dir).await;
+            continue;
+        }
+        app.section = Section::Buttons;
+        app.selected_profile = 0;
+        settle(ply, app).await;
+        snapshot(&dir, "diagram");
+        click(ply, app, "profile_btn").await;
+        snapshot(&dir, "menu");
+        click(ply, app, ("profile_opt", 1)).await;
+        click(ply, app, "mouse_back").await;
+        assert_panel_fits(ply, app);
+        snapshot(&dir, "popover");
+        click(ply, app, "category_menu").await;
+        assert!(app.picker_categories_open);
+        snapshot(&dir, "category-menu");
+        click(ply, app, ("action_category", 1)).await;
+        assert_eq!(app.picker_category, 1);
+        snapshot(&dir, "category-edit");
+        click(ply, app, "category_menu").await;
+        click(ply, app, ("action_category", 0)).await;
+        ply.set_text_value("picker_search", "Copy");
+        settle(ply, app).await;
+        snapshot(&dir, "search-results");
+        click(ply, app, "shortcut_tab").await;
+        app.custom_mods = vec![Modifier::Ctrl];
+        app.custom_key = Some(0x4B);
+        settle(ply, app).await;
+        snapshot(&dir, "shortcut");
+        click(ply, app, "capture").await;
+        snapshot(&dir, "recording");
+        click(ply, app, "capture").await;
+        assert!(!app.capturing_key && app.custom_key == Some(0x4B));
+        click(ply, app, "picker_close").await;
+        for (section, name) in [
+            (Section::Scroll, "scroll"),
+            (Section::Gestures, "gestures"),
+            (Section::Profiles, "profiles"),
+            (Section::Device, "device"),
+        ] {
+            click(ply, app, section.id()).await;
+            snapshot(&dir, name);
+            if matches!(section, Section::Scroll | Section::Gestures) {
+                ply.set_scroll_position("settings_content", (0.0, 500.0));
+                settle(ply, app).await;
+                snapshot(&dir, &format!("{name}-lower"));
+                ply.set_scroll_position("settings_content", (0.0, 0.0));
+            }
+            if section == Section::Profiles {
+                click(ply, app, ("p_pick", 1)).await;
+                snapshot(&dir, "window-pick");
+                click(ply, app, "cancel_window_pick").await;
+                assert!(app.pick_deadline.is_none());
+            }
+        }
+        click(ply, app, "hidpp_head").await;
+        ply.set_scroll_position("settings_content", (0.0, 0.0));
+        settle(ply, app).await;
+        snapshot(&dir, "diagnostics");
+        click(ply, app, "diagnostics_back").await;
+        ply.set_scroll_position("settings_content", (0.0, 0.0));
+        app.device_view.device.connected = false;
+        app.device_view.device.capabilities = Default::default();
+        settle(ply, app).await;
+        snapshot(&dir, "disconnected");
+        app.device_view.device = DeviceStatus::default();
+        settle(ply, app).await;
+        snapshot(&dir, "empty");
+        click(ply, app, "nav_buttons").await;
+        snapshot(&dir, "button-list");
+        click(ply, app, ("btn_chip", 0)).await;
+        snapshot(&dir, "dialog");
+        ply.set_text_value("picker_search", "zzzz");
+        settle(ply, app).await;
+        snapshot(&dir, "no-results");
+        click(ply, app, "picker_close").await;
+        app.device_view.device = connected.clone();
+        app.device_view.paused = true;
+        app.conflict_dismissed = false;
+        app.conflict_names = vec!["Logi Options+".into()];
+        settle(ply, app).await;
+        snapshot(&dir, "alert");
+        app.conflict_dismissed = true;
+        app.device_view.paused = false;
+    }
+    println!(
+        "Gallery saved to {} at {}x{} logical pixels, {}x scale",
+        gallery.display(),
+        screen_width(),
+        screen_height(),
+        miniquad::window::dpi_scale()
+    );
+}
+
+async fn extra_states(
+    ply: &mut Ply<()>,
+    app: &mut App,
+    connected: &DeviceStatus,
+    dir: &std::path::Path,
+) {
+    app.section = Section::Buttons;
+    app.selected_profile = 0;
+    for (model, slug) in [("MX Master 3S", "master-3"), ("MX Master 4", "master-4")] {
+        app.device_view.device.name = Some(model.into());
+        if slug == "master-4" {
+            app.device_view
+                .device
+                .capabilities
+                .buttons
+                .push(ButtonInfo {
+                    name: "Haptic Sense Panel".into(),
+                    cid: 0x01a0,
+                    slot: "control_01a0".into(),
+                });
+        }
+        settle(ply, app).await;
+        snapshot(dir, slug);
+    }
+    click(ply, app, "mouse_haptic").await;
+    snapshot(dir, "haptic");
+    app.close_picker();
+    app.device_view
+        .device
+        .capabilities
+        .buttons
+        .push(ButtonInfo {
+            name: "Additional button".into(),
+            cid: 0x01ff,
+            slot: "control_01ff".into(),
+        });
+    settle(ply, app).await;
+    snapshot(dir, "extra-button");
+    app.device_view.device = DeviceStatus {
+        name: connected.name.clone(),
+        ..Default::default()
+    };
+    settle(ply, app).await;
+    snapshot(dir, "offline-diagram");
+    app.device_view.device = connected.clone();
+    app.draft.gestures.enabled = false;
+    app.section = Section::Gestures;
+    settle(ply, app).await;
+    snapshot(dir, "gestures-off");
+    app.draft.gestures.enabled = true;
+    app.draft.device.hires_scroll = false;
+    app.draft.device.smartshift = crate::config::SmartShiftMode::AlwaysRatchet;
+    app.section = Section::Scroll;
+    settle(ply, app).await;
+    snapshot(dir, "scroll-limited");
+    app.device_view.device = DeviceStatus {
+        connected: true,
+        name: Some("USB mouse".into()),
+        connection: Some("USB".into()),
+        settings_unavailable_reason: Some(
+            "This mouse reports standard Windows buttons only.".into(),
+        ),
+        ..Default::default()
+    };
+    app.section = Section::Device;
+    settle(ply, app).await;
+    snapshot(dir, "standard-mouse");
+    app.conflict_names = vec!["Logi Options+".into()];
+    app.conflict_dismissed = false;
+    app.kill_outcome = Some(crate::conflicts::KillOutcome {
+        killed: 0,
+        failed: vec![("Logi Options+".into(), "Access denied".into())],
+    });
+    settle(ply, app).await;
+    snapshot(dir, "conflict-error");
+    app.kill_outcome = None;
+    app.conflict_dismissed = true;
+    app.section = Section::Profiles;
+    let profiles = std::mem::take(&mut app.draft.profiles);
+    settle(ply, app).await;
+    snapshot(dir, "default-only");
+    app.draft.profiles = profiles;
+    app.draft.profiles.push(Profile {
+        name: "Photo editor".into(),
+        match_processes: vec!["photo.exe".into()],
+        buttons: ButtonMap::default(),
+    });
+    settle(ply, app).await;
+    snapshot(dir, "profile-order");
+    app.selected_profile = 2;
+    click(ply, app, ("p_up", 2)).await;
+    assert_eq!(app.selected_profile, 1);
+    assert_eq!(app.draft.profiles[0].name, "Photo editor");
+    click(ply, app, ("p_down", 1)).await;
+    assert_eq!(app.draft.profiles[1].name, "Photo editor");
+    assert_eq!(app.selected_profile, 2);
+    app.selected_profile = 0;
+    app.draft.profiles.pop();
+    app.device_view.device = connected.clone();
+    app.section = Section::Buttons;
+    chrome::make_frameless(720.0, 540.0);
+    settle(ply, app).await;
+    snapshot(dir, "compact");
+    click(ply, app, ("btn_chip", 0)).await;
+    assert_panel_fits(ply, app);
+    snapshot(dir, "compact-picker");
+    click(ply, app, "category_menu").await;
+    click(ply, app, ("action_category", 2)).await;
+    assert_eq!(app.picker_category, 2);
+    assert!(
+        ply.bounding_box(("pk", 203)).is_some(),
+        "Last Tabs & windows action must be available in compact mode"
+    );
+    app.close_picker();
+    chrome::make_frameless(DESIGN_W, DESIGN_H);
+    settle(ply, app).await;
 }

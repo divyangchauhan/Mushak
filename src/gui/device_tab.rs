@@ -26,12 +26,16 @@ fn feature_name(id: u16) -> &'static str {
         0x2201 => "Adjustable DPI",
         0x2202 => "Extended adjustable DPI",
         0x2205 => "Pointer motion",
-        _ => "Unknown",
+        _ => "Unidentified feature",
     }
 }
 
 pub fn section(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
+    if app.hidpp_expanded && app.mouse_awake() && !app.device_view.device.features.is_empty() {
+        feature_details(ui, app);
+        return;
+    }
     let mut refresh = false;
 
     ui.element()
@@ -40,8 +44,20 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         .layout(|l| l.direction(LeftToRight).align(Left, Top).gap(16))
         .children(|ui| {
             ui.element().width(grow!()).height(fit!()).children(|ui| {
-                widgets::heading(ui, &pal, "Device", "Live status straight from the mouse.");
+                widgets::heading(
+                    ui,
+                    &pal,
+                    "Device",
+                    if app.mouse_awake() {
+                        app.device_view.device.display_name()
+                    } else {
+                        ""
+                    },
+                );
             });
+            if !app.mouse_awake() || app.device_view.device.settings_unavailable_reason.is_some() {
+                return;
+            }
             let hovered = ui.pointer_over("btn_reapply");
             ui.element()
                 .id("btn_reapply")
@@ -64,7 +80,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         refresh = true;
                     }
                     widgets::icon(ui, &icons::REFRESH, 15.0, pal.text);
-                    ui.text("Re-apply", |t| {
+                    ui.text("Reapply settings", |t| {
                         t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
                     });
                 });
@@ -110,11 +126,13 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
                 });
             });
-            stat_tile(ui, app, "Firmware", |ui| {
-                ui.text(d.firmware.as_deref().unwrap_or("—"), |t| {
-                    t.font(&fonts::MONO_SEMIBOLD).font_size(15).color(pal.text)
+            if d.firmware.is_some() {
+                stat_tile(ui, app, "Firmware", |ui| {
+                    ui.text(d.firmware.as_deref().unwrap_or("—"), |t| {
+                        t.font(&fonts::MONO_SEMIBOLD).font_size(15).color(pal.text)
+                    });
                 });
-            });
+            }
         });
     ui.element().width(grow!()).height(fixed!(10.0)).empty();
     ui.element()
@@ -228,96 +246,43 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
 
     // HID++ feature list (diagnostic).
     let features = d.features.clone();
-    let expanded = app.hidpp_expanded;
     let mut toggle = false;
-    widgets::card(ui, &pal)
-        .layout(|l| l.direction(TopToBottom).padding(0))
-        .children(|ui| {
-            ui.element()
-                .id("hidpp_head")
-                .width(grow!())
-                .height(fixed!(46.0))
-                .layout(|l| {
-                    l.direction(LeftToRight)
-                        .align(Left, CenterY)
-                        .gap(10)
-                        .padding((0, 17, 0, 17))
-                })
-                .children(|ui| {
-                    if ui.just_pressed() {
-                        toggle = true;
-                    }
-                    widgets::icon(
-                        ui,
-                        if expanded {
-                            &icons::CHEVRON_DOWN
-                        } else {
-                            &icons::CHEVRON_RIGHT
-                        },
-                        14.0,
-                        pal.muted,
-                    );
-                    ui.element().width(grow!()).height(fit!()).children(|ui| {
-                        ui.text("HID++ features", |t| {
-                            t.font(&fonts::SANS_SEMIBOLD)
-                                .font_size(widgets::px(13.5))
-                                .color(pal.text)
+    if !features.is_empty() {
+        widgets::card(ui, &pal)
+            .layout(|l| l.direction(TopToBottom).padding(0))
+            .children(|ui| {
+                ui.element()
+                    .id("hidpp_head")
+                    .width(grow!())
+                    .height(fixed!(46.0))
+                    .layout(|l| {
+                        l.direction(LeftToRight)
+                            .align(Left, CenterY)
+                            .gap(10)
+                            .padding((0, 17, 0, 17))
+                    })
+                    .children(|ui| {
+                        if ui.just_pressed() {
+                            toggle = true;
+                        }
+                        widgets::icon(ui, &icons::CHEVRON_RIGHT, 14.0, pal.muted);
+                        ui.element().width(grow!()).height(fit!()).children(|ui| {
+                            ui.text("HID++ features", |t| {
+                                t.font(&fonts::SANS_SEMIBOLD)
+                                    .font_size(widgets::px(13.5))
+                                    .color(pal.text)
+                            });
+                        });
+                        ui.text(&format!("{} detected", features.len()), |t| {
+                            t.font(&fonts::MONO_MEDIUM)
+                                .font_size(widgets::px(11.5))
+                                .color(pal.faint)
                         });
                     });
-                    ui.text(&format!("{} · diagnostic", features.len()), |t| {
-                        t.font(&fonts::MONO_MEDIUM)
-                            .font_size(widgets::px(11.5))
-                            .color(pal.faint)
-                    });
-                });
-            if expanded {
-                ui.element()
-                    .width(grow!())
-                    .height(fit!())
-                    .layout(|l| l.direction(TopToBottom).padding((2, 8, 10, 8)))
-                    .children(|ui| {
-                        for (id, _idx) in &features {
-                            ui.element()
-                                .width(grow!())
-                                .height(fixed!(32.0))
-                                .corner_radius(8.0)
-                                .layout(|l| {
-                                    l.direction(LeftToRight)
-                                        .align(Left, CenterY)
-                                        .gap(12)
-                                        .padding((0, 10, 0, 10))
-                                })
-                                .children(|ui| {
-                                    ui.element().width(fixed!(64.0)).height(fit!()).children(
-                                        |ui| {
-                                            ui.text(&format!("{id:#06x}"), |t| {
-                                                t.font(&fonts::MONO_MEDIUM)
-                                                    .font_size(12)
-                                                    .color(pal.accent)
-                                            });
-                                        },
-                                    );
-                                    ui.element().width(grow!()).height(fit!()).children(|ui| {
-                                        ui.text(feature_name(*id), |t| {
-                                            t.font(&fonts::SANS)
-                                                .font_size(widgets::px(12.5))
-                                                .color(pal.text)
-                                        });
-                                    });
-                                    ui.element()
-                                        .width(fixed!(6.0))
-                                        .height(fixed!(6.0))
-                                        .corner_radius(99.0)
-                                        .background_color(pal.good)
-                                        .empty();
-                                });
-                        }
-                    });
-            }
-        });
-
+            });
+    }
     if toggle {
-        app.hidpp_expanded = !expanded;
+        app.hidpp_expanded = true;
     }
     if let Some(v) = new_dpi {
         app.draft.device.dpi = v;
@@ -326,6 +291,98 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     if refresh {
         app.device_view = crate::statusfile::read();
         app.commit_config();
+    }
+}
+
+fn feature_details(ui: &mut Ui2, app: &mut App) {
+    let pal = app.pal;
+    let d = &app.device_view.device;
+    ui.element()
+        .id("diagnostics_back")
+        .height(fixed!(30.0))
+        .corner_radius(7.0)
+        .background_color(pal.surface)
+        .accessibility(|a| a.button("Back to device"))
+        .layout(|l| {
+            l.direction(LeftToRight)
+                .gap(6)
+                .align(Left, CenterY)
+                .padding((0, 10, 0, 10))
+        })
+        .children(|ui| {
+            if ui.just_pressed() {
+                app.hidpp_expanded = false;
+            }
+            widgets::icon(ui, &icons::BTN_BACK, 14.0, pal.accent);
+            ui.text("Device", |t| {
+                t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
+            });
+        });
+    ui.element().height(fixed!(12.0)).empty();
+    widgets::heading(
+        ui,
+        &pal,
+        "HID++ features",
+        &format!(
+            "{} features reported by {}.",
+            d.features.len(),
+            d.display_name()
+        ),
+    );
+    ui.element().height(fixed!(16.0)).empty();
+    let mut other = Vec::new();
+    widgets::card(ui, &pal)
+        .layout(|l| l.direction(TopToBottom).padding((7, 16, 7, 16)))
+        .children(|ui| {
+            for (id, _) in &d.features {
+                let name = feature_name(*id);
+                if name == "Unidentified feature" {
+                    other.push(format!("{id:#06x}"));
+                    continue;
+                }
+                ui.element()
+                    .width(grow!())
+                    .height(fixed!(25.0))
+                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
+                    .children(|ui| {
+                        ui.text(&format!("{id:#06x}"), |t| {
+                            t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.accent)
+                        });
+                        ui.text(name, |t| {
+                            t.font(&fonts::SANS_MEDIUM).font_size(14).color(pal.text)
+                        });
+                    });
+            }
+        });
+    if !other.is_empty() {
+        ui.element().height(fixed!(16.0)).empty();
+        widgets::eyebrow(ui, &pal, "Features without a known name");
+        ui.text(
+            "Use these IDs when reporting a device compatibility issue.",
+            |t| t.font(&fonts::SANS).font_size(13).color(pal.muted),
+        );
+        let per_line = ((screen_width() - 260.0).clamp(70.0, 700.0) / 70.0) as usize;
+        for row in other.chunks(per_line) {
+            ui.element().height(fixed!(6.0)).empty();
+            ui.element()
+                .width(grow!())
+                .height(fit!())
+                .layout(|l| l.direction(LeftToRight).gap(6))
+                .children(|ui| {
+                    for id in row {
+                        ui.element()
+                            .height(fixed!(26.0))
+                            .corner_radius(5.0)
+                            .background_color(pal.s2)
+                            .layout(|l| l.align(CenterX, CenterY).padding((0, 8, 0, 8)))
+                            .children(|ui| {
+                                ui.text(id, |t| {
+                                    t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.text)
+                                });
+                            });
+                    }
+                });
+        }
     }
 }
 
@@ -340,7 +397,7 @@ fn stat_tile(ui: &mut Ui2, app: &App, label: &str, body: impl FnOnce(&mut Ui2)) 
         .border(|b| b.all(1).color(pal.line))
         .layout(|l| l.direction(TopToBottom).gap(7).padding((15, 17, 15, 17)))
         .children(|ui| {
-            ui.text(&label.to_uppercase(), |t| {
+            ui.text(label, |t| {
                 t.font(&fonts::SANS_SEMIBOLD)
                     .font_size(widgets::px(11.5))
                     .color(pal.faint)

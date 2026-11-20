@@ -39,7 +39,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         ui,
         &pal,
         "Gestures",
-        "Hold the gesture button and move the mouse to swipe, or just tap it.",
+        if app.draft.gestures.enabled {
+            "Tap the gesture button, or hold it and move the mouse to swipe."
+        } else {
+            "Gesture recognition is off."
+        },
     );
     ui.element().width(grow!()).height(fixed!(22.0)).empty();
 
@@ -59,16 +63,25 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         app,
         "sw_gestures",
         "Button gestures",
-        "Turn the whole gesture pad on or off.",
+        "Gesture actions apply to every profile.",
         enabled,
     ) {
         toggle_enabled = true;
     }
 
+    if !enabled {
+        if toggle_enabled {
+            app.draft.gestures.enabled = true;
+            app.commit_config();
+        }
+        ui.element().height(fixed!(16.0)).empty();
+        ui.text(
+            "Enable gestures to edit your saved tap and swipe actions.",
+            |t| t.font(&fonts::SANS).font_size(14).color(pal.muted),
+        );
+        return;
+    }
     ui.element().width(grow!()).height(fixed!(10.0)).empty();
-
-    // Everything below is inert while gestures are off; the design dims it.
-    let body_text = if enabled { pal.text } else { pal.muted };
 
     widgets::card(ui, &pal)
         .layout(|l| l.direction(TopToBottom).gap(3).padding((16, 17, 16, 17)))
@@ -80,15 +93,15 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 .children(|ui| {
                     ui.element().width(grow!()).height(fit!()).children(|ui| {
                         ui.text("Tap vs. swipe threshold", |t| {
-                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(body_text)
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
                         });
                     });
-                    ui.text(&format!("{threshold} units"), |t| {
+                    ui.text(&format!("{threshold} counts"), |t| {
                         t.font(&fonts::MONO_BOLD).font_size(13).color(pal.accent)
                     });
                 });
             ui.text(
-                "Move less than this and it counts as a tap; more, and it's a swipe.",
+                "A swipe starts when horizontal or vertical movement reaches this many sensor counts.",
                 |t| {
                     t.font(&fonts::SANS)
                         .font_size(widgets::px(12.5))
@@ -104,25 +117,8 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     ui.text("10", |t| {
                         t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
                     });
-                    if enabled {
-                        if let Some(v) =
-                            widgets::slider(ui, &pal, "threshold", threshold, 10, 400, 5)
-                        {
-                            new_threshold = Some(v);
-                        }
-                    } else {
-                        ui.element()
-                            .width(grow!())
-                            .height(fixed!(20.0))
-                            .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
-                            .children(|ui| {
-                                ui.element()
-                                    .width(grow!())
-                                    .height(fixed!(4.0))
-                                    .corner_radius(2.0)
-                                    .background_color(pal.s2)
-                                    .empty();
-                            });
+                    if let Some(v) = widgets::slider(ui, &pal, "threshold", threshold, 10, 400, 5) {
+                        new_threshold = Some(v);
                     }
                     ui.text("400", |t| {
                         t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
@@ -150,7 +146,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     ui.element()
         .width(grow!())
         .height(fit!())
-        .layout(|l| l.direction(TopToBottom).gap(10))
+        .layout(|l| l.direction(TopToBottom).gap(4))
         .children(|ui| {
             for (slot, name, disp) in &rows {
                 widgets::card(ui, &pal)
@@ -158,22 +154,17 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         l.direction(LeftToRight)
                             .align(Left, CenterY)
                             .gap(16)
-                            .padding((13, 17, 13, 17))
+                            .padding((6, 16, 6, 16))
                     })
                     .children(|ui| {
-                        widgets::icon(
-                            ui,
-                            row_icon(slot),
-                            24.0,
-                            if enabled { pal.accent } else { pal.muted },
-                        );
+                        widgets::icon(ui, row_icon(slot), 24.0, pal.accent);
                         ui.element().width(grow!()).height(fit!()).children(|ui| {
                             ui.text(name, |t| {
-                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(body_text)
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
                             });
                         });
                         let id: Id = ("g_chip", slot_index(slot)).into();
-                        if widgets::action_chip(ui, &pal, id, disp) && enabled {
+                        if widgets::action_chip(ui, &pal, id, disp) {
                             open_picker = Some(PickerTarget::Gesture(slot.clone()));
                         }
                     });

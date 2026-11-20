@@ -122,7 +122,7 @@ pub fn conflict_banner(ui: &mut Ui2, app: &mut App) {
     let bg = Palette::mix(pal.warn, 14.0, pal.win);
     let border = Palette::mix(pal.warn, 40.0, pal.win);
     let names = app.conflict_names.join(", ");
-    let outcome = app.kill_outcome.clone();
+    let failure = app.kill_outcome.as_ref().and_then(|o| o.failed.first());
     let mut quit = false;
     let mut ignore = false;
 
@@ -144,22 +144,20 @@ pub fn conflict_banner(ui: &mut Ui2, app: &mut App) {
                 .height(fit!())
                 .layout(|l| l.direction(TopToBottom).gap(2))
                 .children(|ui| {
-                    ui.text(&format!("{names} is running"), |t| {
-                        t.font(&fonts::SANS_SEMIBOLD)
-                            .font_size(px(13.5))
-                            .color(pal.text)
-                    });
-                    // After a failed kill, say what actually happened rather
-                    // than repeating the generic advice.
-                    let sub = match &outcome {
-                        Some(o) if !o.all_gone() => {
-                            let (name, why) = &o.failed[0];
-                            format!("Could not quit {name}: {why}")
-                        }
-                        _ => "It fights Mushak for control of the mouse. Quit it so your mappings \
-                              take effect reliably."
-                            .to_string(),
+                    let (title, sub) = match failure {
+                        Some((name, why)) => (
+                            format!("Could not quit {name}"),
+                            format!("{why}. Close the app manually or try again."),
+                        ),
+                        None => (
+                            format!("{names} is running"),
+                            "Close the other mouse software to let Mushak apply your mappings."
+                                .into(),
+                        ),
                     };
+                    ui.text(&title, |t| {
+                        t.font(&fonts::SANS_BOLD).font_size(15).color(pal.text)
+                    });
                     ui.text(&sub, |t| {
                         t.font(&fonts::SANS).font_size(px(12.5)).color(pal.muted)
                     });
@@ -180,7 +178,12 @@ pub fn conflict_banner(ui: &mut Ui2, app: &mut App) {
                     if ui.just_pressed() {
                         quit = true;
                     }
-                    ui.text("Quit Options+", |t| {
+                    let command = if failure.is_some() {
+                        "Try again".to_owned()
+                    } else {
+                        format!("Quit {names}")
+                    };
+                    ui.text(&command, |t| {
                         t.font(&fonts::SANS_SEMIBOLD)
                             .font_size(px(12.5))
                             .color(pal.warn_ink)
@@ -196,7 +199,7 @@ pub fn conflict_banner(ui: &mut Ui2, app: &mut App) {
                     if ui.just_pressed() {
                         ignore = true;
                     }
-                    ui.text("Ignore", |t| {
+                    ui.text("Dismiss", |t| {
                         t.font(&fonts::SANS).font_size(px(12.5)).color(if ig_hover {
                             pal.text
                         } else {
@@ -219,7 +222,7 @@ pub fn nav_item(ui: &mut Ui2, pal: &Palette, section: Section, active: bool) -> 
     let mut clicked = false;
     let hovered = ui.pointer_over(section.id());
     let bg = if active {
-        pal.surface
+        Palette::mix(pal.accent, 14.0, pal.rail)
     } else if hovered {
         Palette::mix(pal.surface, 50.0, pal.win)
     } else {
@@ -238,8 +241,8 @@ pub fn nav_item(ui: &mut Ui2, pal: &Palette, section: Section, active: bool) -> 
         .corner_radius(10.0)
         .background_color(bg)
         .border(|b| {
-            b.all(1)
-                .color(if active { pal.line_strong } else { TRANSPARENT })
+            b.left(3)
+                .color(if active { pal.accent } else { TRANSPARENT })
         })
         .layout(|l| {
             l.direction(LeftToRight)
@@ -251,10 +254,13 @@ pub fn nav_item(ui: &mut Ui2, pal: &Palette, section: Section, active: bool) -> 
             if ui.just_pressed() {
                 clicked = true;
             }
-            icon(ui, section.icon(), 19.0, fg);
-            ui.text(section.label(), |t| {
-                t.font(font).font_size(px(13.5)).color(fg)
-            });
+            icon(
+                ui,
+                section.icon(),
+                19.0,
+                if active { pal.accent } else { fg },
+            );
+            ui.text(section.label(), |t| t.font(font).font_size(15).color(fg));
         });
     clicked
 }
@@ -293,8 +299,18 @@ pub fn status_card(ui: &mut Ui2, app: &mut App) {
         .corner_radius(12.0)
         .background_color(pal.surface)
         .border(|b| b.all(1).color(pal.line))
-        .layout(|l| l.direction(TopToBottom).gap(11).padding(12))
+        .layout(|l| l.direction(TopToBottom).gap(7).padding(13))
         .children(|ui| {
+            if d.name.is_some() {
+                let model = d
+                    .display_name()
+                    .strip_prefix("Wireless Mouse ")
+                    .filter(|s| !s.is_empty())
+                    .unwrap_or(d.display_name());
+                ui.text(model, |t| {
+                    t.font(&fonts::SANS_BOLD).font_size(15).color(pal.text)
+                });
+            }
             ui.element()
                 .width(grow!())
                 .height(fit!())
@@ -310,14 +326,14 @@ pub fn status_card(ui: &mut Ui2, app: &mut App) {
                         t.font(&fonts::SANS_SEMIBOLD).font_size(12).color(pal.text)
                     });
                 });
+            if !d.capabilities.battery {
+                return;
+            }
             ui.element()
                 .width(grow!())
                 .height(fit!())
                 .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(9))
                 .children(|ui| {
-                    if !d.capabilities.battery {
-                        return;
-                    }
                     // Battery shell + fill.
                     ui.element()
                         .width(fixed!(34.0))
@@ -354,7 +370,7 @@ pub fn heading(ui: &mut Ui2, pal: &Palette, title: &str, sub: &str) {
         .layout(|l| l.direction(TopToBottom).gap(5))
         .children(|ui| {
             ui.text(title, |t| {
-                t.font(&fonts::DISPLAY_BOLD).font_size(23).color(pal.text)
+                t.font(&fonts::DISPLAY_BOLD).font_size(30).color(pal.text)
             });
             if !sub.is_empty() {
                 ui.text(sub, |t| {
@@ -366,8 +382,8 @@ pub fn heading(ui: &mut Ui2, pal: &Palette, title: &str, sub: &str) {
 
 /// Small uppercase label the design uses above groups of controls.
 pub fn eyebrow(ui: &mut Ui2, pal: &Palette, text: &str) {
-    ui.text(&text.to_uppercase(), |t| {
-        t.font(&fonts::SANS_SEMIBOLD).font_size(12).color(pal.faint)
+    ui.text(text, |t| {
+        t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.muted)
     });
 }
 
@@ -385,8 +401,8 @@ pub fn card<'a>(ui: &'a mut Ui2, pal: &Palette) -> ElementBuilder<'a, ()> {
 pub fn toggle(ui: &mut Ui2, pal: &Palette, id: &'static str, on: bool) -> bool {
     let mut clicked = false;
     // The knob slides by (track - knob - 2*inset) = 46 - 21 - 4.
-    let track_bg = if on { pal.accent } else { pal.s2 };
-    let knob_bg = if on { pal.accent_ink } else { pal.muted };
+    let track_bg = if on { pal.accent } else { pal.track };
+    let knob_bg = if on { pal.accent_ink } else { pal.surface };
     ui.element()
         .id(id)
         .width(fixed!(46.0))
@@ -459,7 +475,7 @@ pub fn slider(
                 .width(grow!())
                 .height(fixed!(4.0))
                 .corner_radius(2.0)
-                .background_color(pal.s2)
+                .background_color(pal.track)
                 .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
                 .children(|ui| {
                     // Filled portion.
@@ -529,13 +545,13 @@ pub fn action_chip(ui: &mut Ui2, pal: &Palette, id: Id, disp: &super::actions::D
             }
             if !disp.label.is_empty() {
                 let (font, color) = match disp.kind {
-                    super::actions::Kind::PassThrough => (&fonts::SANS, pal.muted),
+                    super::actions::Kind::PassThrough => (&fonts::SANS_SEMIBOLD, pal.text),
                     super::actions::Kind::Disabled => (&fonts::SANS_SEMIBOLD, pal.muted),
                     _ => (&fonts::SANS_SEMIBOLD, pal.text),
                 };
                 ui.text(&disp.label, |t| t.font(font).font_size(13).color(color));
             }
-            icon(ui, &icons::CHEVRON_RIGHT, 14.0, pal.faint);
+            icon(ui, &icons::CHEVRON_RIGHT, 15.0, pal.accent);
         });
     clicked
 }
@@ -543,43 +559,37 @@ pub fn action_chip(ui: &mut Ui2, pal: &Palette, id: Id, disp: &super::actions::D
 /// The "Mouse is asleep" card that replaces Scroll / Gestures / Device bodies
 /// when the mouse cannot be reached.
 pub fn asleep_card(ui: &mut Ui2, pal: &Palette, device: &crate::hidpp::device::DeviceStatus) {
-    ui.element()
-        .width(grow!())
-        .height(fit!())
-        .layout(|l| l.direction(TopToBottom).align(CenterX, Top).padding((60, 0, 0, 0)))
+    card(ui, pal)
+        .layout(|l| {
+            l.direction(LeftToRight)
+                .align(Left, CenterY)
+                .gap(18)
+                .padding(24)
+        })
         .children(|ui| {
             ui.element()
-                .width(fixed!(320.0))
+                .width(fixed!(52.0))
+                .height(fixed!(52.0))
+                .corner_radius(12.0)
+                .background_color(pal.s2)
+                .layout(|l| l.align(CenterX, CenterY))
+                .children(|ui| icon(ui, &icons::ASLEEP, 26.0, pal.muted));
+            ui.element()
+                .width(grow!())
                 .height(fit!())
-                .corner_radius(16.0)
-                .background_color(pal.surface)
-                .border(|b| b.all(1).color(pal.line_strong))
-                .layout(|l| {
-                    l.direction(TopToBottom)
-                        .align(CenterX, Top)
-                        .gap(6)
-                        .padding(28)
-                })
+                .layout(|l| l.direction(TopToBottom).gap(7))
                 .children(|ui| {
-                    ui.element()
-                        .width(fixed!(44.0))
-                        .height(fixed!(44.0))
-                        .corner_radius(12.0)
-                        .background_color(pal.s2)
-                        .layout(|l| l.align(CenterX, CenterY))
-                        .children(|ui| icon(ui, &icons::ASLEEP, 24.0, pal.muted));
-                    ui.element().width(grow!()).height(fixed!(8.0)).empty();
                     ui.text(device.availability_label(), |t| {
-                        t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
+                        t.font(&fonts::DISPLAY_BOLD).font_size(20).color(pal.text)
                     });
-                    ui.text(
-                        if device.name.is_some() {
-                            "Connect or wake your mouse to read its settings. Windows button mappings remain available."
-                        } else {
-                            "Connect a mouse to read its settings."
-                        },
-                        |t| t.font(&fonts::SANS).font_size(13).color(pal.muted),
-                    );
+                    let instruction = if device.name.is_some() {
+                        "Wake or reconnect your mouse. Saved button mappings are still editable."
+                    } else {
+                        "Connect a mouse to see its settings."
+                    };
+                    ui.text(instruction, |t| {
+                        t.font(&fonts::SANS).font_size(14).color(pal.muted)
+                    });
                 });
         });
 }

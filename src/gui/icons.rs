@@ -59,6 +59,11 @@ icon!(BOLT, "bolt");
 
 // Action-picker categories.
 icon!(CAT_EDIT, "cat_edit");
+icon!(EDIT_COPY, "edit_copy");
+icon!(EDIT_PASTE, "edit_paste");
+icon!(EDIT_CUT, "edit_cut");
+icon!(EDIT_UNDO, "edit_undo");
+icon!(EDIT_REDO, "edit_redo");
 icon!(CAT_NAV, "cat_nav");
 icon!(CAT_SYSTEM, "cat_system");
 icon!(CAT_MEDIA, "cat_media");

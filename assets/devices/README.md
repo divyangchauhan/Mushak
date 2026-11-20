@@ -24,6 +24,8 @@ https://resource.logitech.com/w_1000,f_png/content/dam/logitech/en/products/mice
 downloaded on 2026-10-24 at 1000 pixels wide using Logitech's image service:
 https://resource.logitech.com/w_1000,f_png/content/dam/logitech/en/products/mice/mx-master-4/gallery/mx-master-4-graphite-front-3qtr-angle-gallery-10.png.
 
+The settings editor uses two detail crops from the same images. The 2S crop starts at pixel 317, 105 and the MX Master 4 crop at pixel 486, 303. Both measure 348 by 285 pixels.
+
 The artwork belongs to Logitech and is not covered by Mushak's MIT license.
 This local preview uses it to identify the device's button layout. Review
 artwork permissions before distributing a release containing these files.
