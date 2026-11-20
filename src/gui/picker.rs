@@ -1,7 +1,7 @@
 //! The action picker, centered for lists or anchored to a mouse marker.
 //!
-//! Search filters the presets, and the footer builds a custom modifier+key
-//! combo. Ply has no modal primitive, so this is a floating element pinned over
+//! Search filters the presets. The keyboard shortcut tab records a modifier and key
+//! combination. Ply has no modal primitive, so this is a floating element pinned over
 //! the window with a dimmed backdrop behind it.
 
 use super::widgets::{self, Ui2};
@@ -54,7 +54,39 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                 && super::mouse_view::matches_device(&app.device_view.device)
         })
         .and_then(|id| ui.bounding_box(id));
-    let (x, y, width, height) = panel_rect(anchored, screen_width(), screen_height());
+    let (mut x, y, mut width, height) = panel_rect(
+        anchored,
+        screen_width(),
+        screen_height(),
+        if app.shortcut_editor {
+            282.0
+        } else if anchored.is_some() && app.picker_query.is_empty() && screen_height() >= 600.0 {
+            if app.picker_categories_open {
+                443.0
+            } else if app.picker_category == 0 {
+                454.0
+            } else {
+                let category = actions::Category::ORDER[app.picker_category - 1];
+                let count = actions::presets()
+                    .iter()
+                    .filter(|preset| preset.cat == category)
+                    .count();
+                category_height(count)
+            }
+        } else if app.picker_query.is_empty() {
+            504.0
+        } else {
+            246.0
+        },
+    );
+
+    if anchored.is_some()
+        && super::mouse_view::Model::for_device(&app.device_view.device)
+            .is_some_and(|model| model.has_thumb_detail(app.picker_anchor))
+    {
+        width = (screen_width() * 0.45).clamp(350.0, 476.0);
+        x = screen_width() - width - 20.0;
+    }
 
     // Backdrop. Clicking it dismisses.
     //
@@ -86,9 +118,13 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                 .corner_radius(16.0)
                 .background_color(pal.pop)
                 .border(|b| b.all(1).color(pal.line_strong))
-                .layout(|l| l.direction(TopToBottom))
+                .layout(|l| l.direction(TopToBottom).padding((0, 0, 9, 0)))
                 .children(|ui| {
                     header(ui, app, &target, &mut close);
+                    if app.shortcut_editor {
+                        custom_footer(ui, app, &mut chosen);
+                        return;
+                    }
                     if app.picker_fresh {
                         ui.set_text_value("picker_search", "");
                         ui.set_focus("picker_search");
@@ -97,7 +133,6 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                     }
                     let query = app.picker_query.to_lowercase();
                     results(ui, app, &query, &current, &mut chosen);
-                    custom_footer(ui, app, &mut chosen);
                 });
         });
 
@@ -109,6 +144,8 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
         // discarding the whole palette.
         if app.capturing_key {
             app.capturing_key = false;
+        } else if app.picker_categories_open {
+            app.picker_categories_open = false;
         } else {
             app.close_picker();
         }
@@ -128,36 +165,46 @@ fn panel_rect(
     anchor: Option<ply_engine::math::BoundingBox>,
     window_w: f32,
     window_h: f32,
+    preferred_height: f32,
 ) -> (f32, f32, f32, f32) {
-    let margin = 16.0;
+    let margin = 20.0;
     let width = if anchor.is_some() {
-        410.0_f32
+        (window_w * 0.385).clamp(310.0, 408.0)
+    } else if window_h < 600.0 {
+        564.0
     } else {
         500.0_f32
     }
-    .min((window_w - margin * 2.0).max(1.0));
-    let height = 540.0_f32.min((window_h - margin * 2.0).max(1.0));
-    let max_x = (window_w - width - margin).max(margin);
-    let max_y = (window_h - height - margin).max(margin);
-    let (x, y) = if let Some(a) = anchor {
-        let right = a.x + a.width + 14.0;
-        (
-            if right + width <= window_w - margin {
-                right
-            } else {
-                a.x - width - 14.0
-            },
-            a.y - 60.0,
-        )
+    .min((window_w - 2.0 * margin).max(1.0));
+    // Reserve the title bar and leave room around the editor on compact windows.
+    let top = if anchor.is_some() && window_h >= 600.0 {
+        144.0
+    } else if window_h >= 460.0 {
+        60.0
     } else {
-        ((window_w - width) / 2.0, 62.0)
+        margin
     };
-    (
-        x.clamp(margin, max_x),
-        y.clamp(margin, max_y),
-        width,
-        height,
-    )
+    let available = (window_h - top - margin).max(1.0);
+    let height = if anchor.is_none()
+        && preferred_height > available
+        && preferred_height > 400.0
+        && available > 400.0
+    {
+        442.0_f32.min(available)
+    } else {
+        preferred_height.min(available)
+    };
+    let x = if anchor.is_some() {
+        window_w - width - margin
+    } else {
+        (window_w - width) / 2.0
+    };
+    let y = if anchor.is_some() {
+        top
+    } else {
+        top + (available - height) / 2.0
+    };
+    (x.max(0.0), y, width, height)
 }
 
 fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) {
@@ -189,10 +236,48 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                             } else {
                                 target.label(&app.device_view.device)
                             };
-                            ui.text(label, |t| {
-                                t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
+                            let number = app.picker_anchor.and_then(|id| {
+                                super::mouse_view::control_number(&app.device_view.device, id)
                             });
-                            let profile = if matches!(target, PickerTarget::Gesture(_)) {
+                            if let Some(n) = number {
+                                ui.element()
+                                    .width(grow!())
+                                    .height(fit!())
+                                    .layout(|l| {
+                                        l.direction(LeftToRight).align(Left, CenterY).gap(9)
+                                    })
+                                    .children(|ui| {
+                                        ui.element()
+                                            .width(fixed!(23.0))
+                                            .height(fixed!(23.0))
+                                            .corner_radius(12.0)
+                                            .background_color(pal.accent)
+                                            .layout(|l| l.align(CenterX, CenterY))
+                                            .children(|ui| {
+                                                ui.text(&n.to_string(), |t| {
+                                                    t.font(&fonts::MONO_BOLD)
+                                                        .font_size(14)
+                                                        .color(pal.accent_ink)
+                                                });
+                                            });
+                                        ui.text(label, |t| {
+                                            t.font(&fonts::SANS_SEMIBOLD)
+                                                .font_size(19)
+                                                .color(pal.text)
+                                        });
+                                    });
+                            } else {
+                                ui.text(label, |t| {
+                                    t.font(&fonts::SANS_SEMIBOLD).font_size(19).color(pal.text)
+                                });
+                            }
+                            let profile = if app.picker_anchor == Some("mouse_haptic") {
+                                if matches!(target, PickerTarget::Gesture(_)) {
+                                    "Tap the thumb panel"
+                                } else {
+                                    "Press the thumb panel"
+                                }
+                            } else if matches!(target, PickerTarget::Gesture(_)) {
                                 "All profiles"
                             } else {
                                 app.profile_at(app.selected_profile)
@@ -220,6 +305,60 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                 });
             ui.element()
                 .width(grow!())
+                .height(fit!())
+                .background_color(pal.win)
+                .corner_radius(8.0)
+                .layout(|l| l.direction(LeftToRight).gap(3).padding(3))
+                .children(|ui| {
+                    for (keyboard, id, label) in [
+                        (false, "preset_tab", "Actions"),
+                        (true, "shortcut_tab", "Keyboard shortcut"),
+                    ] {
+                        let selected = keyboard == app.shortcut_editor;
+                        ui.element()
+                            .id(id)
+                            .width(if app.shortcut_editor && !keyboard {
+                                fixed!(85.0)
+                            } else {
+                                grow!()
+                            })
+                            .height(fixed!(32.0))
+                            .corner_radius(6.0)
+                            .background_color(if selected {
+                                pal.s2
+                            } else {
+                                super::theme::TRANSPARENT
+                            })
+                            .border(|b| {
+                                b.bottom(2).color(if selected {
+                                    pal.accent
+                                } else {
+                                    super::theme::TRANSPARENT
+                                })
+                            })
+                            .accessibility(|a| a.button(label))
+                            .layout(|l| l.align(CenterX, CenterY))
+                            .children(|ui| {
+                                if ui.just_pressed() && !selected {
+                                    app.shortcut_editor = keyboard;
+                                    app.picker_categories_open = false;
+                                    app.capturing_key = false;
+                                    app.picker_fresh = !keyboard;
+                                    ui.clear_focus();
+                                }
+                                ui.text(label, |t| {
+                                    t.font(&fonts::SANS_SEMIBOLD)
+                                        .font_size(14)
+                                        .color(if selected { pal.text } else { pal.muted })
+                                });
+                            });
+                    }
+                });
+            if app.shortcut_editor {
+                return;
+            }
+            ui.element()
+                .width(grow!())
                 .height(fixed!(38.0))
                 .corner_radius(10.0)
                 .background_color(pal.win)
@@ -237,22 +376,369 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                         .width(grow!())
                         .height(fixed!(24.0))
                         .text_input(|t| {
+                            if app.picker_anchor.is_some() {
+                                t.placeholder_color(pal.muted);
+                            }
                             t.font(&fonts::SANS)
                                 .font_size(14)
                                 .text_color(pal.text)
+                                .cursor_color(pal.text)
                                 .placeholder("Search actions…")
                         })
                         .empty();
                 });
         });
     // Read whatever the input holds now.
+    if app.shortcut_editor {
+        return;
+    }
     let live = ui.get_text_value("picker_search").to_string();
     if live != app.picker_query {
         app.picker_query = live;
+        app.picker_categories_open = false;
+        app.picker_page = 0;
     }
 }
 
-fn results(ui: &mut Ui2, app: &App, query: &str, current: &Action, chosen: &mut Option<Action>) {
+type ActionChoice = (
+    String,
+    Option<String>,
+    Vec<String>,
+    Action,
+    &'static GraphicAsset,
+);
+type ActionGroup = (String, Vec<ActionChoice>);
+const PAGE_SIZE: usize = 8;
+
+// Header, selector, column headings and outer padding, plus a 44px action row and divider.
+fn category_height(actions: usize) -> f32 {
+    248.0 + 45.0 * actions as f32
+}
+
+fn category_menu(ui: &mut Ui2, app: &mut App, groups: &[ActionGroup]) -> bool {
+    let pal = app.pal;
+    let active = &groups[app.picker_category];
+    ui.element()
+        .width(grow!())
+        .height(fixed!(48.0))
+        .layout(|l| {
+            l.direction(LeftToRight)
+                .gap(10)
+                .align(Left, CenterY)
+                .padding((0, 16, 0, 16))
+        })
+        .children(|ui| {
+            ui.text("Category", |t| {
+                t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
+            });
+            ui.element()
+                .id("category_menu")
+                .width(fixed!(140.0))
+                .height(fixed!(33.0))
+                .corner_radius(7.0)
+                .border(|b| {
+                    b.all(1).color(if app.picker_categories_open {
+                        pal.accent
+                    } else {
+                        pal.line_strong
+                    })
+                })
+                .background_color(pal.s2)
+                .accessibility(|a| a.button("Choose action category"))
+                .layout(|l| {
+                    l.direction(LeftToRight)
+                        .align(Left, CenterY)
+                        .gap(6)
+                        .padding((0, 10, 0, 10))
+                })
+                .children(|ui| {
+                    if ui.just_pressed() {
+                        app.picker_categories_open = !app.picker_categories_open;
+                    }
+                    ui.element().width(grow!()).height(fit!()).children(|ui| {
+                        ui.text(&active.0, |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                        });
+                    });
+                    widgets::icon(ui, &icons::CHEVRON_DOWN, 14.0, pal.muted);
+                });
+            ui.element().width(grow!()).empty();
+            if !app.picker_categories_open {
+                ui.text(&format!("{} actions", active.1.len()), |t| {
+                    t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                });
+            }
+        });
+    if app.picker_categories_open {
+        ui.element()
+            .width(grow!())
+            .height(grow!(0.0))
+            .overflow(|o| o.scroll_y())
+            .background_color(pal.win)
+            .border(|b| b.top(1).color(pal.line_strong))
+            .layout(|l| l.direction(TopToBottom).gap(4).padding((5, 10, 8, 10)))
+            .children(|ui| {
+                for (index, (name, items)) in groups.iter().enumerate() {
+                    let selected = index == app.picker_category;
+                    let id: Id = ("action_category", index as u32).into();
+                    let hovered = ui.pointer_over(id.clone());
+                    ui.element()
+                        .id(id)
+                        .width(grow!())
+                        .height(fixed!(40.0))
+                        .corner_radius(8.0)
+                        .background_color(if selected {
+                            super::theme::Palette::mix(pal.accent, 13.0, pal.pop)
+                        } else if hovered {
+                            pal.s2
+                        } else {
+                            super::theme::TRANSPARENT
+                        })
+                        .accessibility(|a| a.button(name))
+                        .layout(|l| {
+                            l.direction(LeftToRight)
+                                .align(Left, CenterY)
+                                .gap(10)
+                                .padding((0, 11, 0, 11))
+                        })
+                        .children(|ui| {
+                            if ui.just_pressed() {
+                                app.picker_category = index;
+                                app.picker_categories_open = false;
+                            }
+                            let icon = if index == 0 {
+                                &icons::NAV_BUTTONS
+                            } else {
+                                actions::Category::ORDER[index - 1].icon()
+                            };
+                            widgets::icon(
+                                ui,
+                                icon,
+                                19.0,
+                                if selected { pal.accent } else { pal.text },
+                            );
+                            ui.element().width(grow!()).height(fit!()).children(|ui| {
+                                ui.text(name, |t| {
+                                    t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                                });
+                            });
+                            ui.text(&format!("{} actions", items.len()), |t| {
+                                t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                            });
+                            widgets::icon(
+                                ui,
+                                if selected {
+                                    &icons::CHECK
+                                } else {
+                                    &icons::CHEVRON_RIGHT
+                                },
+                                14.0,
+                                if selected { pal.accent } else { pal.muted },
+                            );
+                        });
+                }
+            });
+        return true;
+    }
+    false
+}
+
+fn common_tiles(
+    ui: &mut Ui2,
+    pal: super::theme::Palette,
+    items: &[ActionChoice],
+    current: &Action,
+    chosen: &mut Option<Action>,
+) {
+    // Keep native behavior distinct from the keyboard shortcuts it can be replaced with.
+    ui.element()
+        .width(grow!())
+        .height(grow!(0.0))
+        .overflow(|o| o.scroll_y())
+        .layout(|l| l.direction(TopToBottom).gap(7).padding((4, 12, 9, 12)))
+        .children(|ui| {
+            for (title, offset, section) in [
+                ("Button behavior", 0, &items[..2]),
+                ("Shortcuts", 2, &items[2..]),
+            ] {
+                if offset > 0 {
+                    ui.element().height(fixed!(9.0)).empty();
+                }
+                ui.text(title, |t| {
+                    t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.muted)
+                });
+                for (pair_index, pair) in section.chunks(2).enumerate() {
+                    ui.element()
+                        .width(grow!())
+                        .height(fixed!(54.0))
+                        .layout(|l| l.direction(LeftToRight).gap(8))
+                        .children(|ui| {
+                            for (i, (label, desc, keys, action, _)) in pair.iter().enumerate() {
+                                let id: Id = ("pk", (offset + pair_index * 2 + i) as u32).into();
+                                let selected = action == current;
+                                let hover = ui.pointer_over(id.clone());
+                                ui.element()
+                                    .id(id)
+                                    .width(grow!())
+                                    .height(grow!())
+                                    .corner_radius(8.0)
+                                    .background_color(if selected {
+                                        super::theme::Palette::mix(pal.accent, 13.0, pal.pop)
+                                    } else if hover {
+                                        pal.s2
+                                    } else {
+                                        pal.win
+                                    })
+                                    .border(|b| {
+                                        b.all(1).color(if selected || hover {
+                                            pal.accent
+                                        } else {
+                                            pal.line_strong
+                                        })
+                                    })
+                                    .accessibility(|a| a.button(label))
+                                    .layout(|l| {
+                                        l.direction(LeftToRight)
+                                            .align(Left, CenterY)
+                                            .gap(5)
+                                            .padding((0, 10, 0, 10))
+                                    })
+                                    .children(|ui| {
+                                        if ui.just_pressed() {
+                                            *chosen = Some(action.clone());
+                                        }
+                                        ui.element()
+                                            .width(grow!())
+                                            .height(fit!())
+                                            .layout(|l| l.direction(TopToBottom).gap(3))
+                                            .children(|ui| {
+                                                ui.text(label, |t| {
+                                                    t.font(&fonts::SANS_SEMIBOLD)
+                                                        .font_size(15)
+                                                        .color(pal.text)
+                                                });
+                                                let detail = if desc.is_some() {
+                                                    if *action == Action::PassThrough {
+                                                        "Normal button action".to_owned()
+                                                    } else {
+                                                        "Ignore presses".to_owned()
+                                                    }
+                                                } else {
+                                                    keys.join(" + ")
+                                                };
+                                                ui.text(&detail, |t| {
+                                                    t.font(&fonts::SANS)
+                                                        .font_size(13)
+                                                        .color(pal.muted)
+                                                });
+                                            });
+                                        if selected {
+                                            widgets::icon(ui, &icons::CHECK, 14.0, pal.accent);
+                                        }
+                                    });
+                            }
+                        });
+                }
+            }
+        });
+}
+
+fn compact_tiles(
+    ui: &mut Ui2,
+    pal: super::theme::Palette,
+    groups: &[ActionGroup],
+    start: usize,
+    current: &Action,
+    chosen: &mut Option<Action>,
+) {
+    let items: Vec<_> = groups
+        .iter()
+        .enumerate()
+        .flat_map(|(gi, (_, items))| {
+            items
+                .iter()
+                .enumerate()
+                .map(move |(i, item)| ((gi * 100 + i) as u32, item))
+        })
+        .skip(start)
+        .take(PAGE_SIZE)
+        .collect();
+    for pair in items.chunks(2) {
+        ui.element()
+            .width(grow!())
+            .height(fixed!(51.0))
+            .layout(|l| l.direction(LeftToRight).gap(8).padding((3, 4, 3, 4)))
+            .children(|ui| {
+                for (index, (label, desc, keys, action, icon)) in pair {
+                    let id: Id = ("pk", *index).into();
+                    let hover = ui.pointer_over(id.clone());
+                    ui.element()
+                        .id(id)
+                        .width(grow!())
+                        .height(grow!())
+                        .corner_radius(7.0)
+                        .background_color(if action == current || hover {
+                            super::theme::Palette::mix(pal.accent, 13.0, pal.pop)
+                        } else {
+                            pal.win
+                        })
+                        .border(|b| {
+                            b.all(1).color(if action == current || hover {
+                                pal.accent
+                            } else {
+                                pal.line
+                            })
+                        })
+                        .accessibility(|a| a.button(label))
+                        .layout(|l| {
+                            l.direction(LeftToRight)
+                                .gap(10)
+                                .align(Left, CenterY)
+                                .padding((2, 10, 2, 10))
+                        })
+                        .children(|ui| {
+                            if ui.just_pressed() {
+                                *chosen = Some(action.clone());
+                            }
+                            if desc.is_some() {
+                                widgets::icon(ui, icon, 17.0, pal.muted);
+                            }
+                            ui.element()
+                                .width(grow!())
+                                .height(fit!())
+                                .layout(|l| l.direction(TopToBottom).gap(1))
+                                .children(|ui| {
+                                    ui.text(label, |t| {
+                                        t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                                    });
+                                    if let Some(detail) = desc {
+                                        ui.text(detail, |t| {
+                                            t.font(&fonts::SANS).font_size(12).color(pal.muted)
+                                        });
+                                    }
+                                });
+                            for key in keys {
+                                widgets::keycap(ui, &pal, key);
+                            }
+                            if action == current {
+                                widgets::icon(ui, &icons::CHECK, 14.0, pal.accent);
+                            }
+                        });
+                }
+                if pair.len() == 1 {
+                    ui.element().width(grow!()).height(fixed!(1.0)).empty();
+                }
+            });
+    }
+}
+
+fn results(
+    ui: &mut Ui2,
+    app: &mut App,
+    query: &str,
+    current: &Action,
+    chosen: &mut Option<Action>,
+) {
     let pal = app.pal;
     let presets = actions::presets();
 
@@ -267,7 +753,7 @@ fn results(ui: &mut Ui2, app: &App, query: &str, current: &Action, chosen: &mut 
         ),
         (
             "Disabled",
-            "Swallow the press, do nothing",
+            "Ignore this button press",
             Action::Disabled,
             &icons::DISABLED,
             "disabled off nothing block",
@@ -280,16 +766,7 @@ fn results(ui: &mut Ui2, app: &App, query: &str, current: &Action, chosen: &mut 
         })
         .collect();
 
-    let mut groups: Vec<(
-        String,
-        Vec<(
-            String,
-            Option<String>,
-            Vec<String>,
-            Action,
-            &'static GraphicAsset,
-        )>,
-    )> = Vec::new();
+    let mut groups: Vec<ActionGroup> = Vec::new();
     if !quick.is_empty() {
         groups.push((
             "Quick".into(),
@@ -324,72 +801,219 @@ fn results(ui: &mut Ui2, app: &App, query: &str, current: &Action, chosen: &mut 
         }
     }
 
+    let count: usize = groups.iter().map(|(_, items)| items.len()).sum();
+    let compact_list = screen_height() < 600.0 && count > 5;
+    let page_count = count.div_ceil(PAGE_SIZE);
+    let page = app.picker_page.min(page_count.saturating_sub(1));
+    let start = if compact_list { page * PAGE_SIZE } else { 0 };
+    let end = if compact_list {
+        (start + PAGE_SIZE).min(count)
+    } else {
+        count
+    };
     let empty = groups.is_empty();
-    ui.element()
-        .width(grow!())
-        .height(grow!(0.0, 360.0))
-        .overflow(|o| {
+    let categories = app.picker_anchor.is_some()
+        && query.is_empty()
+        && screen_height() >= 600.0
+        && screen_width() >= 840.0;
+    if categories {
+        // Common assignments are shortcuts into the same preset collection used by search.
+        let quick = &mut groups[0];
+        quick.0 = "Common".into();
+        for preset in &presets {
+            if matches!(preset.label, "Copy" | "Paste" | "Back" | "Forward") {
+                quick.1.push((
+                    preset.label.into(),
+                    None,
+                    preset.keys.iter().map(|s| s.to_string()).collect(),
+                    (preset.action)(),
+                    preset.cat.icon(),
+                ));
+            }
+        }
+        if category_menu(ui, app, &groups) {
+            return;
+        }
+    }
+
+    if categories && app.picker_category == 0 {
+        common_tiles(ui, pal, &groups[0].1, current, chosen);
+        return;
+    }
+    let fits = categories
+        && category_height(groups[app.picker_category].1.len()) <= screen_height() - 164.0;
+    let list = ui.element().width(grow!()).height(grow!(0.0));
+    let list = if fits {
+        list
+    } else {
+        list.overflow(|o| {
             o.scroll_y().scrollbar(|s| {
-                s.width(11.0)
+                s.width(if compact_list || categories { 8.0 } else { 5.0 })
                     .corner_radius(6.0)
-                    .thumb_color(pal.line_strong)
+                    .thumb_color(if compact_list || categories {
+                        pal.track
+                    } else {
+                        pal.line_strong
+                    })
                     .track_color(pal.pop)
             })
         })
-        .layout(|l| l.direction(TopToBottom).padding(7))
-        .children(|ui| {
-            if empty {
-                ui.element()
-                    .width(grow!())
-                    .height(fit!())
-                    .layout(|l| l.align(CenterX, CenterY).padding(22))
-                    .children(|ui| {
-                        ui.text(
-                            &format!("No preset matches \u{201C}{query}\u{201D}. Build a custom shortcut below."),
-                            |t| t.font(&fonts::SANS).font_size(13).color(pal.muted),
-                        );
+    };
+    list.layout(|l| {
+        l.direction(TopToBottom).gap(0).padding(if categories {
+            (7, 16, 7, 16)
+        } else {
+            (7, 7, 7, 7)
+        })
+    })
+    .children(|ui| {
+        if empty {
+            ui.element()
+                .width(grow!())
+                .height(fit!())
+                .layout(|l| {
+                    l.direction(TopToBottom)
+                        .align(Left, CenterY)
+                        .gap(7)
+                        .padding(12)
+                })
+                .children(|ui| {
+                    ui.text("No matching actions", |t| {
+                        t.font(&fonts::SANS_BOLD).font_size(16).color(pal.text)
                     });
-                return;
-            }
-            for (gi, (header, items)) in groups.iter().enumerate() {
-                ui.element()
-                    .width(grow!())
-                    .height(fit!())
-                    .layout(|l| l.padding((8, 10, 4, 10)))
-                    .children(|ui| {
-                        ui.text(&header.to_uppercase(), |t| {
-                            t.font(&fonts::SANS_BOLD)
-                                .font_size(widgets::px(10.5))
-                                .color(pal.faint)
+                    ui.text("Try another search or record a keyboard shortcut.", |t| {
+                        t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                    });
+                });
+            return;
+        }
+        if compact_list {
+            compact_tiles(ui, pal, &groups, start, current, chosen);
+            return;
+        }
+        if categories {
+            ui.element()
+                .width(grow!())
+                .height(fixed!(23.0))
+                .layout(|l| {
+                    l.direction(LeftToRight)
+                        .align(Left, CenterY)
+                        .padding((0, 10, 0, 10))
+                })
+                .children(|ui| {
+                    ui.element().width(grow!()).height(fit!()).children(|ui| {
+                        ui.text("Choose an action to assign", |t| {
+                            t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
                         });
                     });
-                for (n, (label, desc, keys, action, glyph)) in items.iter().enumerate() {
-                    let id: Id = ("pk", (gi * 100 + n) as u32).into();
-                    let hov = ui.pointer_over(id.clone());
-                    let is_current = action == current;
-                    ui.element()
-                        .id(id)
-                        .accessibility(|a| a.button(label))
-                        .width(grow!())
-                        .height(fit!())
-                        .corner_radius(9.0)
-                        .background_color(if is_current {
-                            super::theme::Palette::mix(pal.accent, 12.0, pal.pop)
-                        } else if hov {
-                            pal.s2
-                        } else {
-                            super::theme::TRANSPARENT
-                        })
-                        .layout(|l| {
-                            l.direction(LeftToRight)
-                                .align(Left, CenterY)
-                                .gap(11)
-                                .padding((9, 10, 9, 10))
-                        })
-                        .children(|ui| {
-                            if ui.just_pressed() {
-                                *chosen = Some(action.clone());
-                            }
+                    ui.text("Shortcut", |t| {
+                        t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
+                    });
+                });
+        }
+        if categories {
+            let index = app.picker_category;
+            let items = &groups[index].1;
+            ui.element()
+                .width(grow!())
+                .height(fit!())
+                .corner_radius(9.0)
+                .background_color(pal.win)
+                .border(|b| b.all(1).color(pal.line_strong))
+                .layout(|l| l.direction(TopToBottom).padding((1, 9, 1, 9)))
+                .children(|ui| {
+                    for (i, (label, _, keys, action, glyph)) in items.iter().enumerate() {
+                        let id: Id = ("pk", (index * 100 + i) as u32).into();
+                        let hover = ui.pointer_over(id.clone());
+                        let active = action == current;
+                        ui.element()
+                            .id(id)
+                            .width(grow!())
+                            .height(fixed!(44.0))
+                            .background_color(if hover || active {
+                                pal.s2
+                            } else {
+                                super::theme::TRANSPARENT
+                            })
+                            .border(|b| {
+                                b.bottom(if i + 1 < items.len() { 1 } else { 0 })
+                                    .color(pal.line_strong)
+                            })
+                            .accessibility(|a| a.button(label))
+                            .layout(|l| {
+                                l.direction(LeftToRight)
+                                    .gap(12)
+                                    .align(Left, CenterY)
+                                    .padding((0, 6, 0, 6))
+                            })
+                            .children(|ui| {
+                                if ui.just_pressed() {
+                                    *chosen = Some(action.clone());
+                                }
+                                let icon = match label.as_str() {
+                                    "Copy" => &icons::EDIT_COPY,
+                                    "Cut" => &icons::EDIT_CUT,
+                                    "Paste" => &icons::EDIT_PASTE,
+                                    "Undo" => &icons::EDIT_UNDO,
+                                    "Redo" => &icons::EDIT_REDO,
+                                    _ => glyph,
+                                };
+                                widgets::icon(ui, icon, 17.0, pal.muted);
+                                ui.element().width(grow!()).height(fit!()).children(|ui| {
+                                    ui.text(label, |t| {
+                                        t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
+                                    });
+                                });
+                                ui.text(&keys.join(" + "), |t| {
+                                    t.font(&fonts::MONO_MEDIUM).font_size(13).color(pal.muted)
+                                });
+                                if active {
+                                    widgets::icon(ui, &icons::CHECK, 14.0, pal.accent);
+                                }
+                            });
+                    }
+                });
+            return;
+        }
+        for (gi, (header, items)) in groups.iter().enumerate() {
+            ui.element()
+                .width(grow!())
+                .height(fit!())
+                .layout(|l| l.padding((8, 10, 4, 10)))
+                .children(|ui| {
+                    ui.text(header, |t| {
+                        t.font(&fonts::SANS_BOLD).font_size(13).color(pal.faint)
+                    });
+                });
+
+            for (n, (label, desc, keys, action, glyph)) in items.iter().enumerate() {
+                let id: Id = ("pk", (gi * 100 + n) as u32).into();
+                let hov = ui.pointer_over(id.clone());
+                let is_current = action == current;
+                ui.element()
+                    .id(id)
+                    .accessibility(|a| a.button(label))
+                    .width(grow!())
+                    .height(fit!())
+                    .corner_radius(9.0)
+                    .background_color(if is_current {
+                        super::theme::Palette::mix(pal.accent, 12.0, pal.pop)
+                    } else if hov || !query.is_empty() {
+                        pal.s2
+                    } else {
+                        super::theme::TRANSPARENT
+                    })
+                    .layout(|l| {
+                        l.direction(LeftToRight)
+                            .align(Left, CenterY)
+                            .gap(11)
+                            .padding((9, 10, 9, 10))
+                    })
+                    .children(|ui| {
+                        if ui.just_pressed() {
+                            *chosen = Some(action.clone());
+                        }
+                        if desc.is_some() {
                             ui.element()
                                 .width(fixed!(30.0))
                                 .height(fixed!(30.0))
@@ -401,35 +1025,107 @@ fn results(ui: &mut Ui2, app: &App, query: &str, current: &Action, chosen: &mut 
                                         ui,
                                         glyph,
                                         16.0,
-                                        if label == "Disabled" { pal.danger } else { pal.muted },
+                                        if label == "Disabled" {
+                                            pal.danger
+                                        } else {
+                                            pal.muted
+                                        },
                                     );
                                 });
-                            ui.element()
-                                .width(grow!())
-                                .height(fit!())
-                                .layout(|l| l.direction(TopToBottom).gap(1))
-                                .children(|ui| {
-                                    ui.text(label, |t| {
-                                        t.font(&fonts::SANS_SEMIBOLD)
-                                            .font_size(widgets::px(13.5))
-                                            .color(pal.text)
-                                    });
-                                    if let Some(d) = desc {
-                                        ui.text(d, |t| {
-                                            t.font(&fonts::SANS).font_size(12).color(pal.muted)
-                                        });
-                                    }
+                        }
+                        ui.element()
+                            .width(grow!())
+                            .height(fit!())
+                            .layout(|l| l.direction(TopToBottom).gap(1))
+                            .children(|ui| {
+                                ui.text(label, |t| {
+                                    t.font(&fonts::SANS_SEMIBOLD)
+                                        .font_size(widgets::px(13.5))
+                                        .color(pal.text)
                                 });
-                            for k in keys {
-                                widgets::keycap(ui, &pal, k);
+                                if let Some(d) = desc {
+                                    ui.text(d, |t| {
+                                        t.font(&fonts::SANS).font_size(12).color(pal.muted)
+                                    });
+                                }
+                            });
+                        for k in keys {
+                            widgets::keycap(ui, &pal, k);
+                        }
+                        if !query.is_empty() && !is_current {
+                            ui.text("Assign", |t| {
+                                t.font(&fonts::SANS_SEMIBOLD)
+                                    .font_size(13)
+                                    .color(pal.accent)
+                            });
+                            widgets::icon(ui, &icons::CHEVRON_RIGHT, 14.0, pal.accent);
+                        }
+                        if is_current {
+                            widgets::icon(ui, &icons::CHECK, 15.0, pal.accent);
+                        }
+                    });
+            }
+        }
+    });
+    if compact_list {
+        ui.element()
+            .width(grow!())
+            .height(fixed!(45.0))
+            .border(|b| b.top(1).color(pal.line))
+            .layout(|l| {
+                l.direction(LeftToRight)
+                    .align(Left, CenterY)
+                    .gap(8)
+                    .padding((0, 16, 0, 16))
+            })
+            .children(|ui| {
+                ui.element().width(grow!()).height(fit!()).children(|ui| {
+                    ui.text(&format!("Actions {} to {end} of {count}", start + 1), |t| {
+                        t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
+                    });
+                });
+                for (id, label, dest) in [
+                    ("prev_actions", "Previous", page.checked_sub(1)),
+                    (
+                        "next_actions",
+                        "Next",
+                        (page + 1 < page_count).then_some(page + 1),
+                    ),
+                ] {
+                    ui.element()
+                        .id(id)
+                        .height(fixed!(31.0))
+                        .width(fixed!(78.0))
+                        .corner_radius(7.0)
+                        .background_color(if dest.is_some() { pal.s2 } else { pal.pop })
+                        .border(|b| {
+                            b.all(1).color(if dest.is_some() {
+                                pal.line_strong
+                            } else {
+                                pal.line
+                            })
+                        })
+                        .accessibility(|a| a.button(label))
+                        .layout(|l| l.align(CenterX, CenterY))
+                        .children(|ui| {
+                            if ui.just_pressed() {
+                                if let Some(next) = dest {
+                                    app.picker_page = next;
+                                }
                             }
-                            if is_current {
-                                widgets::icon(ui, &icons::CHECK, 15.0, pal.accent);
-                            }
+                            ui.text(label, |t| {
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(
+                                    if dest.is_some() {
+                                        pal.accent
+                                    } else {
+                                        pal.faint
+                                    },
+                                )
+                            });
                         });
                 }
-            }
-        });
+            });
+    }
 }
 
 /// Modifier chips + key capture + Assign.
@@ -445,63 +1141,115 @@ fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
     ui.element()
         .width(grow!())
         .height(fit!())
-        .background_color(pal.win)
-        .border(|b| b.top(1).color(pal.line))
         .layout(|l| l.direction(TopToBottom).gap(9).padding((13, 16, 13, 16)))
         .children(|ui| {
-            ui.text("CUSTOM SHORTCUT", |t| {
-                t.font(&fonts::SANS_BOLD)
-                    .font_size(widgets::px(10.5))
-                    .color(pal.faint)
-            });
+            if capturing {
+                ui.element()
+                    .width(grow!())
+                    .height(fixed!(58.0))
+                    .corner_radius(8.0)
+                    .background_color(super::theme::Palette::mix(pal.accent, 13.0, pal.pop))
+                    .border(|b| b.left(3).color(pal.accent))
+                    .layout(|l| {
+                        l.direction(TopToBottom)
+                            .gap(3)
+                            .align(Left, CenterY)
+                            .padding((0, 12, 0, 12))
+                    })
+                    .children(|ui| {
+                        ui.text("Press a key", |t| {
+                            t.font(&fonts::SANS_BOLD).font_size(16).color(pal.text)
+                        });
+                        ui.text("Escape cancels recording.", |t| {
+                            t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                        });
+                    });
+            } else {
+                ui.text("Modifiers", |t| {
+                    t.font(&fonts::SANS_BOLD).font_size(13).color(pal.faint)
+                });
+                ui.element()
+                    .width(grow!())
+                    .height(fit!())
+                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(7))
+                    .children(|ui| {
+                        for (mi, (m, label)) in [
+                            (Modifier::Ctrl, "Ctrl"),
+                            (Modifier::Win, "Win"),
+                            (Modifier::Alt, "Alt"),
+                            (Modifier::Shift, "Shift"),
+                        ]
+                        .into_iter()
+                        .enumerate()
+                        {
+                            let on = mods.contains(&m);
+                            let id: Id = ("mod", mi as u32).into();
+                            ui.element()
+                                .id(id)
+                                .accessibility(|a| a.button(label))
+                                .height(fixed!(30.0))
+                                .corner_radius(8.0)
+                                .background_color(if on {
+                                    pal.accent
+                                } else {
+                                    super::theme::TRANSPARENT
+                                })
+                                .border(|b| {
+                                    b.all(1).color(if on {
+                                        super::theme::TRANSPARENT
+                                    } else {
+                                        pal.line_strong
+                                    })
+                                })
+                                .layout(|l| {
+                                    l.direction(LeftToRight)
+                                        .gap(6)
+                                        .align(CenterX, CenterY)
+                                        .padding((0, 12, 0, 12))
+                                })
+                                .children(|ui| {
+                                    if ui.just_pressed() {
+                                        toggle_mod = Some(m);
+                                    }
+                                    if on {
+                                        widgets::icon(ui, &icons::CHECK, 12.0, pal.accent_ink);
+                                    }
+                                    ui.text(label, |t| {
+                                        t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(if on {
+                                            pal.accent_ink
+                                        } else {
+                                            pal.muted
+                                        })
+                                    });
+                                });
+                        }
+                    });
+            }
             ui.element()
                 .width(grow!())
-                .height(fit!())
-                .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(7))
+                .height(fixed!(36.0))
+                .layout(|l| l.direction(LeftToRight).gap(6).align(Left, CenterY))
                 .children(|ui| {
-                    for (mi, (m, label)) in [
-                        (Modifier::Ctrl, "Ctrl"),
-                        (Modifier::Win, "Win"),
-                        (Modifier::Alt, "Alt"),
-                        (Modifier::Shift, "Shift"),
-                    ]
-                    .into_iter()
-                    .enumerate()
-                    {
-                        let on = mods.contains(&m);
-                        let id: Id = ("mod", mi as u32).into();
-                        ui.element()
-                            .id(id)
-                            .accessibility(|a| a.button(label))
-                            .height(fixed!(30.0))
-                            .corner_radius(8.0)
-                            .background_color(if on {
-                                pal.accent
-                            } else {
-                                super::theme::TRANSPARENT
-                            })
-                            .border(|b| {
-                                b.all(1).color(if on {
-                                    super::theme::TRANSPARENT
-                                } else {
-                                    pal.line_strong
-                                })
-                            })
-                            .layout(|l| l.align(CenterX, CenterY).padding((0, 12, 0, 12)))
-                            .children(|ui| {
-                                if ui.just_pressed() {
-                                    toggle_mod = Some(m);
-                                }
-                                ui.text(label, |t| {
-                                    t.font(&fonts::MONO_SEMIBOLD).font_size(12).color(if on {
-                                        pal.accent_ink
-                                    } else {
-                                        pal.muted
-                                    })
-                                });
-                            });
+                    ui.text(
+                        if capturing {
+                            "Previous shortcut"
+                        } else {
+                            "Shortcut"
+                        },
+                        |t| t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted),
+                    );
+                    if let Some(vk) = key {
+                        for m in &mods {
+                            widgets::keycap(ui, &pal, &format!("{m:?}"));
+                        }
+                        widgets::keycap(ui, &pal, &actions::key_name(vk));
+                    } else {
+                        ui.text("No key recorded", |t| {
+                            t.font(&fonts::SANS).font_size(13).color(pal.text)
+                        });
                     }
                 });
+            ui.element().height(fixed!(3.0)).empty();
             ui.element()
                 .width(grow!())
                 .height(fit!())
@@ -510,7 +1258,13 @@ fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
                     // Key capture button.
                     ui.element()
                         .id("capture")
-                        .accessibility(|a| a.button("Capture shortcut key"))
+                        .accessibility(|a| {
+                            a.button(if capturing {
+                                "Cancel key capture"
+                            } else {
+                                "Capture shortcut key"
+                            })
+                        })
                         .width(fit!(78.0))
                         .height(fixed!(30.0))
                         .corner_radius(8.0)
@@ -523,22 +1277,28 @@ fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
                         .layout(|l| l.align(CenterX, CenterY).padding((0, 14, 0, 14)))
                         .children(|ui| {
                             if ui.just_pressed() {
-                                start_capture = true;
+                                if capturing {
+                                    app.capturing_key = false;
+                                } else {
+                                    start_capture = true;
+                                }
                             }
                             let label = if capturing {
-                                "Press a key…".to_string()
+                                "Cancel".to_string()
                             } else {
-                                key.map(actions::key_name)
-                                    .unwrap_or_else(|| "Set key".into())
+                                key.map(|_| "Change key".to_owned())
+                                    .unwrap_or_else(|| "Record key".into())
                             };
                             ui.text(&label, |t| {
-                                t.font(&fonts::MONO_BOLD).font_size(12).color(pal.accent)
+                                t.font(&fonts::SANS_SEMIBOLD)
+                                    .font_size(14)
+                                    .color(pal.accent)
                             });
                         });
 
                     ui.element().width(grow!()).height(fixed!(1.0)).empty();
 
-                    let can_assign = key.is_some();
+                    let can_assign = key.is_some() && !capturing;
                     ui.element()
                         .id("assign")
                         .accessibility(|a| a.button("Assign shortcut"))
@@ -550,7 +1310,7 @@ fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
                             if ui.just_pressed() && can_assign {
                                 assign = true;
                             }
-                            ui.text("Assign", |t| {
+                            ui.text("Save shortcut", |t| {
                                 t.font(&fonts::SANS_BOLD)
                                     .font_size(widgets::px(12.5))
                                     .color(if can_assign {
@@ -595,7 +1355,7 @@ mod tests {
         ] {
             for (ax, ay) in [(0.0, 0.0), (w - 24.0, h - 24.0), (w / 2.0, h / 2.0)] {
                 let (x, y, width, height) =
-                    panel_rect(Some(BoundingBox::new(ax, ay, 24.0, 24.0)), w, h);
+                    panel_rect(Some(BoundingBox::new(ax, ay, 24.0, 24.0)), w, h, 504.0);
                 assert!(x >= 16.0 && y >= 16.0);
                 assert!(x + width <= w - 16.0 && y + height <= h - 16.0);
             }

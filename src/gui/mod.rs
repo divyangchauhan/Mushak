@@ -121,8 +121,12 @@ pub struct App {
     pub picker: Option<PickerTarget>,
     /// A mouse marker to attach the action picker to. List pickers stay centered.
     pub picker_anchor: Option<&'static str>,
+    shortcut_editor: bool,
     picker_fresh: bool,
     pub picker_query: String,
+    pub picker_page: usize,
+    picker_category: usize,
+    picker_categories_open: bool,
     pub custom_mods: Vec<Modifier>,
     pub custom_key: Option<u16>,
     pub capturing_key: bool,
@@ -178,8 +182,12 @@ impl App {
             hidpp_expanded: false,
             picker: None,
             picker_anchor: None,
+            shortcut_editor: false,
             picker_fresh: false,
             picker_query: String::new(),
+            picker_page: 0,
+            picker_category: 0,
+            picker_categories_open: false,
             custom_mods: Vec::new(),
             custom_key: None,
             capturing_key: false,
@@ -221,10 +229,22 @@ impl App {
                 self.custom_key = None;
             }
         }
+        self.shortcut_editor = self.custom_key.is_some();
         self.picker = Some(target);
         self.picker_anchor = None;
         self.picker_fresh = true;
         self.picker_query.clear();
+        self.picker_page = 0;
+        self.picker_categories_open = false;
+        self.picker_category = actions::presets()
+            .iter()
+            .find(|p| (p.action)() == current)
+            .and_then(|p| {
+                actions::Category::ORDER
+                    .iter()
+                    .position(|category| *category == p.cat)
+            })
+            .map_or(0, |index| index + 1);
         self.capturing_key = false;
         self.profile_menu_open = false;
     }
@@ -603,6 +623,7 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
         .id("titlebar")
         .width(grow!())
         .height(fixed!(46.0))
+        .background_color(pal.rail)
         .layout(|l| {
             l.direction(LeftToRight)
                 .align(Left, CenterY)
@@ -624,18 +645,18 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
                 } else {
                     &icons::MODAK_ACTIVE
                 },
-                20.0,
+                24.0,
                 theme::WHITE,
             );
             ui.text("Mushak", |t| {
-                t.font(&fonts::DISPLAY_BOLD).font_size(14).color(pal.text)
+                t.font(&fonts::DISPLAY_BOLD).font_size(17).color(pal.text)
             });
             ui.element()
                 .width(fixed!(1.0))
                 .height(fixed!(15.0))
                 .background_color(pal.line_strong)
                 .empty();
-            ui.text(app.device_view.device.display_name(), |t| {
+            ui.text("Mouse settings", |t| {
                 t.font(&fonts::SANS).font_size(13).color(pal.muted)
             });
             if paused {
@@ -652,9 +673,10 @@ fn rail(ui: &mut Ui2, app: &mut App) {
     let current = app.section;
     let mut clicked: Option<Section> = None;
     ui.element()
-        .width(fixed!(226.0))
+        .width(fixed!(if screen_width() < 840.0 { 158.0 } else { 204.0 }))
         .height(grow!())
-        .layout(|l| l.direction(TopToBottom).gap(3).padding(12))
+        .background_color(pal.rail)
+        .layout(|l| l.direction(TopToBottom).gap(4).padding((20, 12, 12, 12)))
         .border(|b| b.right(1).color(pal.line))
         .children(|ui| {
             for s in Section::ALL {
@@ -685,7 +707,7 @@ fn content(ui: &mut Ui2, app: &mut App) {
         .height(grow!())
         .overflow(|o| {
             o.scroll_y().scrollbar(|s| {
-                s.width(11.0)
+                s.width(6.0)
                     .corner_radius(6.0)
                     .thumb_color(pal.line_strong)
                     .track_color(pal.win)
@@ -693,9 +715,9 @@ fn content(ui: &mut Ui2, app: &mut App) {
         })
         .children(|ui| {
             ui.element()
-                .width(grow!(0.0, 660.0))
+                .width(grow!(0.0, 824.0))
                 .height(fit!())
-                .layout(|l| l.direction(TopToBottom).padding((26, 30, 40, 30)))
+                .layout(|l| l.direction(TopToBottom).padding((24, 28, 24, 28)))
                 .children(|ui| match app.section {
                     Section::Buttons => buttons::section(ui, app),
                     Section::Scroll => scroll::section(ui, app),

@@ -15,7 +15,9 @@ fn row_icon(slot: &str) -> &'static GraphicAsset {
     match slot {
         "back" => &icons::BTN_BACK,
         "forward" => &icons::BTN_FORWARD,
-        _ => &icons::BTN_MIDDLE,
+        "middle" => &icons::BTN_MIDDLE,
+        "control_00c4" => &icons::NAV_SCROLL,
+        _ => &icons::NAV_BUTTONS,
     }
 }
 
@@ -39,6 +41,14 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     let mut toggle_menu = false;
     let mut pick_profile: Option<usize> = None;
 
+    if app.profile_menu_open
+        && (is_key_pressed(KeyCode::Escape)
+            || (is_mouse_button_pressed(MouseButton::Left)
+                && !ui.pointer_over("profile_menu")
+                && !ui.pointer_over("profile_btn")))
+    {
+        app.profile_menu_open = false;
+    }
     // Heading + profile dropdown.
     ui.element()
         .width(grow!())
@@ -50,7 +60,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     ui,
                     &pal,
                     "Buttons",
-                    "Remap available mouse buttons. Mappings are saved per profile.",
+                    if app.mouse_awake() {
+                        "Choose a button to edit its action for this profile."
+                    } else {
+                        "Edit saved mappings offline. Changes apply when a mouse connects."
+                    },
                 );
             });
             // Profile picker.
@@ -124,13 +138,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
             .capabilities
             .buttons
             .iter()
-            .map(|button| {
-                (
-                    button.slot.clone(),
-                    button.name.clone(),
-                    "Choose an action for this button.".to_owned(),
-                )
-            })
+            .map(|button| (button.slot.clone(), button.name.clone(), String::new()))
             .collect()
     } else {
         ROWS.iter()
@@ -185,11 +193,13 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                 ui.text(name, |t| {
                                     t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
                                 });
-                                ui.text(desc, |t| {
-                                    t.font(&fonts::SANS)
-                                        .font_size(widgets::px(12.5))
-                                        .color(pal.muted)
-                                });
+                                if !desc.is_empty() {
+                                    ui.text(desc, |t| {
+                                        t.font(&fonts::SANS)
+                                            .font_size(widgets::px(12.5))
+                                            .color(pal.muted)
+                                    });
+                                }
                             });
                         let id: Id = ("btn_chip", slot_index(slot)).into();
                         if widgets::action_chip(ui, &pal, id, disp) {
@@ -201,8 +211,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
 
     ui.element().width(grow!()).height(fixed!(16.0)).empty();
     ui.text(
-        "Left-click and scroll can't be remapped — Windows needs them. Changes apply the \
-         instant you pick them.",
+        "Changes save immediately. Windows handles left click and scrolling.",
         |t| {
             t.font(&fonts::SANS)
                 .font_size(widgets::px(12.5))
@@ -234,7 +243,8 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
     let pal = app.pal;
     let selected = app.selected_profile;
     ui.element()
-        .width(fixed!(200.0))
+        .id("profile_menu")
+        .width(fixed!(168.0))
         .height(fit!())
         .floating(|f| {
             f.attach_id("profile_btn")
@@ -257,7 +267,7 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
                     .height(fixed!(34.0))
                     .corner_radius(8.0)
                     .background_color(if active || hovered {
-                        pal.s2
+                        super::theme::Palette::mix(pal.accent, 12.0, pal.pop)
                     } else {
                         super::theme::TRANSPARENT
                     })

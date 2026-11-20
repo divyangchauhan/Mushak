@@ -8,6 +8,11 @@ static CLASSIC: GraphicAsset = GraphicAsset::Bytes {
     file_name: "mx-master-2s.png",
     data: include_bytes!("../../assets/devices/mx-master-2s.png"),
 };
+// A detail crop of CLASSIC. Source coordinates cover (317, 105) through (665, 390).
+static CLASSIC_THUMB: GraphicAsset = GraphicAsset::Bytes {
+    file_name: "mx-master-2s-thumb.png",
+    data: include_bytes!("../../assets/devices/mx-master-2s-thumb.png"),
+};
 static MASTER_3: GraphicAsset = GraphicAsset::Bytes {
     file_name: "mx-master-3s.png",
     data: include_bytes!("../../assets/devices/mx-master-3s.png"),
@@ -15,6 +20,11 @@ static MASTER_3: GraphicAsset = GraphicAsset::Bytes {
 static MASTER_4: GraphicAsset = GraphicAsset::Bytes {
     file_name: "mx-master-4.png",
     data: include_bytes!("../../assets/devices/mx-master-4.png"),
+};
+
+static MASTER_4_THUMB: GraphicAsset = GraphicAsset::Bytes {
+    file_name: "mx-master-4-thumb.png",
+    data: include_bytes!("../../assets/devices/mx-master-4-thumb.png"),
 };
 
 const STAGE_WIDTH: f32 = 600.0;
@@ -50,6 +60,16 @@ impl Model {
         }
     }
 
+    pub(super) fn has_thumb_detail(self, anchor: Option<&str>) -> bool {
+        matches!(
+            (self, anchor),
+            (
+                Self::Original | Self::Master2S,
+                Some("mouse_back" | "mouse_forward")
+            ) | (Self::Master4, Some("mouse_haptic"))
+        )
+    }
+
     fn artwork(self) -> &'static GraphicAsset {
         match self {
             Self::Original | Self::Master2S => &CLASSIC,
@@ -60,8 +80,8 @@ impl Model {
 
     fn placement(self) -> (f32, f32, f32, f32) {
         match self {
-            Self::Original | Self::Master2S => (40.0, -30.0, 420.0, 360.675),
-            _ => (0.0, -90.0, 600.0, 518.4),
+            Self::Original | Self::Master2S => (1.0, 10.0, 390.0, 334.9125),
+            _ => (-67.0, -47.0, 520.0, 449.28),
         }
     }
 
@@ -81,8 +101,6 @@ struct Part {
     label: &'static str,
     // Coordinates in the embedded product image, before scaling.
     point: (f32, f32),
-    // Label position in the 600 x 320 stage.
-    label_at: (f32, f32),
 }
 
 const CLASSIC_PARTS: [Part; 5] = [
@@ -91,35 +109,30 @@ const CLASSIC_PARTS: [Part; 5] = [
         slot: "middle",
         label: "Middle click",
         point: (180.0, 340.0),
-        label_at: (0.0, 20.0),
     },
     Part {
         id: "mouse_back",
         slot: "back",
         label: "Back button",
         point: (560.0, 190.0),
-        label_at: (435.0, 20.0),
     },
     Part {
         id: "mouse_forward",
         slot: "forward",
         label: "Forward button",
         point: (530.0, 225.0),
-        label_at: (435.0, 115.0),
     },
     Part {
         id: "mouse_gesture",
         slot: "tap",
         label: "Gesture button",
         point: (615.0, 370.0),
-        label_at: (435.0, 225.0),
     },
     Part {
         id: "mouse_mode",
         slot: "control_00c4",
         label: "Wheel mode button",
         point: (275.0, 220.0),
-        label_at: (0.0, 245.0),
     },
 ];
 
@@ -161,7 +174,6 @@ const MASTER_4_PARTS: [Part; 6] = [
     },
     Part {
         point: (535.0, 460.0),
-        label_at: (0.0, 135.0),
         ..CLASSIC_PARTS[3]
     },
     Part {
@@ -173,12 +185,19 @@ const MASTER_4_PARTS: [Part; 6] = [
         slot: "control_01a0",
         label: "Haptic Sense Panel",
         point: (680.0, 500.0),
-        label_at: (435.0, 245.0),
     },
 ];
 
 pub fn matches_device(device: &DeviceStatus) -> bool {
     Model::for_device(device).is_some()
+}
+
+pub(super) fn control_number(device: &DeviceStatus, anchor: &str) -> Option<usize> {
+    Model::for_device(device)?
+        .parts()
+        .iter()
+        .position(|part| part.id == anchor)
+        .map(|i| i + 1)
 }
 
 impl Part {
@@ -236,6 +255,107 @@ fn extra_buttons<'a>(
         .collect()
 }
 
+/// Back and Forward share a narrow strip behind the horizontal wheel on the classic body.
+/// The pointer ends at the button, leaving its face visible.
+fn thumb_detail(ui: &mut Ui2, app: &App, part: &Part, scale: f32) {
+    let pal = app.pal;
+    let compact_form = app.shortcut_editor || !app.picker_query.is_empty();
+    let width = (if compact_form { 178.0 } else { 211.0 }) * scale;
+    let image_height = width * 285.0 / 348.0;
+    let (image, left, top, title, caption) = if part.id == "mouse_haptic" {
+        (
+            &MASTER_4_THUMB,
+            486.0,
+            303.0,
+            "Thumb panel",
+            "Below the thumb wheel",
+        )
+    } else {
+        (
+            &CLASSIC_THUMB,
+            317.0,
+            105.0,
+            "Thumb buttons",
+            "Behind the thumb wheel",
+        )
+    };
+    let point = (
+        (part.point.0 - left) * width / 348.0,
+        (part.point.1 - top) * width / 348.0,
+    );
+    let number = control_number(&app.device_view.device, part.id)
+        .expect("detail belongs to this model")
+        .to_string();
+    ui.element()
+        .id("thumb_detail")
+        .width(fixed!(width))
+        .height(fit!())
+        .floating(|f| f.attach_id("mouse_stage").offset((9.0, 0.0)))
+        .background_color(pal.surface)
+        .border(|b| b.all(1).color(pal.line_strong))
+        .corner_radius(12.0)
+        .layout(|l| l.direction(TopToBottom))
+        .children(|ui| {
+            ui.element()
+                .width(grow!())
+                .height(fixed!(45.0))
+                .layout(|l| l.align(Left, CenterY).padding((0, 15, 0, 15)))
+                .children(|ui| {
+                    ui.text(title, |t| {
+                        t.font(&fonts::SANS_SEMIBOLD).font_size(17).color(pal.text)
+                    });
+                });
+            ui.element()
+                .id("thumb_picture")
+                .width(fixed!(width))
+                .height(fixed!(image_height))
+                .overflow(|o| o.clip())
+                .background_color(theme::WHITE)
+                .image(image)
+                .children(|ui| {
+                    ui.element()
+                        .width(fixed!(2.0))
+                        .height(fixed!(27.0))
+                        .floating(|f| {
+                            f.attach_id("thumb_picture")
+                                .offset((point.0 - 1.0, point.1 - 27.0))
+                                .z_index(2)
+                        })
+                        .background_color(pal.accent)
+                        .empty();
+                    ui.element()
+                        .id(part.id)
+                        .width(fixed!(26.0))
+                        .height(fixed!(26.0))
+                        .floating(|f| {
+                            f.attach_id("thumb_picture")
+                                .offset((point.0 - 13.0, point.1 - 51.0))
+                                .z_index(3)
+                        })
+                        .accessibility(|a| a.static_text(part.label))
+                        .background_color(pal.accent)
+                        .corner_radius(13.0)
+                        .layout(|l| l.align(CenterX, CenterY))
+                        .children(|ui| {
+                            ui.text(&number, |t| {
+                                t.font(&fonts::MONO_BOLD)
+                                    .font_size(14)
+                                    .color(pal.accent_ink)
+                            });
+                        });
+                });
+            ui.element()
+                .width(grow!())
+                .height(fixed!(40.0))
+                .layout(|l| l.align(Left, CenterY).padding((0, 15, 0, 15)))
+                .children(|ui| {
+                    ui.text(caption, |t| {
+                        t.font(&fonts::SANS).font_size(14).color(pal.muted)
+                    });
+                });
+        });
+}
+
 pub fn section(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
     let Some(model) = Model::for_device(&app.device_view.device) else {
@@ -247,20 +367,59 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         .map(|r| r.width)
         .unwrap_or((screen_width() - 300.0).clamp(240.0, STAGE_WIDTH))
         / STAGE_WIDTH;
+    let extras: Vec<_> = extra_buttons(model, &app.device_view.device)
+        .into_iter()
+        .map(|button| (button.slot.clone(), button.name.clone(), button.cid))
+        .collect();
+    let editing = app.picker_anchor.is_some() && screen_width() >= 840.0;
+    // Reserve the right column for the editor while keeping every marker on the artwork.
+    let factor = if editing && model == Model::Master4 {
+        0.70
+    } else if editing {
+        0.78
+    } else if !extras.is_empty() {
+        0.92
+    } else {
+        1.0
+    };
+    let art_scale = scale * factor;
+    let common_actions = editing
+        && !app.shortcut_editor
+        && app.picker_query.is_empty()
+        && app.picker_category == 0
+        && !app.picker_categories_open;
+    let art_y = (1.0 - factor) * 120.0 * scale + if common_actions { 34.0 } else { 0.0 };
+    // Leave room for the separate row when firmware reports an unmapped location.
+    let stage_height = if extras.is_empty() {
+        STAGE_HEIGHT
+    } else {
+        284.0
+    };
+    let row_pitch = if extras.is_empty() { 49.0 } else { 44.0 };
     let mut selected = None;
 
     ui.element()
         .id("mouse_stage")
         .width(grow!())
-        .height(fixed!(STAGE_HEIGHT * scale))
+        .height(fixed!(stage_height * scale))
         .children(|ui| {
+            if editing && model.has_thumb_detail(app.picker_anchor) {
+                if let Some(part) = model
+                    .parts()
+                    .iter()
+                    .find(|p| Some(p.id) == app.picker_anchor)
+                {
+                    thumb_detail(ui, app, part, scale);
+                    return;
+                }
+            }
             ui.element()
-                .width(fixed!(image_w * scale))
-                .height(fixed!(image_h * scale))
+                .width(fixed!(image_w * art_scale))
+                .height(fixed!(image_h * art_scale))
                 .floating(|f| {
                     f.attach_id("mouse_stage")
                         .clip_by_parent()
-                        .offset((image_x * scale, image_y * scale))
+                        .offset((image_x * art_scale, image_y * art_scale + art_y))
                         .passthrough()
                 })
                 .background_color(theme::WHITE)
@@ -273,6 +432,12 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 })
                 .empty();
 
+            let count = model
+                .parts()
+                .iter()
+                .filter(|p| p.target(&app.device_view.device).is_some())
+                .count();
+            let mut row = 0;
             for (index, part) in model.parts().iter().enumerate() {
                 let Some(target) = part.target(&app.device_view.device) else {
                     continue;
@@ -285,51 +450,28 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 };
                 let active =
                     app.picker.as_ref() == Some(&target) && app.picker_anchor == Some(part.id);
+                // Only the active marker has a corresponding control while the editor is open.
+                if editing && !active {
+                    continue;
+                }
                 let label_id: Id = ("mouse_label", index as u32).into();
                 let hovered = ui.pointer_over(part.id) || ui.pointer_over(label_id.clone());
-                let ink = if active || hovered {
-                    pal.accent
-                } else {
-                    pal.line_strong
-                };
+                let number = (index + 1).to_string();
                 let (x, y) = part.point_on_stage(model);
-                let (lx, ly) = part.label_at;
-                let label_edge = if lx < x { lx + 155.0 } else { lx };
-                let elbow = (x + label_edge) / 2.0;
-                let label_y = ly + 25.0;
-
-                // The callout wires use the same coordinates as the image and markers.
-                for (segment, (ax, ay, bx, by)) in [
-                    (x, y, elbow, y),
-                    (elbow, y, elbow, label_y),
-                    (elbow, label_y, label_edge, label_y),
-                ]
-                .into_iter()
-                .enumerate()
-                {
-                    ui.element()
-                        .id(("mouse_wire", (index * 3 + segment) as u32))
-                        .width(fixed!(((bx - ax).abs() * scale).max(1.0)))
-                        .height(fixed!(((by - ay).abs() * scale).max(1.0)))
-                        .floating(|f| {
-                            f.attach_id("mouse_stage")
-                                .clip_by_parent()
-                                .offset((ax.min(bx) * scale, ay.min(by) * scale))
-                                .z_index(1)
-                                .passthrough()
-                        })
-                        .background_color(ink)
-                        .empty();
-                }
-
+                let lx = 379.0;
+                let ly = (stage_height - count as f32 * row_pitch) / 2.0 + row as f32 * row_pitch;
+                row += 1;
                 ui.element()
                     .id(part.id)
-                    .width(fixed!(24.0 * scale))
-                    .height(fixed!(24.0 * scale))
+                    .width(fixed!(20.0 * scale))
+                    .height(fixed!(20.0 * scale))
                     .floating(|f| {
                         f.attach_id("mouse_stage")
                             .clip_by_parent()
-                            .offset(((x - 12.0) * scale, (y - 12.0) * scale))
+                            .offset((
+                                x * art_scale - 10.0 * scale,
+                                y * art_scale + art_y - 10.0 * scale,
+                            ))
                             .z_index(2)
                     })
                     .corner_radius(99.0)
@@ -357,22 +499,54 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         if ui.just_pressed() {
                             selected = Some((target.clone(), part.id));
                         }
-                        ui.element()
-                            .width(fixed!(6.0 * scale))
-                            .height(fixed!(6.0 * scale))
-                            .corner_radius(99.0)
-                            .background_color(if active || hovered {
-                                pal.accent_ink
-                            } else {
-                                pal.text
-                            })
-                            .empty();
+                        ui.text(&number, |t| {
+                            t.font(&fonts::MONO_BOLD)
+                                .font_size(13)
+                                .color(if active || hovered {
+                                    pal.accent_ink
+                                } else {
+                                    pal.text
+                                })
+                        });
                     });
 
+                if editing {
+                    // The checked Common action already shows the saved assignment.
+                    if !app.shortcut_editor
+                        && app.picker_query.is_empty()
+                        && app.picker_category == 0
+                        && !app.picker_categories_open
+                        && matches!(
+                            app.action_for(&target),
+                            crate::config::Action::PassThrough | crate::config::Action::Disabled
+                        )
+                    {
+                        continue;
+                    }
+                    ui.element()
+                        .width(fixed!(246.0 * scale))
+                        .height(fit!())
+                        .floating(|f| {
+                            f.attach_id("mouse_stage")
+                                .offset((14.0 * scale, 266.0 * scale))
+                                .passthrough()
+                        })
+                        .layout(|l| l.direction(TopToBottom).gap(5).padding((2, 10, 2, 12)))
+                        .border(|b| b.left(2).color(pal.accent))
+                        .children(|ui| {
+                            ui.text("Current assignment", |t| {
+                                t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
+                            });
+                            ui.text(&action_label, |t| {
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(16).color(pal.text)
+                            });
+                        });
+                    continue;
+                }
                 ui.element()
                     .id(label_id)
-                    .width(fixed!(155.0 * scale))
-                    .height(fixed!(52.0 * scale))
+                    .width(fixed!(217.0 * scale))
+                    .height(fixed!((row_pitch - 4.0) * scale))
                     .floating(|f| {
                         f.attach_id("mouse_stage")
                             .clip_by_parent()
@@ -399,13 +573,18 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             a.static_text(part.label)
                         }
                     })
-                    .layout(|l| l.direction(TopToBottom).gap(3).padding((9, 11, 9, 11)))
+                    .layout(|l| {
+                        l.direction(TopToBottom)
+                            .align(Left, CenterY)
+                            .gap(3)
+                            .padding((5, 12, 5, 12))
+                    })
                     .children(|ui| {
                         if ui.just_pressed() {
                             selected = Some((target.clone(), part.id));
                         }
-                        ui.text(part.label, |t| {
-                            t.font(&fonts::SANS_SEMIBOLD).font_size(12).color(pal.text)
+                        ui.text(&format!("{number}   {}", part.label), |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
                         });
                         let label = if matches!(target, PickerTarget::Gesture(_))
                             && !app.draft.gestures.enabled
@@ -415,91 +594,117 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             &action_label
                         };
                         ui.text(label, |t| {
-                            t.font(&fonts::SANS).font_size(12).color(
-                                if app.prefs.theme == theme::Theme::Light {
-                                    pal.muted
-                                } else {
-                                    pal.accent
-                                },
-                            )
+                            t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.accent)
                         });
                     });
             }
         });
 
-    ui.text(
-        "Click a button marker or its label to change the action.",
-        |t| t.font(&fonts::SANS).font_size(13).color(pal.muted),
-    );
-    ui.element().height(fixed!(8.0)).empty();
-    let note = if app.mouse_awake() {
-        "Button mappings use the selected profile. Gesture actions apply to every profile."
-    } else {
-        "Mouse disconnected. You can still edit the saved Back, Forward, and Middle mappings."
-    };
-    ui.text(note, |t| {
-        t.font(&fonts::SANS).font_size(12).color(pal.faint)
-    });
-
-    // Keep newly discovered controls editable even without an artwork marker.
-    let extras: Vec<_> = extra_buttons(model, &app.device_view.device)
-        .into_iter()
-        .map(|button| (button.slot.clone(), button.name.clone()))
-        .collect();
-    for (slot, name) in extras {
-        ui.element().height(fixed!(10.0)).empty();
-        let target = PickerTarget::Button(slot.clone());
-        let display = actions::display(&app.action_for(&target));
-        super::widgets::card(ui, &pal)
-            .layout(|l| {
-                l.direction(LeftToRight)
-                    .align(Left, CenterY)
-                    .gap(12)
-                    .padding(12)
-            })
-            .children(|ui| {
-                ui.element().width(grow!()).height(fit!()).children(|ui| {
-                    ui.text(&name, |t| {
-                        t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                    });
-                });
-                let index = super::buttons::slot_index(&slot);
-                if super::widgets::action_chip(ui, &pal, ("mouse_extra", index).into(), &display) {
-                    app.open_picker(target);
-                }
-            });
+    if editing {
+        return;
     }
-
     if app.device_view.device.connected && app.device_view.device.capabilities.gestures {
-        ui.element().height(fixed!(14.0)).empty();
         let mut gestures = false;
         ui.element()
-            .id("mouse_gestures")
-            .width(fit!())
-            .height(fixed!(34.0))
-            .corner_radius(8.0)
-            .background_color(pal.surface)
-            .border(|b| b.all(1).color(pal.line_strong))
-            .accessibility(|a| {
-                if app.picker.is_none() {
-                    a.button("Configure gestures")
-                } else {
-                    a.static_text("Configure gestures")
-                }
-            })
-            .layout(|l| l.direction(LeftToRight).gap(8).padding((8, 12, 8, 12)))
+            .width(grow!())
+            .height(fit!())
+            .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(10))
             .children(|ui| {
-                gestures = ui.just_pressed();
-                super::widgets::icon(ui, &icons::NAV_GESTURES, 16.0, pal.muted);
-                ui.text("Configure gestures", |t| {
-                    t.font(&fonts::SANS_MEDIUM).font_size(12).color(pal.text)
+                ui.element().width(grow!()).children(|ui| {
+                    ui.text("Gesture actions apply to all profiles.", |t| {
+                        t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                    });
                 });
+                ui.element()
+                    .id("mouse_gestures")
+                    .width(fit!())
+                    .height(fixed!(34.0))
+                    .corner_radius(8.0)
+                    .background_color(pal.surface)
+                    .border(|b| b.all(1).color(pal.line_strong))
+                    .accessibility(|a| {
+                        if app.picker.is_none() {
+                            a.button("Configure gestures")
+                        } else {
+                            a.static_text("Configure gestures")
+                        }
+                    })
+                    .layout(|l| l.direction(LeftToRight).gap(8).padding((8, 12, 8, 12)))
+                    .children(|ui| {
+                        gestures = ui.just_pressed();
+                        super::widgets::icon(ui, &icons::NAV_GESTURES, 16.0, pal.muted);
+                        ui.text("Configure gestures", |t| {
+                            t.font(&fonts::SANS_MEDIUM).font_size(14).color(pal.text)
+                        });
+                    });
             });
         if gestures {
             app.section = Section::Gestures;
             app.close_picker();
         }
     }
+    // Keep newly discovered controls editable even without an artwork marker.
+    if !extras.is_empty() {
+        ui.element().height(fixed!(10.0)).empty();
+        super::widgets::eyebrow(ui, &pal, "Buttons outside the diagram");
+    }
+    for (slot, name, cid) in extras {
+        ui.element().height(fixed!(10.0)).empty();
+        let target = PickerTarget::Button(slot.clone());
+        let display = actions::display(&app.action_for(&target));
+        let index = super::buttons::slot_index(&slot);
+        let id: Id = ("mouse_extra", index).into();
+        let hovered = ui.pointer_over(id.clone());
+        let assignment = if display.label.is_empty() {
+            display.keys.join(" + ")
+        } else {
+            display.label
+        };
+        ui.element()
+            .id(id)
+            .width(grow!())
+            .height(fixed!(53.0))
+            .corner_radius(10.0)
+            .background_color(if hovered { pal.s2 } else { pal.surface })
+            .border(|b| b.all(1).color(if hovered { pal.accent } else { pal.line }))
+            .accessibility(|a| a.button(&format!("Configure {name}, {assignment}")))
+            .layout(|l| {
+                l.direction(LeftToRight)
+                    .align(Left, CenterY)
+                    .gap(12)
+                    .padding((0, 14, 0, 14))
+            })
+            .children(|ui| {
+                if ui.just_pressed() {
+                    app.open_picker(target);
+                }
+                super::widgets::icon(ui, &icons::NAV_BUTTONS, 19.0, pal.muted);
+                ui.element()
+                    .width(grow!())
+                    .height(fit!())
+                    .layout(|l| l.direction(TopToBottom).gap(3))
+                    .children(|ui| {
+                        ui.text(&format!("{name}   {cid:#06X}"), |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                        });
+                        ui.text(&assignment, |t| {
+                            t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.accent)
+                        });
+                    });
+                ui.element()
+                    .width(fixed!(91.0))
+                    .height(fixed!(30.0))
+                    .background_color(pal.s2)
+                    .corner_radius(7.0)
+                    .layout(|l| l.align(CenterX, CenterY))
+                    .children(|ui| {
+                        ui.text("Edit action", |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
+                        });
+                    });
+            });
+    }
+
     if let Some((target, anchor)) = selected {
         app.open_button_popover(target, anchor);
     }

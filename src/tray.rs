@@ -1,74 +1,109 @@
 //! System tray icon and menu.
 
 use anyhow::Result;
-use tray_icon::menu::{CheckMenuItem, Menu, MenuId, MenuItem, PredefinedMenuItem};
+use tray_icon::menu::{CheckMenuItem, IconMenuItem, Menu, MenuId, MenuItem, PredefinedMenuItem};
 use tray_icon::{Icon, TrayIcon, TrayIconBuilder};
 
 /// Owns the tray icon (kept alive) and the menu items we update at runtime.
 pub struct Tray {
     _icon: TrayIcon,
-    open: MenuItem,
-    quit: MenuItem,
-    pause: CheckMenuItem,
-    startup: CheckMenuItem,
-    battery: MenuItem,
+    items: TrayMenu,
 }
 
-impl Tray {
-    pub fn build(start_with_windows: bool) -> Result<Tray> {
+struct TrayMenu {
+    menu: Menu,
+    open: IconMenuItem,
+    quit: MenuItem,
+    pause: MenuItem,
+    startup: CheckMenuItem,
+}
+
+impl TrayMenu {
+    fn set_paused(&self, paused: bool) {
+        self.pause.set_text(if paused {
+            "Resume remapping"
+        } else {
+            "Pause remapping"
+        });
+    }
+
+    fn set_status(&self, text: &str) {
+        self.open.set_text(format!("Open mouse settings\t{text}"));
+    }
+
+    fn new(start_with_windows: bool) -> Result<Self> {
         let menu = Menu::new();
-        let open = MenuItem::new("Open Settings", true, None);
-        let pause = CheckMenuItem::new("Pause remapping", true, false, None);
-        // Disabled item used purely as a status label.
-        let battery = MenuItem::new("Battery: n/a", false, None);
+        let mark = tray_icon::menu::Icon::from_rgba(MODAK_ACTIVE.to_vec(), ICON_PX, ICON_PX)?;
+        let open = IconMenuItem::new("Open mouse settings", true, Some(mark), None);
+        let pause = MenuItem::new("Pause remapping", true, None);
         let startup = CheckMenuItem::new("Start with Windows", true, start_with_windows, None);
-        let quit = MenuItem::new("Quit", true, None);
+        let quit = MenuItem::new("Quit Mushak", true, None);
 
         menu.append_items(&[
             &open,
             &PredefinedMenuItem::separator(),
             &pause,
-            &battery,
             &startup,
             &PredefinedMenuItem::separator(),
             &quit,
         ])?;
 
+        Ok(Self {
+            menu,
+            open,
+            pause,
+            startup,
+            quit,
+        })
+    }
+}
+
+#[cfg(debug_assertions)]
+pub fn preview_menu(hwnd: isize, paused: bool) {
+    use tray_icon::menu::ContextMenu;
+    let items = TrayMenu::new(true).unwrap();
+    items.set_paused(paused);
+    items.set_status("Battery: 50%");
+    // The smoke window owns this popup. It has no resident handler.
+    unsafe {
+        items.menu.show_context_menu_for_hwnd(
+            hwnd,
+            Some(tray_icon::dpi::LogicalPosition::new(30.0, 70.0).into()),
+        )
+    };
+}
+
+impl Tray {
+    pub fn build(start_with_windows: bool) -> Result<Tray> {
+        let items = TrayMenu::new(start_with_windows)?;
         let icon = make_icon()?;
         let tray = TrayIconBuilder::new()
-            .with_menu(Box::new(menu))
+            .with_menu(Box::new(items.menu.clone()))
             .with_tooltip("Mushak")
             .with_icon(icon)
             .build()?;
 
-        Ok(Tray {
-            _icon: tray,
-            open,
-            quit,
-            pause,
-            startup,
-            battery,
-        })
+        Ok(Tray { _icon: tray, items })
     }
 
     pub fn open_id(&self) -> &MenuId {
-        self.open.id()
+        self.items.open.id()
     }
 
     pub fn quit_id(&self) -> &MenuId {
-        self.quit.id()
+        self.items.quit.id()
     }
 
     pub fn pause_id(&self) -> &MenuId {
-        self.pause.id()
+        self.items.pause.id()
     }
 
     pub fn startup_id(&self) -> &MenuId {
-        self.startup.id()
+        self.items.startup.id()
     }
 
     pub fn set_paused(&self, paused: bool) {
-        self.pause.set_checked(paused);
+        self.items.set_paused(paused);
         // The icon carries the paused state too, so the tray reads correctly
         // without opening the menu.
         match icon_for(paused) {
@@ -82,11 +117,11 @@ impl Tray {
     }
 
     pub fn set_startup(&self, on: bool) {
-        self.startup.set_checked(on);
+        self.items.startup.set_checked(on);
     }
 
     pub fn set_battery(&self, text: &str) {
-        self.battery.set_text(text);
+        self.items.set_status(text);
     }
 }
 
@@ -106,4 +141,3 @@ fn icon_for(paused: bool) -> Result<Icon> {
     let rgba = if paused { MODAK_PAUSED } else { MODAK_ACTIVE };
     Ok(Icon::from_rgba(rgba.to_vec(), ICON_PX, ICON_PX)?)
 }
-
