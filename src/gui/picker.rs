@@ -54,31 +54,7 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                 && super::mouse_view::matches_device(&app.device_view.device)
         })
         .and_then(|id| ui.bounding_box(id));
-    let (mut x, y, mut width, height) = panel_rect(
-        anchored,
-        screen_width(),
-        screen_height(),
-        if app.shortcut_editor {
-            282.0
-        } else if anchored.is_some() && app.picker_query.is_empty() && screen_height() >= 600.0 {
-            if app.picker_categories_open {
-                443.0
-            } else if app.picker_category == 0 {
-                454.0
-            } else {
-                let category = actions::Category::ORDER[app.picker_category - 1];
-                let count = actions::presets()
-                    .iter()
-                    .filter(|preset| preset.cat == category)
-                    .count();
-                category_height(count)
-            }
-        } else if app.picker_query.is_empty() {
-            504.0
-        } else {
-            246.0
-        },
-    );
+    let (mut x, y, mut width, height) = panel_rect(anchored, screen_width(), screen_height());
 
     if anchored.is_some()
         && super::mouse_view::Model::for_device(&app.device_view.device)
@@ -87,6 +63,14 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
         width = (screen_width() * 0.45).clamp(350.0, 476.0);
         x = screen_width() - width - 20.0;
     }
+
+    let height = if !app.shortcut_editor && !app.picker_query.is_empty() {
+        let matches = action_groups(&app.picker_query.to_lowercase());
+        let rows: usize = matches.iter().map(|(_, actions)| actions.len()).sum();
+        height.min(186.0 + 25.0 * matches.len() as f32 + 42.0 * rows.max(1) as f32)
+    } else {
+        height
+    };
 
     // Backdrop. Clicking it dismisses.
     //
@@ -101,7 +85,7 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
         .background_color(if anchored.is_some() {
             super::theme::TRANSPARENT
         } else {
-            Color::rgba(0.0, 0.0, 0.0, 128.0)
+            Color::rgba(0.0, 0.0, 0.0, 204.0)
         })
         .children(|ui| {
             // A press on any descendant also marks its ancestors pressed, so the
@@ -122,7 +106,7 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                 .children(|ui| {
                     header(ui, app, &target, &mut close);
                     if app.shortcut_editor {
-                        custom_footer(ui, app, &mut chosen);
+                        shortcut_editor(ui, app, &current, &mut chosen, &mut close);
                         return;
                     }
                     if app.picker_fresh {
@@ -165,15 +149,12 @@ fn panel_rect(
     anchor: Option<ply_engine::math::BoundingBox>,
     window_w: f32,
     window_h: f32,
-    preferred_height: f32,
 ) -> (f32, f32, f32, f32) {
     let margin = 20.0;
     let width = if anchor.is_some() {
         (window_w * 0.385).clamp(310.0, 408.0)
-    } else if window_h < 600.0 {
-        564.0
     } else {
-        500.0_f32
+        456.0_f32
     }
     .min((window_w - 2.0 * margin).max(1.0));
     // Reserve the title bar and leave room around the editor on compact windows.
@@ -185,15 +166,16 @@ fn panel_rect(
         margin
     };
     let available = (window_h - top - margin).max(1.0);
-    let height = if anchor.is_none()
-        && preferred_height > available
-        && preferred_height > 400.0
-        && available > 400.0
-    {
-        442.0_f32.min(available)
+    // Switching tabs, filtering and recording must leave the pointer over
+    // the same controls. Only the viewport and presentation set the bounds.
+    let preferred_height: f32 = if anchor.is_some() {
+        436.0
+    } else if window_h < 600.0 {
+        442.0
     } else {
-        preferred_height.min(available)
+        504.0
     };
+    let height = preferred_height.min(available);
     let x = if anchor.is_some() {
         window_w - width - margin
     } else {
@@ -238,6 +220,16 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                             };
                             let number = app.picker_anchor.and_then(|id| {
                                 super::mouse_view::control_number(&app.device_view.device, id)
+                            });
+                            let number = number.or_else(|| {
+                                if app.section == super::Section::Buttons {
+                                    super::mouse_view::target_number(
+                                        &app.device_view.device,
+                                        target,
+                                    )
+                                } else {
+                                    None
+                                }
                             });
                             if let Some(n) = number {
                                 ui.element()
@@ -317,11 +309,7 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                         let selected = keyboard == app.shortcut_editor;
                         ui.element()
                             .id(id)
-                            .width(if app.shortcut_editor && !keyboard {
-                                fixed!(85.0)
-                            } else {
-                                grow!()
-                            })
+                            .width(grow!())
                             .height(fixed!(32.0))
                             .corner_radius(6.0)
                             .background_color(if selected {
@@ -357,12 +345,19 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
             if app.shortcut_editor {
                 return;
             }
+            let focused = ui.focused_element() == Some("picker_search".into());
             ui.element()
                 .width(grow!())
                 .height(fixed!(38.0))
                 .corner_radius(10.0)
                 .background_color(pal.win)
-                .border(|b| b.all(1).color(pal.line_strong))
+                .border(|b| {
+                    b.all(if focused { 2 } else { 1 }).color(if focused {
+                        pal.accent
+                    } else {
+                        pal.line_strong
+                    })
+                })
                 .layout(|l| {
                     l.direction(LeftToRight)
                         .align(Left, CenterY)
@@ -396,7 +391,6 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
     if live != app.picker_query {
         app.picker_query = live;
         app.picker_categories_open = false;
-        app.picker_page = 0;
     }
 }
 
@@ -408,16 +402,13 @@ type ActionChoice = (
     &'static GraphicAsset,
 );
 type ActionGroup = (String, Vec<ActionChoice>);
-const PAGE_SIZE: usize = 8;
-
-// Header, selector, column headings and outer padding, plus a 44px action row and divider.
-fn category_height(actions: usize) -> f32 {
-    248.0 + 45.0 * actions as f32
-}
 
 fn category_menu(ui: &mut Ui2, app: &mut App, groups: &[ActionGroup]) -> bool {
     let pal = app.pal;
     let active = &groups[app.picker_category];
+    let selector_width = ui
+        .bounding_box("picker_panel")
+        .map_or(168.0, |panel| (panel.width - 173.0).clamp(135.0, 180.0));
     ui.element()
         .width(grow!())
         .height(fixed!(48.0))
@@ -433,7 +424,7 @@ fn category_menu(ui: &mut Ui2, app: &mut App, groups: &[ActionGroup]) -> bool {
             });
             ui.element()
                 .id("category_menu")
-                .width(fixed!(140.0))
+                .width(fixed!(selector_width))
                 .height(fixed!(33.0))
                 .corner_radius(7.0)
                 .border(|b| {
@@ -488,7 +479,7 @@ fn category_menu(ui: &mut Ui2, app: &mut App, groups: &[ActionGroup]) -> bool {
                         .height(fixed!(40.0))
                         .corner_radius(8.0)
                         .background_color(if selected {
-                            super::theme::Palette::mix(pal.accent, 13.0, pal.pop)
+                            super::theme::Palette::mix(pal.accent, 20.0, pal.pop)
                         } else if hovered {
                             pal.s2
                         } else {
@@ -562,7 +553,7 @@ fn common_tiles(
                 ("Shortcuts", 2, &items[2..]),
             ] {
                 if offset > 0 {
-                    ui.element().height(fixed!(9.0)).empty();
+                    ui.element().height(fixed!(5.0)).empty();
                 }
                 ui.text(title, |t| {
                     t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.muted)
@@ -570,7 +561,7 @@ fn common_tiles(
                 for (pair_index, pair) in section.chunks(2).enumerate() {
                     ui.element()
                         .width(grow!())
-                        .height(fixed!(54.0))
+                        .height(fixed!(49.0))
                         .layout(|l| l.direction(LeftToRight).gap(8))
                         .children(|ui| {
                             for (i, (label, desc, keys, action, _)) in pair.iter().enumerate() {
@@ -583,7 +574,7 @@ fn common_tiles(
                                     .height(grow!())
                                     .corner_radius(8.0)
                                     .background_color(if selected {
-                                        super::theme::Palette::mix(pal.accent, 13.0, pal.pop)
+                                        super::theme::Palette::mix(pal.accent, 20.0, pal.pop)
                                     } else if hover {
                                         pal.s2
                                     } else {
@@ -643,103 +634,7 @@ fn common_tiles(
         });
 }
 
-fn compact_tiles(
-    ui: &mut Ui2,
-    pal: super::theme::Palette,
-    groups: &[ActionGroup],
-    start: usize,
-    current: &Action,
-    chosen: &mut Option<Action>,
-) {
-    let items: Vec<_> = groups
-        .iter()
-        .enumerate()
-        .flat_map(|(gi, (_, items))| {
-            items
-                .iter()
-                .enumerate()
-                .map(move |(i, item)| ((gi * 100 + i) as u32, item))
-        })
-        .skip(start)
-        .take(PAGE_SIZE)
-        .collect();
-    for pair in items.chunks(2) {
-        ui.element()
-            .width(grow!())
-            .height(fixed!(51.0))
-            .layout(|l| l.direction(LeftToRight).gap(8).padding((3, 4, 3, 4)))
-            .children(|ui| {
-                for (index, (label, desc, keys, action, icon)) in pair {
-                    let id: Id = ("pk", *index).into();
-                    let hover = ui.pointer_over(id.clone());
-                    ui.element()
-                        .id(id)
-                        .width(grow!())
-                        .height(grow!())
-                        .corner_radius(7.0)
-                        .background_color(if action == current || hover {
-                            super::theme::Palette::mix(pal.accent, 13.0, pal.pop)
-                        } else {
-                            pal.win
-                        })
-                        .border(|b| {
-                            b.all(1).color(if action == current || hover {
-                                pal.accent
-                            } else {
-                                pal.line
-                            })
-                        })
-                        .accessibility(|a| a.button(label))
-                        .layout(|l| {
-                            l.direction(LeftToRight)
-                                .gap(10)
-                                .align(Left, CenterY)
-                                .padding((2, 10, 2, 10))
-                        })
-                        .children(|ui| {
-                            if ui.just_pressed() {
-                                *chosen = Some(action.clone());
-                            }
-                            if desc.is_some() {
-                                widgets::icon(ui, icon, 17.0, pal.muted);
-                            }
-                            ui.element()
-                                .width(grow!())
-                                .height(fit!())
-                                .layout(|l| l.direction(TopToBottom).gap(1))
-                                .children(|ui| {
-                                    ui.text(label, |t| {
-                                        t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                                    });
-                                    if let Some(detail) = desc {
-                                        ui.text(detail, |t| {
-                                            t.font(&fonts::SANS).font_size(12).color(pal.muted)
-                                        });
-                                    }
-                                });
-                            for key in keys {
-                                widgets::keycap(ui, &pal, key);
-                            }
-                            if action == current {
-                                widgets::icon(ui, &icons::CHECK, 14.0, pal.accent);
-                            }
-                        });
-                }
-                if pair.len() == 1 {
-                    ui.element().width(grow!()).height(fixed!(1.0)).empty();
-                }
-            });
-    }
-}
-
-fn results(
-    ui: &mut Ui2,
-    app: &mut App,
-    query: &str,
-    current: &Action,
-    chosen: &mut Option<Action>,
-) {
-    let pal = app.pal;
+fn action_groups(query: &str) -> Vec<ActionGroup> {
     let presets = actions::presets();
 
     // "Quick" group: pass-through and disabled.
@@ -801,26 +696,25 @@ fn results(
         }
     }
 
-    let count: usize = groups.iter().map(|(_, items)| items.len()).sum();
-    let compact_list = screen_height() < 600.0 && count > 5;
-    let page_count = count.div_ceil(PAGE_SIZE);
-    let page = app.picker_page.min(page_count.saturating_sub(1));
-    let start = if compact_list { page * PAGE_SIZE } else { 0 };
-    let end = if compact_list {
-        (start + PAGE_SIZE).min(count)
-    } else {
-        count
-    };
+    groups
+}
+
+fn results(
+    ui: &mut Ui2,
+    app: &mut App,
+    query: &str,
+    current: &Action,
+    chosen: &mut Option<Action>,
+) {
+    let pal = app.pal;
+    let mut groups = action_groups(query);
     let empty = groups.is_empty();
-    let categories = app.picker_anchor.is_some()
-        && query.is_empty()
-        && screen_height() >= 600.0
-        && screen_width() >= 840.0;
+    let categories = query.is_empty();
     if categories {
         // Common assignments are shortcuts into the same preset collection used by search.
         let quick = &mut groups[0];
         quick.0 = "Common".into();
-        for preset in &presets {
+        for preset in actions::presets() {
             if matches!(preset.label, "Copy" | "Paste" | "Back" | "Forward") {
                 quick.1.push((
                     preset.label.into(),
@@ -840,30 +734,27 @@ fn results(
         common_tiles(ui, pal, &groups[0].1, current, chosen);
         return;
     }
-    let fits = categories
-        && category_height(groups[app.picker_category].1.len()) <= screen_height() - 164.0;
-    let list = ui.element().width(grow!()).height(grow!(0.0));
-    let list = if fits {
-        list
-    } else {
-        list.overflow(|o| {
+    let list = ui
+        .element()
+        .width(grow!())
+        .height(grow!(0.0))
+        .overflow(|o| {
             o.scroll_y().scrollbar(|s| {
-                s.width(if compact_list || categories { 8.0 } else { 5.0 })
+                s.width(if categories { 8.0 } else { 5.0 })
                     .corner_radius(6.0)
-                    .thumb_color(if compact_list || categories {
+                    .thumb_color(if categories {
                         pal.track
                     } else {
                         pal.line_strong
                     })
                     .track_color(pal.pop)
             })
-        })
-    };
+        });
     list.layout(|l| {
         l.direction(TopToBottom).gap(0).padding(if categories {
-            (7, 16, 7, 16)
+            (2, 12, 2, 12)
         } else {
-            (7, 7, 7, 7)
+            (7, 16, 7, 16)
         })
     })
     .children(|ui| {
@@ -887,92 +778,70 @@ fn results(
                 });
             return;
         }
-        if compact_list {
-            compact_tiles(ui, pal, &groups, start, current, chosen);
-            return;
-        }
         if categories {
-            ui.element()
-                .width(grow!())
-                .height(fixed!(23.0))
-                .layout(|l| {
-                    l.direction(LeftToRight)
-                        .align(Left, CenterY)
-                        .padding((0, 10, 0, 10))
-                })
-                .children(|ui| {
-                    ui.element().width(grow!()).height(fit!()).children(|ui| {
-                        ui.text("Choose an action to assign", |t| {
-                            t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
-                        });
-                    });
-                    ui.text("Shortcut", |t| {
-                        t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
-                    });
-                });
-        }
-        if categories {
-            let index = app.picker_category;
-            let items = &groups[index].1;
-            ui.element()
-                .width(grow!())
-                .height(fit!())
-                .corner_radius(9.0)
-                .background_color(pal.win)
-                .border(|b| b.all(1).color(pal.line_strong))
-                .layout(|l| l.direction(TopToBottom).padding((1, 9, 1, 9)))
-                .children(|ui| {
-                    for (i, (label, _, keys, action, glyph)) in items.iter().enumerate() {
-                        let id: Id = ("pk", (index * 100 + i) as u32).into();
-                        let hover = ui.pointer_over(id.clone());
-                        let active = action == current;
+            let category = app.picker_category;
+            for (index, (label, _, keys, action, _)) in groups[category].1.iter().enumerate() {
+                let id: Id = ("pk", (100 * category + index) as u32).into();
+                let active = action == current;
+                let hovered = ui.pointer_over(id.clone());
+                ui.element()
+                    .width(grow!())
+                    .height(fixed!(46.0))
+                    .layout(|l| l.padding((2, 0, 2, 0)))
+                    .children(|ui| {
                         ui.element()
                             .id(id)
                             .width(grow!())
-                            .height(fixed!(44.0))
-                            .background_color(if hover || active {
-                                pal.s2
+                            .height(grow!())
+                            .accessibility(|a| a.button(label))
+                            .corner_radius(6.0)
+                            .background_color(if active {
+                                super::theme::Palette::mix(pal.accent, 20.0, pal.pop)
                             } else {
-                                super::theme::TRANSPARENT
+                                pal.win
                             })
                             .border(|b| {
-                                b.bottom(if i + 1 < items.len() { 1 } else { 0 })
-                                    .color(pal.line_strong)
+                                b.all(1).color(if active || hovered {
+                                    pal.accent
+                                } else {
+                                    pal.line
+                                })
                             })
-                            .accessibility(|a| a.button(label))
                             .layout(|l| {
                                 l.direction(LeftToRight)
-                                    .gap(12)
                                     .align(Left, CenterY)
-                                    .padding((0, 6, 0, 6))
+                                    .gap(5)
+                                    .padding((0, 10, 0, 10))
                             })
                             .children(|ui| {
                                 if ui.just_pressed() {
                                     *chosen = Some(action.clone());
                                 }
-                                let icon = match label.as_str() {
-                                    "Copy" => &icons::EDIT_COPY,
-                                    "Cut" => &icons::EDIT_CUT,
-                                    "Paste" => &icons::EDIT_PASTE,
-                                    "Undo" => &icons::EDIT_UNDO,
-                                    "Redo" => &icons::EDIT_REDO,
-                                    _ => glyph,
+                                let glyph = match label.as_str() {
+                                    "Copy" => Some(&icons::EDIT_COPY),
+                                    "Paste" => Some(&icons::EDIT_PASTE),
+                                    "Cut" => Some(&icons::EDIT_CUT),
+                                    "Undo" => Some(&icons::EDIT_UNDO),
+                                    "Redo" => Some(&icons::EDIT_REDO),
+                                    _ => None,
                                 };
-                                widgets::icon(ui, icon, 17.0, pal.muted);
+                                if let Some(glyph) = glyph {
+                                    widgets::icon(ui, glyph, 15.0, pal.muted);
+                                }
                                 ui.element().width(grow!()).height(fit!()).children(|ui| {
                                     ui.text(label, |t| {
-                                        t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
+                                        t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
                                     });
                                 });
-                                ui.text(&keys.join(" + "), |t| {
-                                    t.font(&fonts::MONO_MEDIUM).font_size(13).color(pal.muted)
-                                });
+                                for key in keys {
+                                    widgets::keycap(ui, &pal, key);
+                                }
                                 if active {
                                     widgets::icon(ui, &icons::CHECK, 14.0, pal.accent);
                                 }
                             });
-                    }
-                });
+                    });
+            }
             return;
         }
         for (gi, (header, items)) in groups.iter().enumerate() {
@@ -998,10 +867,17 @@ fn results(
                     .corner_radius(9.0)
                     .background_color(if is_current {
                         super::theme::Palette::mix(pal.accent, 12.0, pal.pop)
-                    } else if hov || !query.is_empty() {
+                    } else if hov {
                         pal.s2
                     } else {
-                        super::theme::TRANSPARENT
+                        pal.win
+                    })
+                    .border(|b| {
+                        b.all(1).color(if hov || is_current {
+                            pal.accent
+                        } else {
+                            pal.line_strong
+                        })
                     })
                     .layout(|l| {
                         l.direction(LeftToRight)
@@ -1058,7 +934,6 @@ fn results(
                                     .font_size(13)
                                     .color(pal.accent)
                             });
-                            widgets::icon(ui, &icons::CHEVRON_RIGHT, 14.0, pal.accent);
                         }
                         if is_current {
                             widgets::icon(ui, &icons::CHECK, 15.0, pal.accent);
@@ -1067,69 +942,16 @@ fn results(
             }
         }
     });
-    if compact_list {
-        ui.element()
-            .width(grow!())
-            .height(fixed!(45.0))
-            .border(|b| b.top(1).color(pal.line))
-            .layout(|l| {
-                l.direction(LeftToRight)
-                    .align(Left, CenterY)
-                    .gap(8)
-                    .padding((0, 16, 0, 16))
-            })
-            .children(|ui| {
-                ui.element().width(grow!()).height(fit!()).children(|ui| {
-                    ui.text(&format!("Actions {} to {end} of {count}", start + 1), |t| {
-                        t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
-                    });
-                });
-                for (id, label, dest) in [
-                    ("prev_actions", "Previous", page.checked_sub(1)),
-                    (
-                        "next_actions",
-                        "Next",
-                        (page + 1 < page_count).then_some(page + 1),
-                    ),
-                ] {
-                    ui.element()
-                        .id(id)
-                        .height(fixed!(31.0))
-                        .width(fixed!(78.0))
-                        .corner_radius(7.0)
-                        .background_color(if dest.is_some() { pal.s2 } else { pal.pop })
-                        .border(|b| {
-                            b.all(1).color(if dest.is_some() {
-                                pal.line_strong
-                            } else {
-                                pal.line
-                            })
-                        })
-                        .accessibility(|a| a.button(label))
-                        .layout(|l| l.align(CenterX, CenterY))
-                        .children(|ui| {
-                            if ui.just_pressed() {
-                                if let Some(next) = dest {
-                                    app.picker_page = next;
-                                }
-                            }
-                            ui.text(label, |t| {
-                                t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(
-                                    if dest.is_some() {
-                                        pal.accent
-                                    } else {
-                                        pal.faint
-                                    },
-                                )
-                            });
-                        });
-                }
-            });
-    }
 }
 
 /// Modifier chips + key capture + Assign.
-fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
+fn shortcut_editor(
+    ui: &mut Ui2,
+    app: &mut App,
+    current: &Action,
+    chosen: &mut Option<Action>,
+    close: &mut bool,
+) {
     let pal = app.pal;
     let mods = app.custom_mods.clone();
     let key = app.custom_key;
@@ -1140,121 +962,132 @@ fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
 
     ui.element()
         .width(grow!())
-        .height(fit!())
-        .layout(|l| l.direction(TopToBottom).gap(9).padding((13, 16, 13, 16)))
+        .height(grow!(0.0))
+        .overflow(|o| o.scroll_y())
+        .layout(|l| l.direction(TopToBottom).gap(12).padding((16, 16, 8, 16)))
         .children(|ui| {
-            if capturing {
-                ui.element()
-                    .width(grow!())
-                    .height(fixed!(58.0))
-                    .corner_radius(8.0)
-                    .background_color(super::theme::Palette::mix(pal.accent, 13.0, pal.pop))
-                    .border(|b| b.left(3).color(pal.accent))
-                    .layout(|l| {
-                        l.direction(TopToBottom)
-                            .gap(3)
-                            .align(Left, CenterY)
-                            .padding((0, 12, 0, 12))
-                    })
-                    .children(|ui| {
-                        ui.text("Press a key", |t| {
-                            t.font(&fonts::SANS_BOLD).font_size(16).color(pal.text)
-                        });
-                        ui.text("Escape cancels recording.", |t| {
-                            t.font(&fonts::SANS).font_size(13).color(pal.muted)
-                        });
-                    });
-            } else {
-                ui.text("Modifiers", |t| {
-                    t.font(&fonts::SANS_BOLD).font_size(13).color(pal.faint)
-                });
-                ui.element()
-                    .width(grow!())
-                    .height(fit!())
-                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(7))
-                    .children(|ui| {
-                        for (mi, (m, label)) in [
-                            (Modifier::Ctrl, "Ctrl"),
-                            (Modifier::Win, "Win"),
-                            (Modifier::Alt, "Alt"),
-                            (Modifier::Shift, "Shift"),
-                        ]
-                        .into_iter()
-                        .enumerate()
-                        {
-                            let on = mods.contains(&m);
-                            let id: Id = ("mod", mi as u32).into();
-                            ui.element()
-                                .id(id)
-                                .accessibility(|a| a.button(label))
-                                .height(fixed!(30.0))
-                                .corner_radius(8.0)
-                                .background_color(if on {
-                                    pal.accent
-                                } else {
-                                    super::theme::TRANSPARENT
-                                })
-                                .border(|b| {
-                                    b.all(1).color(if on {
-                                        super::theme::TRANSPARENT
-                                    } else {
-                                        pal.line_strong
-                                    })
-                                })
-                                .layout(|l| {
-                                    l.direction(LeftToRight)
-                                        .gap(6)
-                                        .align(CenterX, CenterY)
-                                        .padding((0, 12, 0, 12))
-                                })
-                                .children(|ui| {
-                                    if ui.just_pressed() {
-                                        toggle_mod = Some(m);
-                                    }
-                                    if on {
-                                        widgets::icon(ui, &icons::CHECK, 12.0, pal.accent_ink);
-                                    }
-                                    ui.text(label, |t| {
-                                        t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(if on {
-                                            pal.accent_ink
-                                        } else {
-                                            pal.muted
-                                        })
-                                    });
-                                });
-                        }
-                    });
-            }
+            let assigned = actions::display(current);
             ui.element()
                 .width(grow!())
-                .height(fixed!(36.0))
-                .layout(|l| l.direction(LeftToRight).gap(6).align(Left, CenterY))
+                .height(fit!())
+                .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(8))
                 .children(|ui| {
-                    ui.text(
-                        if capturing {
-                            "Previous shortcut"
-                        } else {
-                            "Shortcut"
-                        },
-                        |t| t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted),
-                    );
-                    if let Some(vk) = key {
-                        for m in &mods {
-                            widgets::keycap(ui, &pal, &format!("{m:?}"));
+                    ui.text("Assigned now", |t| {
+                        t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
+                    });
+                    if assigned.label.is_empty() {
+                        for key in &assigned.keys {
+                            widgets::keycap(ui, &pal, key);
                         }
-                        widgets::keycap(ui, &pal, &actions::key_name(vk));
                     } else {
-                        ui.text("No key recorded", |t| {
-                            t.font(&fonts::SANS).font_size(13).color(pal.text)
+                        ui.text(&assigned.label, |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
                         });
                     }
                 });
-            ui.element().height(fixed!(3.0)).empty();
+            ui.text("Modifiers", |t| {
+                t.font(&fonts::SANS_BOLD).font_size(13).color(pal.faint)
+            });
             ui.element()
                 .width(grow!())
                 .height(fit!())
                 .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(7))
                 .children(|ui| {
+                    for (mi, (m, label)) in [
+                        (Modifier::Ctrl, "Ctrl"),
+                        (Modifier::Win, "Win"),
+                        (Modifier::Alt, "Alt"),
+                        (Modifier::Shift, "Shift"),
+                    ]
+                    .into_iter()
+                    .enumerate()
+                    {
+                        let on = mods.contains(&m);
+                        let id: Id = ("mod", mi as u32).into();
+                        ui.element()
+                            .id(id)
+                            .accessibility(|a| a.button(label))
+                            .width(grow!())
+                            .height(fixed!(34.0))
+                            .corner_radius(8.0)
+                            .background_color(if on {
+                                pal.accent
+                            } else {
+                                super::theme::TRANSPARENT
+                            })
+                            .border(|b| {
+                                b.all(1).color(if on {
+                                    super::theme::TRANSPARENT
+                                } else {
+                                    pal.line_strong
+                                })
+                            })
+                            .layout(|l| {
+                                l.direction(LeftToRight)
+                                    .gap(6)
+                                    .align(CenterX, CenterY)
+                                    .padding((0, 4, 0, 4))
+                            })
+                            .children(|ui| {
+                                if ui.just_pressed() {
+                                    toggle_mod = Some(m);
+                                }
+                                if on {
+                                    widgets::icon(ui, &icons::CHECK, 12.0, pal.accent_ink);
+                                }
+                                ui.text(label, |t| {
+                                    t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(if on {
+                                        pal.accent_ink
+                                    } else {
+                                        pal.muted
+                                    })
+                                });
+                            });
+                    }
+                });
+            ui.element()
+                .width(grow!())
+                .height(grow!(104.0))
+                .corner_radius(8.0)
+                .background_color(if capturing {
+                    super::theme::Palette::mix(pal.accent, 9.0, pal.win)
+                } else {
+                    pal.win
+                })
+                .border(|b| {
+                    b.all(1)
+                        .color(if capturing { pal.accent } else { pal.line })
+                })
+                .layout(|l| l.direction(TopToBottom).gap(8).align(CenterX, CenterY))
+                .children(|ui| {
+                    ui.text(
+                        if capturing {
+                            "Press a key"
+                        } else {
+                            "New shortcut"
+                        },
+                        |t| t.font(&fonts::SANS_BOLD).font_size(17).color(pal.text),
+                    );
+                    ui.element()
+                        .width(fit!())
+                        .height(fit!())
+                        .layout(|l| l.direction(LeftToRight).gap(5).align(CenterX, CenterY))
+                        .children(|ui| {
+                            if capturing {
+                                ui.text("Escape cancels recording.", |t| {
+                                    t.font(&fonts::SANS).font_size(14).color(pal.muted)
+                                });
+                            } else if let Some(vk) = key {
+                                for m in &mods {
+                                    widgets::keycap(ui, &pal, &format!("{m:?}"));
+                                }
+                                widgets::keycap(ui, &pal, &actions::key_name(vk));
+                            } else {
+                                ui.text("Choose modifiers, then record the main key.", |t| {
+                                    t.font(&fonts::SANS).font_size(14).color(pal.muted)
+                                });
+                            }
+                        });
                     // Key capture button.
                     ui.element()
                         .id("capture")
@@ -1265,8 +1098,8 @@ fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
                                 "Capture shortcut key"
                             })
                         })
-                        .width(fit!(78.0))
-                        .height(fixed!(30.0))
+                        .width(fixed!(140.0))
+                        .height(fixed!(36.0))
                         .corner_radius(8.0)
                         .background_color(if capturing {
                             super::theme::Palette::mix(pal.accent, 16.0, pal.win)
@@ -1284,7 +1117,7 @@ fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
                                 }
                             }
                             let label = if capturing {
-                                "Cancel".to_string()
+                                "Stop recording".to_string()
                             } else {
                                 key.map(|_| "Change key".to_owned())
                                     .unwrap_or_else(|| "Record key".into())
@@ -1295,29 +1128,67 @@ fn custom_footer(ui: &mut Ui2, app: &mut App, chosen: &mut Option<Action>) {
                                     .color(pal.accent)
                             });
                         });
-
-                    ui.element().width(grow!()).height(fixed!(1.0)).empty();
-
-                    let can_assign = key.is_some() && !capturing;
+                });
+            ui.element()
+                .width(grow!())
+                .height(fit!())
+                .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(7))
+                .children(|ui| {
                     ui.element()
-                        .id("assign")
-                        .accessibility(|a| a.button("Assign shortcut"))
+                        .id("cancel_shortcut")
+                        .accessibility(|a| a.button("Cancel shortcut changes"))
                         .height(fixed!(32.0))
                         .corner_radius(8.0)
-                        .background_color(if can_assign { pal.accent } else { pal.s2 })
+                        .border(|b| b.all(1).color(pal.line_strong))
                         .layout(|l| l.align(CenterX, CenterY).padding((0, 16, 0, 16)))
                         .children(|ui| {
-                            if ui.just_pressed() && can_assign {
+                            if ui.just_pressed() {
+                                *close = true;
+                            }
+                            ui.text("Cancel", |t| {
+                                t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.text)
+                            });
+                        });
+                    ui.element().width(grow!()).height(fixed!(1.0)).empty();
+
+                    if key.is_none() || capturing {
+                        ui.element()
+                            .id("assign")
+                            .width(fit!())
+                            .height(fixed!(32.0))
+                            .layout(|l| l.align(Right, CenterY))
+                            .children(|ui| {
+                                ui.text(
+                                    if capturing {
+                                        "Waiting for keypress"
+                                    } else {
+                                        "No key recorded"
+                                    },
+                                    |t| t.font(&fonts::SANS).font_size(13).color(pal.muted),
+                                );
+                            });
+                        return;
+                    }
+                    ui.element()
+                        .id("assign")
+                        .accessibility(|a| a.button("Save shortcut"))
+                        .height(fixed!(32.0))
+                        .corner_radius(8.0)
+                        .background_color(pal.accent)
+                        .layout(|l| {
+                            l.direction(LeftToRight)
+                                .align(CenterX, CenterY)
+                                .gap(6)
+                                .padding((0, 14, 0, 14))
+                        })
+                        .children(|ui| {
+                            if ui.just_pressed() {
                                 assign = true;
                             }
                             ui.text("Save shortcut", |t| {
                                 t.font(&fonts::SANS_BOLD)
                                     .font_size(widgets::px(12.5))
-                                    .color(if can_assign {
-                                        pal.accent_ink
-                                    } else {
-                                        pal.faint
-                                    })
+                                    .color(pal.accent_ink)
                             });
                         });
                 });
@@ -1355,7 +1226,7 @@ mod tests {
         ] {
             for (ax, ay) in [(0.0, 0.0), (w - 24.0, h - 24.0), (w / 2.0, h / 2.0)] {
                 let (x, y, width, height) =
-                    panel_rect(Some(BoundingBox::new(ax, ay, 24.0, 24.0)), w, h, 504.0);
+                    panel_rect(Some(BoundingBox::new(ax, ay, 24.0, 24.0)), w, h);
                 assert!(x >= 16.0 && y >= 16.0);
                 assert!(x + width <= w - 16.0 && y + height <= h - 16.0);
             }

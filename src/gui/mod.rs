@@ -124,7 +124,6 @@ pub struct App {
     shortcut_editor: bool,
     picker_fresh: bool,
     pub picker_query: String,
-    pub picker_page: usize,
     picker_category: usize,
     picker_categories_open: bool,
     pub custom_mods: Vec<Modifier>,
@@ -185,7 +184,6 @@ impl App {
             shortcut_editor: false,
             picker_fresh: false,
             picker_query: String::new(),
-            picker_page: 0,
             picker_category: 0,
             picker_categories_open: false,
             custom_mods: Vec::new(),
@@ -234,7 +232,6 @@ impl App {
         self.picker_anchor = None;
         self.picker_fresh = true;
         self.picker_query.clear();
-        self.picker_page = 0;
         self.picker_categories_open = false;
         self.picker_category = actions::presets()
             .iter()

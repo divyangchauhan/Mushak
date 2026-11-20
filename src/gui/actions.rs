@@ -12,14 +12,16 @@ use super::icons;
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Category {
     Edit,
+    Tabs,
     Navigation,
     System,
     Media,
 }
 
 impl Category {
-    pub const ORDER: [Category; 4] = [
+    pub const ORDER: [Category; 5] = [
         Category::Edit,
+        Category::Tabs,
         Category::Navigation,
         Category::System,
         Category::Media,
@@ -27,6 +29,7 @@ impl Category {
     pub fn label(self) -> &'static str {
         match self {
             Category::Edit => "Edit",
+            Category::Tabs => "Tabs & windows",
             Category::Navigation => "Navigation",
             Category::System => "System",
             Category::Media => "Media",
@@ -35,6 +38,7 @@ impl Category {
     pub fn icon(self) -> &'static GraphicAsset {
         match self {
             Category::Edit => &icons::CAT_EDIT,
+            Category::Tabs => &icons::CAT_NAV,
             Category::Navigation => &icons::CAT_NAV,
             Category::System => &icons::CAT_SYSTEM,
             Category::Media => &icons::CAT_MEDIA,
@@ -64,15 +68,15 @@ pub fn presets() -> Vec<Preset> {
         p!("Cut", Category::Edit, ["Ctrl", "X"], Action::key(&[Ctrl], vk::letter(b'X'))),
         p!("Undo", Category::Edit, ["Ctrl", "Z"], Action::key(&[Ctrl], vk::letter(b'Z'))),
         p!("Redo", Category::Edit, ["Ctrl", "Y"], Action::key(&[Ctrl], vk::letter(b'Y'))),
-        p!("Close tab", Category::Navigation, ["Ctrl", "W"], Action::key(&[Ctrl], vk::letter(b'W'))),
-        p!("New", Category::Navigation, ["Ctrl", "N"], Action::key(&[Ctrl], vk::letter(b'N'))),
-        p!("New tab", Category::Navigation, ["Ctrl", "T"], Action::key(&[Ctrl], vk::letter(b'T'))),
-        p!("Reopen tab", Category::Navigation, ["Ctrl", "Shift", "T"], Action::key(&[Ctrl, Shift], vk::letter(b'T'))),
-        p!("Find", Category::Navigation, ["Ctrl", "F"], Action::key(&[Ctrl], vk::letter(b'F'))),
+        p!("Close tab", Category::Tabs, ["Ctrl", "W"], Action::key(&[Ctrl], vk::letter(b'W'))),
+        p!("New", Category::Tabs, ["Ctrl", "N"], Action::key(&[Ctrl], vk::letter(b'N'))),
+        p!("New tab", Category::Tabs, ["Ctrl", "T"], Action::key(&[Ctrl], vk::letter(b'T'))),
+        p!("Reopen tab", Category::Tabs, ["Ctrl", "Shift", "T"], Action::key(&[Ctrl, Shift], vk::letter(b'T'))),
+        p!("Find", Category::Edit, ["Ctrl", "F"], Action::key(&[Ctrl], vk::letter(b'F'))),
         p!("Back", Category::Navigation, ["Alt", "\u{2190}"], Action::key(&[Alt], vk::LEFT)),
         p!("Forward", Category::Navigation, ["Alt", "\u{2192}"], Action::key(&[Alt], vk::RIGHT)),
-        p!("Browser back", Category::Navigation, ["\u{21E4}"], Action::key(&[], vk::BROWSER_BACK)),
-        p!("Browser forward", Category::Navigation, ["\u{21E5}"], Action::key(&[], vk::BROWSER_FORWARD)),
+        p!("Browser back", Category::Navigation, ["Browser Back"], Action::key(&[], vk::BROWSER_BACK)),
+        p!("Browser forward", Category::Navigation, ["Browser Forward"], Action::key(&[], vk::BROWSER_FORWARD)),
         p!("Task View", Category::System, ["Win", "Tab"], Action::key(&[Win], vk::TAB)),
         p!("Desktop left", Category::System, ["Ctrl", "Win", "\u{2190}"], Action::key(&[Win, Ctrl], vk::LEFT)),
         p!("Desktop right", Category::System, ["Ctrl", "Win", "\u{2192}"], Action::key(&[Win, Ctrl], vk::RIGHT)),

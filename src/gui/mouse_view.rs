@@ -200,6 +200,15 @@ pub(super) fn control_number(device: &DeviceStatus, anchor: &str) -> Option<usiz
         .map(|i| i + 1)
 }
 
+/// Look up the diagram number for a mapping opened from the compact list.
+pub(super) fn target_number(device: &DeviceStatus, target: &PickerTarget) -> Option<usize> {
+    Model::for_device(device)?
+        .parts()
+        .iter()
+        .position(|part| part.target(device).as_ref() == Some(target))
+        .map(|index| index + 1)
+}
+
 impl Part {
     fn target(&self, device: &DeviceStatus) -> Option<PickerTarget> {
         let haptic_gesture = device.capabilities.gesture_control == Some(0x01a0);
@@ -259,8 +268,7 @@ fn extra_buttons<'a>(
 /// The pointer ends at the button, leaving its face visible.
 fn thumb_detail(ui: &mut Ui2, app: &App, part: &Part, scale: f32) {
     let pal = app.pal;
-    let compact_form = app.shortcut_editor || !app.picker_query.is_empty();
-    let width = (if compact_form { 178.0 } else { 211.0 }) * scale;
+    let width = 211.0 * scale;
     let image_height = width * 285.0 / 348.0;
     let (image, left, top, title, caption) = if part.id == "mouse_haptic" {
         (
@@ -383,12 +391,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         1.0
     };
     let art_scale = scale * factor;
-    let common_actions = editing
-        && !app.shortcut_editor
-        && app.picker_query.is_empty()
-        && app.picker_category == 0
-        && !app.picker_categories_open;
-    let art_y = (1.0 - factor) * 120.0 * scale + if common_actions { 34.0 } else { 0.0 };
+    let art_y = (1.0 - factor) * 120.0 * scale;
     // Leave room for the separate row when firmware reports an unmapped location.
     let stage_height = if extras.is_empty() {
         STAGE_HEIGHT
@@ -511,18 +514,6 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     });
 
                 if editing {
-                    // The checked Common action already shows the saved assignment.
-                    if !app.shortcut_editor
-                        && app.picker_query.is_empty()
-                        && app.picker_category == 0
-                        && !app.picker_categories_open
-                        && matches!(
-                            app.action_for(&target),
-                            crate::config::Action::PassThrough | crate::config::Action::Disabled
-                        )
-                    {
-                        continue;
-                    }
                     ui.element()
                         .width(fixed!(246.0 * scale))
                         .height(fit!())

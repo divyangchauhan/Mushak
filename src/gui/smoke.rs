@@ -98,6 +98,103 @@ fn assert_panel_fits(ply: &Ply<()>, app: &App) {
     }
 }
 
+/// Capture real layout bounds across input transitions. A still image cannot catch a
+/// field moving away from the pointer after the first character.
+async fn check_editor_sizing(ply: &mut Ply<()>, app: &mut App, output: &std::path::Path) {
+    let mut failures = Vec::new();
+    let prefs = app.prefs;
+    for (name, width, height, control) in [
+        ("diagram", DESIGN_W, DESIGN_H, "mouse_middle"),
+        ("light", DESIGN_W, DESIGN_H, "mouse_middle"),
+        ("thumb", DESIGN_W, DESIGN_H, "mouse_back"),
+        ("compact", 720.0, 540.0, "btn_chip"),
+    ] {
+        app.prefs.theme = if name == "light" {
+            Theme::Light
+        } else {
+            Theme::Dark
+        };
+        app.pal = Palette::resolve(app.prefs.theme, app.prefs.accent);
+        chrome::make_frameless(width, height);
+        settle(ply, app).await;
+        if control == "btn_chip" {
+            click(ply, app, ("btn_chip", 2)).await;
+        } else {
+            click(ply, app, control).await;
+        }
+        if app.shortcut_editor {
+            click(ply, app, "preset_tab").await;
+        }
+        let mut ids = vec!["picker_panel", "picker_close", "preset_tab", "shortcut_tab"];
+        if name == "thumb" {
+            ids.push("thumb_picture");
+        } else if control == "mouse_middle" {
+            ids.push(control);
+        }
+        let original: Vec<_> = ids
+            .iter()
+            .map(|id| ply.bounding_box(*id).unwrap())
+            .collect();
+        let search = ply.bounding_box("picker_search").unwrap();
+        for state in ["actions", "search", "shortcut", "record", "back"] {
+            match state {
+                "search" => {
+                    ply.set_text_value("picker_search", "Copy");
+                    settle(ply, app).await;
+                    assert_eq!(app.picker_query, "Copy");
+                }
+                "shortcut" => click(ply, app, "shortcut_tab").await,
+                "record" => {
+                    click(ply, app, "capture").await;
+                    assert!(app.capturing_key);
+                }
+                "back" => {
+                    click(ply, app, "preset_tab").await;
+                    assert!(!app.capturing_key && !app.shortcut_editor);
+                }
+                _ => (),
+            }
+            assert_panel_fits(ply, app);
+            snapshot(output, &format!("sizing-{name}-{state}"));
+            for (id, before) in ids.iter().zip(&original) {
+                let after = ply.bounding_box(*id).unwrap();
+                if (after.x - before.x).abs() > 1.0
+                    || (after.y - before.y).abs() > 1.0
+                    || (after.width - before.width).abs() > 1.0
+                    || ((state != "search" || *id != "picker_panel")
+                        && (after.height - before.height).abs() > 1.0)
+                {
+                    failures.push(format!("{name}/{state}/{id}: {before:?} -> {after:?}"));
+                }
+            }
+            if state == "search" {
+                let after = ply.bounding_box("picker_search").unwrap();
+                if (after.y - search.y).abs() > 1.0 {
+                    failures.push(format!(
+                        "{name} search moved from {} to {}",
+                        search.y, after.y
+                    ));
+                }
+            }
+        }
+        click(ply, app, "shortcut_tab").await;
+        let target = app.picker.clone().unwrap();
+        let before = app.action_for(&target);
+        click(ply, app, ("mod", 0)).await;
+        click(ply, app, "cancel_shortcut").await;
+        assert!(app.picker.is_none());
+        assert_eq!(app.action_for(&target), before);
+    }
+    app.prefs = prefs;
+    app.pal = Palette::resolve(prefs.theme, prefs.accent);
+    chrome::make_frameless(DESIGN_W, DESIGN_H);
+    settle(ply, app).await;
+    assert!(
+        failures.is_empty(),
+        "Editor geometry changed during input: {failures:#?}"
+    );
+}
+
 async fn check(output: PathBuf) {
     // Use explicit input while retaining Ply's normal layout and GPU renderer.
     let mut ply = Ply::<()>::new_headless((968.0, 668.0).into());
@@ -111,11 +208,11 @@ async fn check(output: PathBuf) {
         ..Default::default()
     };
     app.device_view.device.capabilities.gestures = true;
-    for (slot, cid) in [
-        ("middle", 0x0052),
-        ("back", 0x0053),
-        ("forward", 0x0056),
-        ("control_00c4", 0x00c4),
+    for (slot, name, cid) in [
+        ("middle", "Middle click", 0x0052),
+        ("back", "Back button", 0x0053),
+        ("forward", "Forward button", 0x0056),
+        ("control_00c4", "Wheel mode shift", 0x00c4),
     ] {
         app.device_view
             .device
@@ -124,7 +221,7 @@ async fn check(output: PathBuf) {
             .push(ButtonInfo {
                 cid,
                 slot: slot.into(),
-                name: slot.into(),
+                name: name.into(),
             });
     }
     chrome::make_frameless(DESIGN_W, DESIGN_H);
@@ -142,6 +239,8 @@ async fn check(output: PathBuf) {
         review_gallery(&mut ply, &mut app, output).await;
         std::process::exit(0);
     }
+
+    check_editor_sizing(&mut ply, &mut app, &output).await;
 
     for (id, slot) in [
         ("mouse_middle", "middle"),
@@ -605,14 +704,13 @@ async fn extra_states(
     click(ply, app, ("btn_chip", 0)).await;
     assert_panel_fits(ply, app);
     snapshot(dir, "compact-picker");
-    for page in 1..=3 {
-        click(ply, app, "next_actions").await;
-        assert_eq!(app.picker_page, page);
-    }
-    click(ply, app, "next_actions").await;
-    assert_eq!(app.picker_page, 3);
-    click(ply, app, "prev_actions").await;
-    assert_eq!(app.picker_page, 2);
+    click(ply, app, "category_menu").await;
+    click(ply, app, ("action_category", 2)).await;
+    assert_eq!(app.picker_category, 2);
+    assert!(
+        ply.bounding_box(("pk", 203)).is_some(),
+        "Last Tabs & windows action must be available in compact mode"
+    );
     app.close_picker();
     chrome::make_frameless(DESIGN_W, DESIGN_H);
     settle(ply, app).await;
