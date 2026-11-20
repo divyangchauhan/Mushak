@@ -1,0 +1,39 @@
+Group,Name,Latest reviewed round,gpt-6.1-terra,gpt-6.2-sol,gpt-6.1-sol,Median Overall
+diagram,MX Master button diagram,4,8,9,9,9
+button-list,Offline button list,4,9,9,9,9
+menu,Profile menu,4,9,9,9,9
+popover,Button action popover,24,9,9,9,9
+shortcut,Custom keyboard shortcut,25,8,9,9,9
+dialog,Centered mapping dialog,7,8,9,9,9
+no-results,Empty search,7,8,9,9,9
+alert,Conflict warning and paused state,4,9,9,9,9
+scroll,Wheel modes and sliders,4,9,9,9,9
+scroll-lower,Scroll direction and resolution,4,9,9,9,9
+gestures,Gesture settings,4,9,9,9,9
+gestures-lower,Gesture mapping rows,4,9,9,9,9
+profiles,Application profiles,5,8,9,9,9
+window-pick,Foreground window countdown,6,9,9,9,9
+device,Device status and DPI,4,9,9,9,9
+diagnostics,HID++ diagnostics,4,8,9,9,9
+disconnected,Remembered disconnected device,4,9,9,9,9
+empty,No device,4,9,9,9,9
+master-3,MX Master 3 and 3S diagram,4,9,9,9,9
+master-4,MX Master 4 diagram,4,8,9,9,9
+haptic,Haptic panel assignment,25,8,9,9,9
+extra-button,Additional reported control,8,8,9,9,9
+offline-diagram,Offline MX Master diagram,4,9,9,9,9
+compact,Compact button list,4,9,8,9,9
+compact-picker,Compact mapping dialog,9,8,9,9,9
+standard-mouse,Standard USB mouse,4,9,9,9,9
+gestures-off,Gestures switched off,4,9,9,9,9
+scroll-limited,Dependent wheel settings off,4,9,9,9,9
+conflict-error,Conflict dismissal failure,4,9,9,9,9
+default-only,Default profile only,4,9,9,9,9
+tray-active,Active tray menu,4,9,8,9,9
+tray-paused,Paused tray menu,4,9,8,9,9
+profile-order,Profile priority controls,5,8,9,9,9
+shell,"Window, navigation and device status",4,9,8,9,9
+search-results,Filtered action results,24,9,8,9,9
+recording,Recording a shortcut key,25,8,9,9,9
+category-edit,Action category selection,24,9,9,9,9
+category-menu,Action category menu,24,9,9,9,9
