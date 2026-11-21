@@ -21,7 +21,7 @@ mod theme;
 mod uiprefs;
 mod widgets;
 
-use crate::config::{Config, Modifier};
+use crate::config::{Action, Config, Modifier};
 use crate::statusfile::{self, SharedStatus};
 use crate::{conflicts, state};
 use conflicts::KillOutcome;
@@ -49,8 +49,13 @@ impl Section {
     fn available(self, device: &crate::hidpp::device::DeviceStatus) -> bool {
         match self {
             Self::Scroll => device.connected && device.capabilities.has_scroll_settings(),
-            Self::Gestures => device.connected && device.capabilities.gestures,
-            Self::Buttons => !device.connected || !device.capabilities.buttons.is_empty(),
+            // Gesture actions are saved software mappings and can be edited offline.
+            Self::Gestures => !device.connected || device.capabilities.gestures,
+            Self::Buttons => {
+                !device.connected
+                    || !device.capabilities.buttons.is_empty()
+                    || device.capabilities.gestures
+            }
             _ => true,
         }
     }
@@ -126,6 +131,10 @@ pub struct App {
     pub picker_query: String,
     picker_category: usize,
     picker_categories_open: bool,
+    picker_dpi: [u16; 2],
+    picker_speed_editor: bool,
+    save_notice: Option<(String, Instant)>,
+    picker_feedback: Option<Instant>,
     pub custom_mods: Vec<Modifier>,
     pub custom_key: Option<u16>,
     pub capturing_key: bool,
@@ -134,7 +143,7 @@ pub struct App {
 /// What the action picker is currently editing.
 #[derive(Clone, PartialEq, Eq)]
 pub enum PickerTarget {
-    /// Slot name: back / forward / middle.
+    /// Slot name: back / forward / middle / control_<four-digit HID++ ID>.
     Button(String),
     /// Slot name: tap / up / down / left / right.
     Gesture(String),
@@ -143,13 +152,19 @@ pub enum PickerTarget {
 impl PickerTarget {
     fn available(&self, device: &crate::hidpp::device::DeviceStatus) -> bool {
         match self {
-            Self::Gesture(_) => device.connected && device.capabilities.gestures,
+            Self::Gesture(_) => Section::Gestures.available(device),
             Self::Button(slot) if device.connected => device
                 .capabilities
                 .buttons
                 .iter()
                 .any(|button| button.slot == *slot),
-            Self::Button(slot) => matches!(slot.as_str(), "back" | "forward" | "middle"),
+            Self::Button(slot) => {
+                matches!(slot.as_str(), "back" | "forward" | "middle")
+                    || slot
+                        .strip_prefix("control_")
+                        .and_then(buttons::control_id)
+                        .is_some()
+            }
         }
     }
 }
@@ -186,6 +201,10 @@ impl App {
             picker_query: String::new(),
             picker_category: 0,
             picker_categories_open: false,
+            picker_dpi: [800, 1600],
+            picker_speed_editor: false,
+            save_notice: None,
+            picker_feedback: None,
             custom_mods: Vec::new(),
             custom_key: None,
             capturing_key: false,
@@ -228,6 +247,12 @@ impl App {
             }
         }
         self.shortcut_editor = self.custom_key.is_some();
+        self.picker_feedback = None;
+        self.picker_speed_editor = false;
+        self.picker_dpi = match current {
+            Action::ChangePointerSpeed { first, second } => [first, second],
+            _ => [800, 1600],
+        };
         self.picker = Some(target);
         self.picker_anchor = None;
         self.picker_fresh = true;
@@ -274,7 +299,7 @@ impl App {
                 })
                 .unwrap_or_default(),
             PickerTarget::Gesture(slot) => {
-                let g = &self.draft.gestures;
+                let g = self.selected_gestures();
                 match slot.as_str() {
                     "tap" => g.tap.clone(),
                     "up" => g.up.clone(),
@@ -309,7 +334,7 @@ impl App {
                 }
             }
             PickerTarget::Gesture(slot) => {
-                let g = &mut self.draft.gestures;
+                let g = self.selected_gestures_mut();
                 match slot.as_str() {
                     "tap" => g.tap = action,
                     "up" => g.up = action,
@@ -319,7 +344,21 @@ impl App {
                 }
             }
         }
-        self.commit_config();
+        let message = match self.draft.save() {
+            Ok(()) => {
+                state::set_config(self.draft.clone());
+                String::new()
+            }
+            Err(e) => {
+                tracing::error!("saving action failed: {e:#}");
+                "Could not save the action. Please try again.".to_string()
+            }
+        };
+        self.save_notice = if message.is_empty() {
+            None
+        } else {
+            Some((message, Instant::now()))
+        };
     }
 
     /// While the picker is capturing, the next key press becomes the custom key.
@@ -372,8 +411,8 @@ impl App {
         self.prefs.save();
     }
 
-    /// True while the mouse is reachable. Scroll / Gestures / Device all read
-    /// live device values, so they dim to an "asleep" card without it.
+    /// True while the mouse is reachable. Hardware settings need a live device;
+    /// saved gesture actions can be edited without one.
     pub fn mouse_awake(&self) -> bool {
         self.device_view.device.connected
     }
@@ -579,7 +618,7 @@ async fn frame_loop() {
 
         // blocking_event_loop parks the loop until input arrives; anything
         // time-driven has to ask for its own frame.
-        if app.pick_deadline.is_some() {
+        if app.pick_deadline.is_some() || app.picker_feedback.is_some() || app.save_notice.is_some() {
             miniquad::window::schedule_update();
         }
 
@@ -610,6 +649,7 @@ fn window(ui: &mut Ui2, app: &mut App) {
                 });
             // Last, so it floats over everything.
             picker::overlay(ui, app);
+            picker::save_notice(ui, app);
         });
 }
 
@@ -730,6 +770,31 @@ mod tests {
     use super::*;
     use crate::hidpp::device::DeviceStatus;
     #[test]
+    fn disconnected_mouse_keeps_saved_gesture_configuration_editable() {
+        for name in [
+            "Wireless Mouse MX Master 2S",
+            "MX Master 3S",
+            "MX Master 4",
+            "Other mouse",
+        ] {
+            let device = DeviceStatus {
+                name: Some(name.into()),
+                ..Default::default()
+            };
+            assert!(
+                Section::Gestures.available(&device),
+                "{name}: gesture settings must remain visible offline"
+            );
+            for slot in ["tap", "up", "down", "left", "right"] {
+                assert!(
+                    PickerTarget::Gesture(slot.into()).available(&device),
+                    "{name}: saved {slot} must be configurable offline"
+                );
+            }
+        }
+    }
+
+    #[test]
     fn settings_follow_capabilities_instead_of_connection_alone() {
         let mut device = DeviceStatus {
             connected: true,
@@ -737,13 +802,32 @@ mod tests {
         };
         assert!(!Section::Scroll.available(&device));
         assert!(!Section::Gestures.available(&device));
+        assert!(!PickerTarget::Gesture("tap".into()).available(&device));
         device.capabilities.hires_scroll = true;
         assert!(Section::Scroll.available(&device));
         assert!(!Section::Gestures.available(&device));
         device.capabilities.gestures = true;
         assert!(Section::Gestures.available(&device));
+        assert!(Section::Buttons.available(&device));
         device.connected = false;
         assert!(!Section::Scroll.available(&device));
-        assert!(!Section::Gestures.available(&device));
+        assert!(Section::Gestures.available(&device));
+    }
+}
+
+impl App {
+    fn selected_gestures(&self) -> &crate::config::GestureConfig {
+        self.profile_at(self.selected_profile)
+            .and_then(|p| p.gestures.as_ref())
+            .unwrap_or(&self.draft.gestures)
+    }
+    fn selected_gestures_mut(&mut self) -> &mut crate::config::GestureConfig {
+        if self.selected_profile == 0 {
+            return &mut self.draft.gestures;
+        }
+        let defaults = self.draft.gestures.clone();
+        self.draft.profiles[self.selected_profile - 1]
+            .gestures
+            .get_or_insert(defaults)
     }
 }

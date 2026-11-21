@@ -104,8 +104,4 @@ app tile icon.
 - Privacy URL: <https://github.com/divyangchauhan/Mushak/blob/main/PRIVACY.md>
 - Copyright: Copyright 2026 Divyang Chauhan
 - License: MIT, <https://github.com/divyangchauhan/Mushak/blob/main/LICENSE>
-- What's new: Visual button configuration for the original MX Master, 2S, 3,
-  3S, and 4, including Mac and Business variants. Click a marker or label to
-  choose an action. Extra controls appear only when reported by the mouse.
-  Includes the Store runtime fix. Physical validation across all models and
-  connections remains pending.
+- What's new: The redesigned settings window includes light and dark themes and a compact layout for smaller windows. Switch between Actions and Keyboard shortcut without moving the tabs or mouse diagram. Search for an action, record a shortcut, or cancel an edit. Existing profiles, gesture assignments, and mouse settings carry over.

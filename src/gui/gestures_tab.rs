@@ -39,7 +39,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         ui,
         &pal,
         "Gestures",
-        if app.draft.gestures.enabled {
+        if app.selected_gestures().enabled {
             "Tap the gesture button, or hold it and move the mouse to swipe."
         } else {
             "Gesture recognition is off."
@@ -48,12 +48,90 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     ui.element().width(grow!()).height(fixed!(22.0)).empty();
 
     if !app.mouse_awake() {
-        widgets::asleep_card(ui, &pal, &app.device_view.device);
-        return;
+        ui.text(
+            "Mouse disconnected. These saved actions will apply when a supported mouse connects.",
+            |t| t.font(&fonts::SANS).font_size(13).color(pal.muted),
+        );
+        ui.element().height(fixed!(14.0)).empty();
     }
 
-    let enabled = app.draft.gestures.enabled;
-    let threshold = app.draft.gestures.tap_threshold as i64;
+    ui.element()
+        .width(grow!())
+        .height(fit!())
+        .layout(|l| l.direction(LeftToRight).gap(8))
+        .children(|ui| {
+            for (index, name) in app.profile_names().iter().enumerate() {
+                ui.element()
+                    .id(("gesture_profile", index as u32))
+                    .height(fixed!(32.0))
+                    .width(fit!())
+                    .background_color(if index == app.selected_profile {
+                        pal.s2
+                    } else {
+                        pal.win
+                    })
+                    .layout(|l| l.padding(8))
+                    .children(|ui| {
+                        ui.text(name, |t| t.font(&fonts::SANS).font_size(13).color(pal.text));
+                        if ui.just_pressed() {
+                            app.selected_profile = index;
+                        }
+                    });
+            }
+        });
+    if app.selected_profile > 0
+        && app.draft.profiles[app.selected_profile - 1]
+            .gestures
+            .is_some()
+    {
+        ui.element()
+            .id("gesture_inherit")
+            .width(grow!())
+            .height(fixed!(30.0))
+            .children(|ui| {
+                ui.text("Use default profile gestures", |t| {
+                    t.font(&fonts::SANS).font_size(12).color(pal.accent)
+                });
+                if ui.just_pressed() {
+                    app.draft.profiles[app.selected_profile - 1].gestures = None;
+                    app.commit_config();
+                }
+            });
+    }
+    ui.text(
+        "Gesture trigger replaces that button's normal action while enabled.",
+        |t| t.font(&fonts::SANS).font_size(12).color(pal.muted),
+    );
+    let mut triggers = vec![(None, "Default gesture button".to_string())];
+    triggers.extend(
+        app.device_view
+            .device
+            .capabilities
+            .gesture_buttons
+            .iter()
+            .map(|b| (Some(b.cid), b.name.clone())),
+    );
+    for (index, (cid, name)) in triggers.iter().enumerate() {
+        ui.element()
+            .id(("gesture_trigger", index as u32))
+            .width(grow!())
+            .height(fixed!(30.0))
+            .background_color(if app.selected_gestures().trigger == *cid {
+                pal.s2
+            } else {
+                pal.win
+            })
+            .layout(|l| l.padding(6))
+            .children(|ui| {
+                ui.text(name, |t| t.font(&fonts::SANS).font_size(12).color(pal.text));
+                if ui.just_pressed() {
+                    app.selected_gestures_mut().trigger = *cid;
+                    app.commit_config();
+                }
+            });
+    }
+    let enabled = app.selected_gestures().enabled;
+    let threshold = app.selected_gestures().tap_threshold as i64;
     let mut toggle_enabled = false;
     let mut new_threshold: Option<i64> = None;
     let mut open_picker: Option<PickerTarget> = None;
@@ -63,25 +141,24 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         app,
         "sw_gestures",
         "Button gestures",
-        "Gesture actions apply to every profile.",
+        "Use the tap and swipe actions for this profile.",
         enabled,
     ) {
         toggle_enabled = true;
     }
 
     if !enabled {
-        if toggle_enabled {
-            app.draft.gestures.enabled = true;
-            app.commit_config();
-        }
-        ui.element().height(fixed!(16.0)).empty();
+        ui.element().height(fixed!(10.0)).empty();
         ui.text(
-            "Enable gestures to edit your saved tap and swipe actions.",
-            |t| t.font(&fonts::SANS).font_size(14).color(pal.muted),
+            "Gestures are off. Edit saved actions below, then turn on Button gestures to use them.",
+            |t| t.font(&fonts::SANS).font_size(12).color(pal.muted),
         );
-        return;
     }
+
     ui.element().width(grow!()).height(fixed!(10.0)).empty();
+
+    // Keep saved actions editable while input recognition is turned off.
+    let body_text = if enabled { pal.text } else { pal.muted };
 
     widgets::card(ui, &pal)
         .layout(|l| l.direction(TopToBottom).gap(3).padding((16, 17, 16, 17)))
@@ -93,7 +170,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 .children(|ui| {
                     ui.element().width(grow!()).height(fit!()).children(|ui| {
                         ui.text("Tap vs. swipe threshold", |t| {
-                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(body_text)
                         });
                     });
                     ui.text(&format!("{threshold} counts"), |t| {
@@ -128,7 +205,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
 
     ui.element().width(grow!()).height(fixed!(16.0)).empty();
 
-    let g = &app.draft.gestures;
+    let g = app.selected_gestures();
     let rows: Vec<(String, String, actions::Display)> = ROWS
         .iter()
         .map(|(slot, name)| {
@@ -160,7 +237,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         widgets::icon(ui, row_icon(slot), 24.0, pal.accent);
                         ui.element().width(grow!()).height(fit!()).children(|ui| {
                             ui.text(name, |t| {
-                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(body_text)
                             });
                         });
                         let id: Id = ("g_chip", slot_index(slot)).into();
@@ -172,11 +249,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         });
 
     if toggle_enabled {
-        app.draft.gestures.enabled = !enabled;
+        app.selected_gestures_mut().enabled = !enabled;
         app.commit_config();
     }
     if let Some(v) = new_threshold {
-        app.draft.gestures.tap_threshold = v as i32;
+        app.selected_gestures_mut().tap_threshold = v as i32;
         app.commit_config();
     }
     if let Some(t) = open_picker {

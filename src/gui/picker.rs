@@ -10,6 +10,8 @@ use crate::config::{Action, Modifier};
 use ply_engine::layout::Sizing;
 use ply_engine::prelude::*;
 
+const SELECTION_FEEDBACK_SECONDS: f32 = 0.12;
+
 impl PickerTarget {
     pub fn label<'a>(&self, device: &'a crate::hidpp::device::DeviceStatus) -> &'a str {
         match self {
@@ -17,6 +19,9 @@ impl PickerTarget {
                 "back" => "Back button",
                 "forward" => "Forward button",
                 "middle" => "Middle click",
+                "control_00c4" => "Wheel mode button",
+                "control_00ed" => "DPI change button",
+                "control_00fd" => "DPI switch button",
                 _ => device
                     .capabilities
                     .buttons
@@ -116,13 +121,26 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                         app.picker_fresh = false;
                     }
                     let query = app.picker_query.to_lowercase();
-                    results(ui, app, &query, &current, &mut chosen);
+                    device_actions(ui, app, &query, &mut chosen);
+                    if !app.picker_speed_editor {
+                        results(ui, app, &query, &current, &mut chosen);
+                    }
                 });
         });
 
-    if let Some(a) = chosen {
+    if let Some(started) = app.picker_feedback {
+        if started.elapsed().as_secs_f32() >= SELECTION_FEEDBACK_SECONDS {
+            app.picker_feedback = None;
+            app.close_picker();
+            miniquad::window::schedule_update();
+        }
+    } else if let Some(a) = chosen {
         app.assign_action(&target, a);
-        app.close_picker();
+        if app.save_notice.is_none() {
+            app.picker_feedback = Some(std::time::Instant::now());
+        } else {
+            app.close_picker();
+        }
     } else if is_key_pressed(KeyCode::Escape) {
         // While capturing, Escape backs out of the capture rather than
         // discarding the whole palette.
@@ -269,8 +287,6 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                                 } else {
                                     "Press the thumb panel"
                                 }
-                            } else if matches!(target, PickerTarget::Gesture(_)) {
-                                "All profiles"
                             } else {
                                 app.profile_at(app.selected_profile)
                                     .map(|p| p.name.as_str())
@@ -392,6 +408,273 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
         app.picker_query = live;
         app.picker_categories_open = false;
     }
+}
+
+fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<Action>) {
+    if !matches!(&app.picker, Some(PickerTarget::Button(slot)) if slot == "control_00c4") {
+        return;
+    }
+    let d = &app.device_view.device;
+    if !d.connected {
+        app.picker_speed_editor = false;
+        let pal = app.pal;
+        ui.element()
+            .width(grow!())
+            .height(fit!())
+            .layout(|l| l.direction(TopToBottom).gap(6).padding((8, 16, 8, 16)))
+            .children(|ui| {
+                for (label, search) in [
+                    (
+                        "Switch wheel mode",
+                        "switch shift wheel mode ratchet free spin",
+                    ),
+                    ("Switch pointer speed", "switch change pointer speed dpi"),
+                ] {
+                    if !query.is_empty() && !search.contains(query) {
+                        continue;
+                    }
+                    ui.element()
+                        .width(grow!())
+                        .height(fit!())
+                        .corner_radius(6.0)
+                        .background_color(pal.s2)
+                        .layout(|l| l.direction(TopToBottom).gap(4).padding((8, 10, 8, 10)))
+                        .children(|ui| {
+                            ui.text(label, |t| {
+                                t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                            });
+                            ui.text(
+                                "Reconnect the mouse to check availability and configure.",
+                                |t| t.font(&fonts::SANS).font_size(11).color(pal.muted),
+                            );
+                        });
+                }
+            });
+        return;
+    }
+    let wheel_selected = app
+        .picker
+        .as_ref()
+        .map(|target| app.action_for(target) == Action::ShiftWheelMode)
+        .unwrap_or(false);
+    let editing = app.picker_speed_editor;
+    let wheel = !editing
+        && d.capabilities.smartshift
+        && (query.is_empty() || "shift wheel mode ratchet free spin".contains(query));
+    let dpi = d.capabilities.dpi
+        && d.dpi_list.len() > 1
+        && (editing || query.is_empty() || "change pointer speed dpi".contains(query));
+    if !wheel && !dpi {
+        return;
+    }
+    let pal = app.pal;
+    let choices = d.dpi_list.clone();
+    let pulse = feedback_pulse(app);
+    ui.element()
+        .width(grow!())
+        .height(fit!())
+        .layout(|l| l.direction(TopToBottom).gap(6).padding((8, 16, 8, 16)))
+        .children(|ui| {
+            if editing {
+                ui.element()
+                    .id("picker_speed_back")
+                    .width(grow!())
+                    .height(fixed!(30.0))
+                    .accessibility(|a| a.button("Back to actions"))
+                    .children(|ui| {
+                        ui.text("< Back to actions", |t| {
+                            t.font(&fonts::SANS).font_size(13).color(pal.accent)
+                        });
+                        if ui.just_pressed() {
+                            app.picker_speed_editor = false;
+                        }
+                    });
+                ui.text("Switch between two pointer speeds", |t| {
+                    t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
+                });
+                ui.text("Each button press switches to the other speed.", |t| {
+                    t.font(&fonts::SANS).font_size(12).color(pal.muted)
+                });
+            }
+            if wheel
+                && hardware_row(
+                    ui,
+                    &pal,
+                    "picker_wheel_action",
+                    "Switch wheel mode",
+                    "Toggle between ratchet and free-spin scrolling",
+                    &icons::NAV_SCROLL,
+                    wheel_selected,
+                    if wheel_selected {
+                        app.picker_feedback
+                    } else {
+                        None
+                    },
+                )
+            {
+                *chosen = Some(Action::ShiftWheelMode);
+            }
+            if dpi
+                && !editing
+                && hardware_row(
+                    ui,
+                    &pal,
+                    "picker_speed_setup",
+                    "Switch pointer speed",
+                    "Choose two speeds to toggle between",
+                    &icons::CAT_SYSTEM,
+                    false,
+                    None,
+                )
+            {
+                app.picker_speed_editor = true;
+            }
+            if dpi && editing {
+                for (i, id) in ["picker_dpi_first", "picker_dpi_second"].iter().enumerate() {
+                    let selected = choices
+                        .iter()
+                        .enumerate()
+                        .min_by_key(|(_, v)| {
+                            (i32::from(**v) - i32::from(app.picker_dpi[i])).unsigned_abs()
+                        })
+                        .map(|(i, _)| i)
+                        .unwrap_or(0);
+                    app.picker_dpi[i] = choices[selected];
+                    ui.element()
+                        .width(grow!())
+                        .height(fixed!(25.0))
+                        .layout(|l| l.direction(LeftToRight).gap(10).align(Left, CenterY))
+                        .children(|ui| {
+                            ui.text(
+                                &format!("Speed {}: {} DPI", i + 1, app.picker_dpi[i]),
+                                |t| t.font(&fonts::SANS).font_size(12).color(pal.text),
+                            );
+                            if let Some(v) = widgets::slider(
+                                ui,
+                                &pal,
+                                *id,
+                                selected as i64,
+                                0,
+                                (choices.len() - 1) as i64,
+                                1,
+                            ) {
+                                app.picker_dpi[i] = choices[v as usize];
+                            }
+                        });
+                }
+                let distinct = app.picker_dpi[0] != app.picker_dpi[1];
+                ui.element()
+                    .id("picker_dpi_action")
+                    .width(grow!())
+                    .height(fixed!(30.0))
+                    .background_color(if app.picker_feedback.is_some() {
+                        super::theme::Palette::mix(pal.accent, 12.0 + 24.0 * pulse, pal.pop)
+                    } else {
+                        pal.s2
+                    })
+                    .corner_radius(6.0)
+                    .accessibility(|a| a.button("Change pointer speed"))
+                    .layout(|l| l.align(Left, CenterY).padding((0, 8, 0, 8)))
+                    .children(|ui| {
+                        ui.text(
+                            if distinct {
+                                if app.picker_feedback.is_some() {
+                                    "Selected"
+                                } else {
+                                    "Save pointer speed action"
+                                }
+                            } else {
+                                "Choose two different speeds"
+                            },
+                            |t| {
+                                t.font(&fonts::SANS).font_size(13).color(if distinct {
+                                    pal.text
+                                } else {
+                                    pal.muted
+                                })
+                            },
+                        );
+                        if distinct && ui.just_pressed() {
+                            *chosen = Some(Action::ChangePointerSpeed {
+                                first: app.picker_dpi[0],
+                                second: app.picker_dpi[1],
+                            });
+                        }
+                    });
+            }
+        });
+}
+
+/// Match the preset rows, including their icon tile, hover fill and selected check.
+fn hardware_row(
+    ui: &mut Ui2,
+    pal: &super::theme::Palette,
+    id: &'static str,
+    label: &str,
+    description: &str,
+    glyph: &'static GraphicAsset,
+    selected: bool,
+    feedback: Option<std::time::Instant>,
+) -> bool {
+    let hover = ui.pointer_over(id);
+    let pressed = ui.is_pressed(id);
+    let progress = feedback.map(|t| (t.elapsed().as_secs_f32() / SELECTION_FEEDBACK_SECONDS).clamp(0.0, 1.0));
+    let pulse = progress.map(|t| (1.0 - t) * (1.0 - t)).unwrap_or(0.0);
+    let mut clicked = false;
+    ui.element()
+        .id(id)
+        .accessibility(|a| a.button(label))
+        .width(grow!())
+        .height(fit!())
+        .corner_radius(9.0)
+        .background_color(if selected || feedback.is_some() {
+            super::theme::Palette::mix(pal.accent, 12.0 + 24.0 * pulse, pal.pop)
+        } else if hover || pressed {
+            pal.s2
+        } else {
+            super::theme::TRANSPARENT
+        })
+        .layout(|l| {
+            l.direction(LeftToRight)
+                .align(Left, CenterY)
+                .gap(11)
+                .padding((9, 10, 9, 10))
+        })
+        .children(|ui| {
+            clicked = ui.just_pressed();
+            ui.element()
+                .width(fixed!(30.0))
+                .height(fixed!(30.0))
+                .corner_radius(8.0)
+                .background_color(pal.s2)
+                .layout(|l| l.align(CenterX, CenterY))
+                .children(|ui| {
+                    widgets::icon(
+                        ui,
+                        glyph,
+                        if pressed { 14.0 } else { 16.0 - 2.0 * pulse },
+                        pal.muted,
+                    );
+                });
+            ui.element()
+                .width(grow!())
+                .height(fit!())
+                .layout(|l| l.direction(TopToBottom).gap(1))
+                .children(|ui| {
+                    ui.text(label, |t| {
+                        t.font(&fonts::SANS_SEMIBOLD)
+                            .font_size(widgets::px(13.5))
+                            .color(pal.text)
+                    });
+                    ui.text(description, |t| {
+                        t.font(&fonts::SANS).font_size(12).color(pal.muted)
+                    });
+                });
+            if selected || feedback.is_some() {
+                widgets::icon(ui, &icons::CHECK, 15.0 - 3.0 * pulse, pal.accent);
+            }
+        });
+    clicked
 }
 
 type ActionChoice = (
@@ -640,11 +923,11 @@ fn action_groups(query: &str) -> Vec<ActionGroup> {
     // "Quick" group: pass-through and disabled.
     let quick: Vec<(&str, &str, Action, &'static GraphicAsset, &str)> = vec![
         (
-            "Pass through",
+            "Native action",
             "Keep the button's normal behavior",
             Action::PassThrough,
             &icons::PASSTHROUGH,
-            "pass through leave normal default",
+            "native pass through leave normal default",
         ),
         (
             "Disabled",
@@ -956,6 +1239,7 @@ fn shortcut_editor(
     let mods = app.custom_mods.clone();
     let key = app.custom_key;
     let capturing = app.capturing_key;
+    let pulse = feedback_pulse(app);
     let mut toggle_mod: Option<Modifier> = None;
     let mut start_capture = false;
     let mut assign = false;
@@ -1174,7 +1458,7 @@ fn shortcut_editor(
                         .accessibility(|a| a.button("Save shortcut"))
                         .height(fixed!(32.0))
                         .corner_radius(8.0)
-                        .background_color(pal.accent)
+                        .background_color(super::theme::Palette::mix(pal.pop, 30.0 * pulse, pal.accent))
                         .layout(|l| {
                             l.direction(LeftToRight)
                                 .align(CenterX, CenterY)
@@ -1232,4 +1516,44 @@ mod tests {
             }
         }
     }
+}
+
+/// Assignment feedback remains visible after the picker closes.
+pub fn save_notice(ui: &mut Ui2, app: &mut App) {
+    let Some((message, since)) = &app.save_notice else {
+        return;
+    };
+    if since.elapsed().as_secs() >= 7 {
+        app.save_notice = None;
+        return;
+    }
+    let pal = app.pal;
+    let width = 540.0_f32.min(screen_width() - 32.0);
+    ui.element()
+        .id("action_saved_notice")
+        .width(fixed!(width))
+        .height(fit!())
+        .floating(|f| {
+            f.attach_root()
+                .offset(((screen_width() - width) / 2.0, screen_height() - 110.0))
+                .z_index(150)
+        })
+        .background_color(pal.pop)
+        .corner_radius(10.0)
+        .border(|b| b.all(1).color(pal.accent))
+        .layout(|l| l.padding(16))
+        .children(|ui| {
+            ui.text(message, |t| {
+                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+            });
+        });
+}
+
+fn feedback_pulse(app: &App) -> f32 {
+    app.picker_feedback
+        .map(|t| {
+            let progress = (t.elapsed().as_secs_f32() / SELECTION_FEEDBACK_SECONDS).clamp(0.0, 1.0);
+            (1.0 - progress).powi(2)
+        })
+        .unwrap_or(0.0)
 }

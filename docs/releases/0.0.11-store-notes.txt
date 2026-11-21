@@ -1,0 +1,1 @@
+The redesigned settings window includes light and dark themes and a compact layout for smaller windows. Switch between Actions and Keyboard shortcut without moving the tabs or mouse diagram. Search for an action, record a shortcut, or cancel an edit. Existing profiles, gesture assignments, and mouse settings carry over.

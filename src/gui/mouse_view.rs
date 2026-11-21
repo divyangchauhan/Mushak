@@ -211,10 +211,14 @@ pub(super) fn target_number(device: &DeviceStatus, target: &PickerTarget) -> Opt
 
 impl Part {
     fn target(&self, device: &DeviceStatus) -> Option<PickerTarget> {
+        if !device.connected && self.slot.starts_with("control_") && self.slot != "control_00c4" {
+            return None;
+        }
         let haptic_gesture = device.capabilities.gesture_control == Some(0x01a0);
-        let target = if device.capabilities.gestures
-            && ((self.slot == "tap" && !haptic_gesture)
-                || (self.slot == "control_01a0" && haptic_gesture))
+        let target = if (self.slot == "tap" && !device.connected)
+            || device.capabilities.gestures
+                && ((self.slot == "tap" && !haptic_gesture)
+                    || (self.slot == "control_01a0" && haptic_gesture))
         {
             PickerTarget::Gesture("tap".into())
         } else if self.slot == "tap" {
@@ -244,17 +248,13 @@ impl Part {
     }
 }
 
-fn extra_buttons<'a>(
+fn extra_buttons(
     model: Model,
-    device: &'a DeviceStatus,
-) -> Vec<&'a crate::hidpp::features::reprog::ButtonInfo> {
-    if !device.connected {
-        return Vec::new();
-    }
-    device
-        .capabilities
-        .buttons
-        .iter()
+    device: &DeviceStatus,
+    saved: &crate::config::Config,
+) -> Vec<crate::hidpp::features::reprog::ButtonInfo> {
+    super::buttons::editable_buttons(device, saved)
+        .into_iter()
         .filter(|button| {
             !model
                 .parts()
@@ -375,7 +375,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         .map(|r| r.width)
         .unwrap_or((screen_width() - 300.0).clamp(240.0, STAGE_WIDTH))
         / STAGE_WIDTH;
-    let extras: Vec<_> = extra_buttons(model, &app.device_view.device)
+    let extras: Vec<_> = extra_buttons(model, &app.device_view.device, &app.draft)
         .into_iter()
         .map(|button| (button.slot.clone(), button.name.clone(), button.cid))
         .collect();
@@ -578,7 +578,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
                         });
                         let label = if matches!(target, PickerTarget::Gesture(_))
-                            && !app.draft.gestures.enabled
+                            && !app.selected_gestures().enabled
                         {
                             "Gestures off"
                         } else {
@@ -594,7 +594,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     if editing {
         return;
     }
-    if app.device_view.device.connected && app.device_view.device.capabilities.gestures {
+    if Section::Gestures.available(&app.device_view.device) {
         let mut gestures = false;
         ui.element()
             .width(grow!())
@@ -602,7 +602,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
             .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(10))
             .children(|ui| {
                 ui.element().width(grow!()).children(|ui| {
-                    ui.text("Gesture actions apply to all profiles.", |t| {
+                    ui.text("Gesture actions follow the selected profile.", |t| {
                         t.font(&fonts::SANS).font_size(13).color(pal.muted)
                     });
                 });
@@ -781,7 +781,7 @@ mod tests {
                 .filter(|p| p.target(&device).is_some())
                 .map(|p| p.slot)
                 .collect();
-            assert_eq!(slots, ["middle", "back", "forward"]);
+            assert_eq!(slots, ["middle", "back", "forward", "tap", "control_00c4"]);
             for part in model.parts() {
                 let (x, y) = part.point_on_stage(model);
                 assert!((12.0..STAGE_WIDTH - 12.0).contains(&x));
@@ -834,7 +834,7 @@ mod tests {
             Model::Master3S,
             Model::Master4,
         ] {
-            let extras = extra_buttons(model, &device);
+            let extras = extra_buttons(model, &device, &crate::config::Config::default());
             assert_eq!(
                 extras.iter().filter(|b| b.slot == "control_01ff").count(),
                 1
@@ -842,6 +842,8 @@ mod tests {
             assert_eq!(extras.len(), if model == Model::Master4 { 1 } else { 2 });
         }
         device.connected = false;
-        assert!(extra_buttons(Model::Master4, &device).is_empty());
+        assert!(
+            extra_buttons(Model::Master4, &device, &crate::config::Config::default()).is_empty()
+        );
     }
 }

@@ -106,11 +106,20 @@ jobs:
           "exe_sha256=$exeHash" >> $env:GITHUB_OUTPUT
           "msi_sha256=$msiHash" >> $env:GITHUB_OUTPUT
 
+      - name: Select release notes
+        id: notes
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v',''
+          $notes = "docs/releases/$version.md"
+          if (-not (Test-Path -LiteralPath $notes)) { throw "Missing release notes: $notes" }
+          "path=$notes" >> $env:GITHUB_OUTPUT
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           draft: true # review the notes, then click "Publish"
-          generate_release_notes: true
+          body_path: ${{ steps.notes.outputs.path }}
           files: |
             target/release/mushak.exe
             ${{ steps.pkg.outputs.zip }}
