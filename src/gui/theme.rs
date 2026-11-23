@@ -1,7 +1,4 @@
-//! Design tokens, transcribed from the Claude Design handoff (`themeVars()`).
-//!
-//! The two palettes do not share a temperature: dark is cool slate, light is
-//! warm paper. That is deliberate in the design, not a transcription slip.
+//! Color roles for the settings window and its controls.
 
 use ply_engine::prelude::Color;
 
@@ -51,6 +48,8 @@ impl Accent {
 pub struct Palette {
     /// Window background.
     pub win: Color,
+    pub rail: Color,
+    pub track: Color,
     /// Raised card / control background.
     pub surface: Color,
     /// Second-level fill: keycap wells, chips, inactive toggle tracks.
@@ -96,16 +95,18 @@ impl Palette {
     pub fn resolve(theme: Theme, accent: Accent) -> Self {
         match theme {
             Theme::Dark => Palette {
-                win: rgb(0x16181d),
-                surface: rgb(0x1e2127),
-                s2: rgb(0x262a31),
-                pop: rgb(0x1c1f25),
+                rail: rgb(0x151a20),
+                track: rgb(0x52606c),
+                win: rgb(0x1a2027),
+                surface: rgb(0x252d36),
+                s2: rgb(0x303b47),
+                pop: rgb(0x252d36),
                 line: rgba(0xffffff, 0.08),
                 line_strong: rgba(0xffffff, 0.13),
                 keycap: rgba(0xffffff, 0.06),
                 text: rgb(0xeef1f5),
-                muted: rgb(0x99a1ad),
-                faint: rgb(0x616976),
+                muted: rgb(0xb9c2cb),
+                faint: rgb(0xa5afb9),
                 accent: rgb(accent.rgb()),
                 accent_ink: rgb(0x0e1013),
                 danger: rgb(0xe5533c),
@@ -114,8 +115,10 @@ impl Palette {
                 warn_ink: rgb(0x3a2705),
             },
             Theme::Light => Palette {
-                win: rgb(0xfcfaf5),
-                surface: rgb(0xf4f0e7),
+                rail: rgb(0xefede6),
+                track: rgb(0xb5b6ae),
+                win: rgb(0xf8f7f2),
+                surface: rgb(0xfffefa),
                 s2: rgb(0xece6da),
                 pop: rgb(0xfcfaf5),
                 line: rgba(0x3c2d14, 0.10),
@@ -123,13 +126,18 @@ impl Palette {
                 keycap: rgba(0x3c2d14, 0.05),
                 text: rgb(0x221e16),
                 muted: rgb(0x6c6455),
-                faint: rgb(0xa29986),
-                accent: rgb(accent.rgb()),
-                accent_ink: rgb(0xfff7ea),
+                faint: rgb(0x68675d),
+                accent: rgb(match accent {
+                    Accent::Marigold => 0x945407,
+                    Accent::Vermilion => 0xa63824,
+                    Accent::Blue => 0x305f96,
+                    Accent::Green => 0x426b38,
+                }),
+                accent_ink: rgb(0xffffff),
                 danger: rgb(0xc24327),
                 good: rgb(0x4e9a54),
                 warn: rgb(0xc98416),
-                warn_ink: rgb(0xfff4e2),
+                warn_ink: rgb(0x241600),
             },
         }
     }
