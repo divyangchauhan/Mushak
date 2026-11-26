@@ -102,13 +102,7 @@ fn assert_panel_fits(ply: &Ply<()>, app: &App) {
         controls.extend(["assign", "cancel_shortcut", "capture"]);
     } else {
         controls.push("picker_search");
-        if !app.picker_speed_editor
-            && (!picker::has_mouse_actions(app, app.picker.as_ref().unwrap())
-                || app.wheel_presets
-                || !app.picker_query.is_empty())
-        {
-            controls.extend(["save_action", "cancel_action"]);
-        }
+        controls.extend(["save_action", "cancel_action"]);
     }
     for id in controls {
         let b = ply.bounding_box(id).unwrap();
@@ -772,7 +766,18 @@ async fn check(output: PathBuf) {
     settle(&mut ply, &mut app).await;
     assert_panel_fits(&ply, &app);
     snapshot(&output, "15-device-actions");
+    let before_wheel = Config::load_strict().unwrap();
     click(&mut ply, &mut app, "picker_wheel_action").await;
+    assert_eq!(Config::load_strict().unwrap(), before_wheel);
+    app.device_view.device.capabilities.smartshift = false;
+    settle(&mut ply, &mut app).await;
+    assert!(app.pending_action.is_none());
+    click(&mut ply, &mut app, "save_action").await;
+    assert_eq!(Config::load_strict().unwrap(), before_wheel);
+    app.device_view.device.capabilities.smartshift = true;
+    settle(&mut ply, &mut app).await;
+    click(&mut ply, &mut app, "picker_wheel_action").await;
+    click(&mut ply, &mut app, "save_action").await;
     assert!(app.failed_assignment.is_none());
     if app.picker_feedback.is_some() {
         snapshot(&output, "17-wheel-action-feedback");
@@ -789,7 +794,7 @@ async fn check(output: PathBuf) {
     click(&mut ply, &mut app, "picker_speed_setup").await;
     assert!(app.picker_speed_editor);
     snapshot(&output, "16-pointer-speed-editor");
-    click(&mut ply, &mut app, "picker_dpi_action").await;
+    click(&mut ply, &mut app, "save_action").await;
     assert_eq!(
         app.action_for(&PickerTarget::Button("control_00c4".into())),
         Action::ChangePointerSpeed {
@@ -918,6 +923,8 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         app.saved_notice = None;
         click(ply, app, "mouse_mode").await;
         snapshot(&dir, "wheel-actions");
+        let original_search = ply.bounding_box("picker_search").unwrap();
+        let original_footer = ply.bounding_box("save_action").unwrap();
         click(ply, app, "browse_wheel_actions").await;
         assert!(app.wheel_presets);
         snapshot(&dir, "wheel-presets");
@@ -926,9 +933,19 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         assert!(!app.wheel_presets);
         click(ply, app, "picker_speed_setup").await;
         snapshot(&dir, "dpi-editor");
+        let speed_search = ply.bounding_box("picker_search").unwrap();
+        let speed_footer = ply.bounding_box("save_action").unwrap();
+        assert_eq!(
+            (original_search.x, original_search.y),
+            (speed_search.x, speed_search.y)
+        );
+        assert_eq!(
+            (original_footer.x, original_footer.y),
+            (speed_footer.x, speed_footer.y)
+        );
         ply.set_text_value(("dpi_value", 0), "9999");
         settle(ply, app).await;
-        click(ply, app, "picker_dpi_action").await;
+        click(ply, app, "save_action").await;
         assert!(app.picker_speed_editor && app.picker.is_some());
         ply.set_text_value(("dpi_value", 0), "1000");
         settle(ply, app).await;

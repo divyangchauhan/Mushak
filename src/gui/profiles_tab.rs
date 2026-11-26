@@ -229,7 +229,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         ui.element().width(grow!()).height(fixed!(12.0)).empty();
                         let waiting = picking == Some(i);
                         let caption = if waiting {
-                            "Switch to the app window you want to add"
+                            "Switch windows. Mushak adds the active app when the timer ends."
                         } else {
                             "Apps using this profile"
                         };
