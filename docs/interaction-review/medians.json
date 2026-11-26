@@ -510,5 +510,21 @@
     "Device diagnostics": 9,
     "Conflict and feedback": 8,
     "Tray menu": 9
+  },
+  "round-32": {
+    "Shell and profile switcher": 8,
+    "Button artwork and reported controls": 8,
+    "Button mapping list": 8,
+    "Action editor and categories": 8,
+    "Action search": 9,
+    "Wheel button actions": 8,
+    "Shortcut interaction": 9,
+    "Wheel settings": 8,
+    "Gestures": 8,
+    "Profiles and window capture": 9,
+    "Device status": 8,
+    "Device diagnostics": 9,
+    "Conflict and feedback": 8,
+    "Tray menu": 9
   }
 }
