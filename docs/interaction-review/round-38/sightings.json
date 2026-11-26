@@ -1,0 +1,218 @@
+{
+  "sol": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "The menu opens below the profile picker and puts a check next to Default above Preview app. The left rail keeps the connected model and 50% battery visible."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "Hovering marker 2 highlights the Back button row. MX Master 4 adds marker 6 for the Haptic Sense Panel, and an unplaced Button 0x01FF can become Spare button."
+    },
+    {
+      "id": 3,
+      "label": "Edit",
+      "detail": "The compact list gives each assignment a labeled edit button and shows Ctrl and W keycaps next to Close tab. The no-device list swaps the numbers for control icons."
+    },
+    {
+      "id": 4,
+      "label": "Save action",
+      "detail": "Picking Copy leaves Send Back to the app in the assigned line until Save action commits it. The diagram returns with Copy in the row and a named confirmation."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "The empty state for zzzz offers Clear search and Record a keyboard shortcut. Searching Copy yields one Edit result with Ctrl and C keycaps."
+    },
+    {
+      "id": 6,
+      "label": "Switch pointer speed",
+      "detail": "Set speeds opens two numeric fields with sliders. The editor shows Current 1000 DPI and Next press 800 DPI before saving the 800 and 1600 DPI pair."
+    },
+    {
+      "id": 7,
+      "label": "Press a key",
+      "detail": "The M draft survives a tab switch and a compact resize. Cancel restores the prior view with Send Back to the app. After K is saved, the restarted editor shows K under Assigned now and a Saved check in the footer."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "The threshold shows 50% of a notch. When high-resolution scrolling is off, the saved value remains visible and the helper says how to enable adjustment. The compact layout shortens the mode descriptions and keeps all three choices on one row."
+    },
+    {
+      "id": 9,
+      "label": "Button gestures off",
+      "detail": "With gestures off, the directional markers turn neutral and the saved assignments retain their edit pencils. When on, the swipe threshold explains that 60 counts is about 1.5 mm at 1000 DPI. The compact layout keeps the five assignments and distance slider within one screen."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "Pick a window shows a 6s countdown with Add 6 seconds and Cancel. The captured python.exe appears beside preview.exe with a named confirmation, and the new Trial tools profile sits at priority 3 above Default. At compact width, Photo editing and color correction wraps to two lines with the ordering controls still visible."
+    },
+    {
+      "id": 11,
+      "label": "Edit button mappings",
+      "detail": "A remembered disconnected mouse gets a wake or reconnect prompt. No device gets offline standard mapping copy. Both expose the same direct edit button. The compact connected view fits Bluetooth, firmware, battery, DPI, and the row showing 29 detected features."
+    },
+    {
+      "id": 12,
+      "label": "Copy unnamed IDs",
+      "detail": "The HID++ page presents 29 reported features, pairs names and hexadecimal IDs in a two-column list, and sets off the 18 unnamed entries."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused",
+      "detail": "Dismissing the conflict banner leaves the Remapping paused badge in place. Resume failed offers tray steps, and a successful retry returns to the previous Settings page with a green Remapping resumed badge. The compact editor says Applies after resume."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "The Windows menu swaps Pause remapping for Resume remapping in the same slot and shows a check beside Start with Windows in both states."
+    }
+  ],
+  "terra": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "The selector opens Default and Preview app, with a check beside Default."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "Button 0x01FF appears below the six numbered MX Master 4 controls and can be named Spare button."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "The compact list shows Win and Tab keycaps next to Task View, with a separate Edit control."
+    },
+    {
+      "id": 4,
+      "label": "Select an action",
+      "detail": "The Back button editor shows categories, shortcuts and a checked selected action; saving Copy returns to the diagram with a confirmation."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "A failed search offers Clear search and Record a keyboard shortcut."
+    },
+    {
+      "id": 6,
+      "label": "Switch between two pointer speeds",
+      "detail": "The editor pairs 800 and 1600 DPI inputs with sliders and reports Current 1000 DPI and Next press 800 DPI."
+    },
+    {
+      "id": 7,
+      "label": "Press a key",
+      "detail": "Recording shows Stop recording and Esc cancels; a draft survives switching tabs and resizing, and saved K reappears after restart."
+    },
+    {
+      "id": 8,
+      "label": "SmartShift flick sensitivity",
+      "detail": "The slider shows Level 10 of 50, and disabled controls explain which setting enables them."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "The slider shows 60 counts and explains that shorter moves count as taps; each direction has its assigned action."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "A six-second prompt offers Add 6 seconds and Cancel; a captured python.exe appears with confirmation."
+    },
+    {
+      "id": 11,
+      "label": "Disconnected",
+      "detail": "The page says saved button mappings remain editable and offers Edit button mappings."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "The diagnostic page lists 29 reported IDs, including Adjustable DPI 0x2201, and offers copy actions."
+    },
+    {
+      "id": 13,
+      "label": "Resume failed",
+      "detail": "The page offers Retry and two steps for resuming from the tray; saving while paused says the assignment applies after resume."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "The native tray menu changes Pause remapping to Resume remapping when paused, and Start with Windows has a checkmark."
+    }
+  ],
+  "astra": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "Default is checked in the dropdown. The amber Buttons selection matches the assignment accent and the sidebar keeps connection and battery visible."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "MX Master 4 adds a sixth Haptic Sense Panel marker. Hovering Back button highlights both marker 2 and its matching card. Naming Button 0x01FF changes its card to Spare button."
+    },
+    {
+      "id": 3,
+      "label": "Configure gestures",
+      "detail": "The compact layout replaces the illustration with five numbered rows. Close tab includes Ctrl and W keycaps and every row has a labeled Edit control."
+    },
+    {
+      "id": 4,
+      "label": "Save action",
+      "detail": "Selecting Copy adds a checkmark and enables the amber Save action button. After saving, the Back button card says Copy and the toast identifies the changed button."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "The empty search state offers Clear search and Record a keyboard shortcut. Searching Copy returns one result under Edit with Ctrl and C keycaps."
+    },
+    {
+      "id": 6,
+      "label": "Save pointer speed action",
+      "detail": "The speed editor shows 800 and 1600 DPI with paired sliders, a supported range of 200 to 4000 DPI, and Current 1000 DPI versus Next press 800 DPI."
+    },
+    {
+      "id": 7,
+      "label": "Press a key",
+      "detail": "Recording changes the panel to Press a key with Stop recording and an Escape hint. The M draft survives tab switching and compact resizing. Cancel restores the old assignment, K saves, and reopening plus the native restart frame show K with Saved."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "SmartShift has a selected radio card, sensitivity shows Level 10 of 50, and the nudge threshold shows 50% of a notch. Turning the prerequisite off explains how to enable the gray slider."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "Five gesture rows pair directional icons with action chips. The 60 counts setting is translated into about 1.5 mm at 1000 DPI, and the off state explicitly says saved actions remain editable."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "The capture state shows 6s, Add 6 seconds and Cancel. The native capture result adds python.exe with a named success toast. Long profile names wrap without hiding the reorder or Delete controls."
+    },
+    {
+      "id": 11,
+      "label": "Reapply mouse settings",
+      "detail": "Connected status separates Bluetooth, firmware, battery and DPI. The compact page preserves these controls. Disconnected and No device states both offer Edit button mappings."
+    },
+    {
+      "id": 12,
+      "label": "Copy unnamed IDs",
+      "detail": "HID++ features places named features and hexadecimal IDs in a two-column table, followed by 18 unnamed features. The compact layout exposes a scrollbar and keeps both copy buttons visible."
+    },
+    {
+      "id": 13,
+      "label": "Couldn't save assignment",
+      "detail": "The failed-save view explicitly says Copy is still unsaved and the previous assignment is still active. Paused editing says Applies after resume. Native Resume failed, Retry and tray fallback states retain a route back to Buttons or Profiles."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "The native tray menu changes Pause remapping to Resume remapping and keeps a check beside Start with Windows. Separators group opening settings, operational controls and quitting."
+    }
+  ]
+}
