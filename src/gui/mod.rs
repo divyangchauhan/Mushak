@@ -60,11 +60,11 @@ impl Section {
         }
     }
     const ALL: [Section; 5] = [
-        Section::Buttons,
-        Section::Scroll,
-        Section::Gestures,
-        Section::Profiles,
         Section::Device,
+        Section::Profiles,
+        Section::Buttons,
+        Section::Gestures,
+        Section::Scroll,
     ];
     fn label(self) -> &'static str {
         match self {
@@ -871,13 +871,21 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
         });
 }
 
+fn rail_width() -> f32 {
+    if screen_width() < 840.0 {
+        158.0
+    } else {
+        204.0
+    }
+}
+
 fn rail(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
     let current = app.section;
     let short = screen_height() < 430.0;
     let mut clicked: Option<Section> = None;
     ui.element()
-        .width(fixed!(if screen_width() < 840.0 { 158.0 } else { 204.0 }))
+        .width(fixed!(rail_width()))
         .height(grow!())
         .background_color(pal.rail)
         .overflow(|o| {
@@ -895,6 +903,7 @@ fn rail(ui: &mut Ui2, app: &mut App) {
         })
         .border(|b| b.right(1).color(pal.line))
         .children(|ui| {
+            // Keep device information and profiles in reach as hardware comes and goes.
             for s in Section::ALL {
                 if !s.available(&app.device_view.device) {
                     continue;

@@ -484,18 +484,15 @@ fn feature_details(ui: &mut Ui2, app: &mut App) {
             "Use these IDs when reporting a device compatibility issue.",
             |t| t.font(&fonts::SANS).font_size(13).color(pal.muted),
         );
+        let content_width = (screen_width() - super::rail_width() - 56.0).min(768.0);
+        let per_line = (content_width / 76.0).floor().max(1.0) as usize;
         ui.element()
             .width(grow!())
             .height(fit!())
-            .layout(|l| {
-                l.direction(LeftToRight)
-                    .wrap()
-                    .gap(12)
-                    .padding((8, 0, 0, 0))
-            })
+            .layout(|l| l.direction(TopToBottom).gap(7).padding((8, 0, 0, 0)))
             .children(|ui| {
-                for id in &other {
-                    ui.text(id, |t| {
+                for line in other.chunks(per_line) {
+                    ui.text(&line.join("  "), |t| {
                         t.font(&fonts::MONO_MEDIUM).font_size(14).color(pal.text)
                     });
                 }

@@ -208,6 +208,14 @@ def control(id, frame):
     click(float(b["x"]) + float(b["w"]) / 2, float(b["y"]) + float(b["h"]) / 2)
 
 
+def nav_y(section, fallback):
+    coordinates = args.bounds.with_name("navigation.csv")
+    if coordinates.exists():
+        with coordinates.open() as stream:
+            return round(float(next(row["y"] for row in csv.DictReader(stream) if row["section"] == section)))
+    return fallback
+
+
 def profile():
     box = next(
         (
@@ -269,7 +277,7 @@ def check_window_pick():
     import tkinter as tk
 
     click(918, 176)
-    click(88, 208)
+    click(88, nav_y("Profiles", 208))
     assert matches_capture("profiles", (229, 68, 367, 102)), "Profiles did not open"
     click(434, 247)
     helper = tk.Tk()
@@ -481,6 +489,8 @@ try:
         resize(720, 540)
         previous = None
         for name, y in [("buttons", 85), ("wheel", 127), ("gestures", 169), ("profiles", 211), ("device", 253)]:
+            section = "Scroll" if name == "wheel" else name.capitalize()
+            y = nav_y(section, y)
             click(74, y)
             deadline = time.monotonic() + 5
             while time.monotonic() < deadline:

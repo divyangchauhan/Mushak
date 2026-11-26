@@ -91,11 +91,6 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         .children(|ui| {
             for i in (1..count).chain(std::iter::once(0)) {
                 let locked = i == 0;
-                // At compact width a middle profile can have three editing commands.
-                // Give its title room to wrap above those commands.
-                let middle = i > 1 && i + 1 < count;
-                let separate_controls =
-                    screen_width() < 840.0 && (middle || names[i].chars().count() > 18);
                 let mut row_actions = |ui: &mut Ui2, app: &App| {
                     if i > 1 && profile_action(ui, app, ("p_up", i as u32), &icons::ARROW_UP) {
                         move_up = Some(i);
@@ -173,11 +168,13 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                         });
                                         if !locked {
                                             widgets::icon(ui, &icons::CAT_EDIT, 16.0, pal.muted);
-                                            ui.text("Rename", |t| {
-                                                t.font(&fonts::SANS_MEDIUM)
-                                                    .font_size(13)
-                                                    .color(pal.muted)
-                                            });
+                                            if screen_width() >= 840.0 {
+                                                ui.text("Rename", |t| {
+                                                    t.font(&fonts::SANS_MEDIUM)
+                                                        .font_size(13)
+                                                        .color(pal.muted)
+                                                });
+                                            }
                                             if ui.just_pressed() {
                                                 app.renaming_profile = Some(i);
                                                 app.profile_name_error = None;
@@ -204,19 +201,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                                     .color(pal.faint)
                                             });
                                         });
-                                } else if !separate_controls {
+                                } else {
                                     row_actions(ui, app);
                                 }
                             });
 
-                        if separate_controls && !locked {
-                            ui.element().height(fixed!(5.0)).empty();
-                            ui.element()
-                                .width(grow!())
-                                .height(fit!())
-                                .layout(|l| l.direction(LeftToRight).gap(8).align(Left, CenterY))
-                                .children(|ui| row_actions(ui, app));
-                        }
                         if app.renaming_profile == Some(i) {
                             if let Some(message) = app.profile_name_error {
                                 ui.text(message, |t| {
@@ -524,6 +513,16 @@ fn profile_action(
         "p_down" => "Move down",
         _ => "Delete profile",
     };
+    let visible_label = if screen_width() < 840.0 {
+        match id.0 {
+            "p_up" => "Up",
+            "p_down" => "Down",
+            "p_del" => "Delete",
+            _ => label,
+        }
+    } else {
+        label
+    };
     let destructive = id.0 == "p_del";
     let primary = id.0 == "save_profile_name";
     let ink = if destructive {
@@ -560,7 +559,7 @@ fn profile_action(
                 clicked = true;
             }
             widgets::icon(ui, glyph, 15.0, ink);
-            ui.text(label, |t| {
+            ui.text(visible_label, |t| {
                 t.font(&fonts::SANS_MEDIUM).font_size(13).color(ink)
             });
         });

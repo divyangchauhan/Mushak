@@ -537,7 +537,9 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                                 subtitle
                             };
                             ui.text(&subtitle, |t| {
-                                t.font(&fonts::SANS).font_size(12).color(pal.muted)
+                                t.font(&fonts::SANS_MEDIUM)
+                                    .font_size(if screen_height() < 430.0 { 12 } else { 14 })
+                                    .color(pal.text)
                             });
                             if let PickerTarget::Button(slot) = target {
                                 let device = &app.device_view.device;
@@ -856,7 +858,7 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                             &pal,
                             "picker_wheel_action",
                             "Toggle ratchet and free-spin",
-                            "Mushak switches the wheel mode on each press",
+                            "Mushak changes mode on each press",
                             &icons::NAV_SCROLL,
                             wheel_selected,
                             if wheel_selected {

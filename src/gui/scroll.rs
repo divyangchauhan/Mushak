@@ -70,14 +70,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         ui.element()
             .width(grow!())
             .height(fit!())
-            .layout(|l| {
-                l.direction(if screen_width() >= 840.0 {
-                    LeftToRight
-                } else {
-                    TopToBottom
-                })
-                .gap(8)
-            })
+            .layout(|l| l.direction(LeftToRight).gap(6))
             .children(|ui| {
                 for (i, (m, title, desc)) in MODES.into_iter().enumerate() {
                     let id: Id = ("mode", i as u32).into();
@@ -85,11 +78,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     ui.element()
                         .id(id)
                         .width(grow!())
-                        .height(if screen_width() >= 840.0 {
-                            fixed!(86.0)
-                        } else {
-                            fit!()
-                        })
+                        .height(fixed!(if screen_width() >= 840.0 { 86.0 } else { 64.0 }))
                         .corner_radius(10.0)
                         .background_color(if sel {
                             Palette2::mix_accent(&pal)
@@ -100,8 +89,8 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         .layout(|l| {
                             l.direction(LeftToRight)
                                 .align(Left, CenterY)
-                                .gap(8)
-                                .padding(12)
+                                .gap(if screen_width() >= 840.0 { 8 } else { 5 })
+                                .padding(if screen_width() >= 840.0 { 12 } else { 7 })
                         })
                         .children(|ui| {
                             if ui.just_pressed() {
@@ -138,11 +127,13 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                             .font_size(widgets::px(13.5))
                                             .color(pal.text)
                                     });
-                                    ui.text(desc, |t| {
-                                        t.font(&fonts::SANS)
-                                            .font_size(widgets::px(12.5))
-                                            .color(pal.muted)
-                                    });
+                                    if screen_width() >= 840.0 {
+                                        ui.text(desc, |t| {
+                                            t.font(&fonts::SANS)
+                                                .font_size(widgets::px(12.5))
+                                                .color(pal.muted)
+                                        });
+                                    }
                                 });
                         });
                 }
@@ -261,7 +252,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             });
                         });
                         ui.text(&threshold, |t| {
-                            t.font(&fonts::MONO_BOLD).font_size(15).color(pal.accent)
+                            t.font(&fonts::MONO_BOLD).font_size(15).color(if hires {
+                                pal.accent
+                            } else {
+                                pal.muted
+                            })
                         });
                     });
                 let hint = if !hires {

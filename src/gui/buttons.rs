@@ -305,11 +305,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
 
     if super::Section::Gestures.available(&app.device_view.device) {
         ui.element().width(grow!()).height(fixed!(10.0)).empty();
-        let hint = if app.mouse_awake() {
-            "Windows handles left click and scrolling."
-        } else {
-            "Swipe actions follow the selected profile."
-        };
+        let hint = "Swipe actions follow the selected profile.";
         ui.element().width(grow!()).height(fit!()).children(|ui| {
             super::mouse_view::gesture_footer(ui, app, hint, "Configure gestures");
         });

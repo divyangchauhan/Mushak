@@ -840,6 +840,12 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
             menu.x >= caption.x + caption.width || menu.y >= caption.y + caption.height,
             "Profile menu covers its caption"
         );
+        let mut navigation = String::from("section,y\n");
+        for section in Section::ALL {
+            let b = ply.bounding_box(section.id()).unwrap();
+            navigation.push_str(&format!("{},{}\n", section.label(), b.y + b.height / 2.0));
+        }
+        std::fs::write(dir.join("navigation.csv"), navigation).unwrap();
         snapshot(&dir, "menu");
         let option = ply.bounding_box(("profile_opt", 1)).unwrap();
         std::fs::write(
@@ -988,6 +994,13 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         click(ply, app, "hidpp_head").await;
         ply.set_scroll_position("settings_content", (0.0, 0.0));
         settle(ply, app).await;
+        for bounds in ["titlebar", "copy_device_report", "copy_feature_ids"] {
+            let box_ = ply.bounding_box(bounds).unwrap();
+            assert!(
+                box_.x + box_.width <= screen_width() + 0.25,
+                "Diagnostics clipped {bounds}"
+            );
+        }
         snapshot(&dir, "diagnostics");
         ply.set_scroll_position("settings_content", (0.0, 10000.0));
         settle(ply, app).await;
@@ -1588,7 +1601,10 @@ async fn extra_states(
     let title = ply.bounding_box(("rename_profile", 2)).unwrap();
     let move_up = ply.bounding_box(("p_up", 2)).unwrap();
     let delete = ply.bounding_box(("p_del", 2)).unwrap();
-    assert!(title.y + title.height <= move_up.y);
+    assert!(
+        title.x + title.width <= move_up.x + 0.25,
+        "Long profile name overlaps priority commands"
+    );
     assert!(delete.x + delete.width <= screen_width());
     click(ply, app, ("rename_profile", 2)).await;
     assert_eq!(
