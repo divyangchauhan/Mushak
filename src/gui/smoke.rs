@@ -1069,10 +1069,25 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         let forward = ("btn_chip", buttons::slot_index("forward"));
         let row = ply.bounding_box(forward).unwrap();
         let caption = ply.bounding_box("profile_caption").unwrap();
-        assert!(caption.y + caption.height < row.y && row.y + row.height <= screen_height());
+        assert!(
+            caption.y + caption.height < row.y && row.y + row.height <= screen_height(),
+            "Forward row {row:?} / caption {caption:?} / viewport {} x {}",
+            screen_width(),
+            screen_height()
+        );
         assert!(app.saved_notice.is_some());
         click(ply, app, forward).await;
         assert!(app.picker == Some(PickerTarget::Button("forward".into())));
+        let viewport = ply.bounding_box(("category_results", 0)).unwrap();
+        for i in 0..6 {
+            let category = ply.bounding_box(("action_category", i)).unwrap();
+            assert!(category.y + category.height <= viewport.y + viewport.height);
+            let item = ply.bounding_box(("pk", i)).unwrap();
+            assert!(
+                item.y >= viewport.y && item.y + item.height <= viewport.y + viewport.height,
+                "Short action picker clips choice {i}: {item:?} in {viewport:?}"
+            );
+        }
         snapshot(&dir, "next-mapping");
         click(ply, app, "picker_close").await;
         let after = ply.bounding_box(forward).unwrap();

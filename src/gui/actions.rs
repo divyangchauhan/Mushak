@@ -131,7 +131,11 @@ pub fn key_name(code: u16) -> String {
 
 /// Describe the native event or firmware behavior when a mapped control passes through.
 pub fn assignment(app: &super::App, target: &super::PickerTarget) -> Display {
-    let mut binding = display(&app.action_for(target));
+    display_for(app, target, &app.action_for(target))
+}
+
+pub fn display_for(app: &super::App, target: &super::PickerTarget, action: &Action) -> Display {
+    let mut binding = display(action);
     if let (Kind::PassThrough, super::PickerTarget::Button(slot)) = (&binding.kind, target) {
         let label = match slot.as_str() {
             "back" => "Send Back to the app",
