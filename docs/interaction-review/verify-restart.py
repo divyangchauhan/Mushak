@@ -113,9 +113,10 @@ def launch():
     h = handles[0]
     time.sleep(1)
     scale = u.GetDpiForWindow(h) / 96
-    u.ShowWindow(h, 5)
-    u.SetForegroundWindow(h)
-    u.SetWindowPos(h, -1, 20, 20, 0, 0, 0x1 | 0x10)
+    # These checks deliver input to one HWND and capture its client directly.
+    # Leave other apps above it so physical input cannot land on the test fixture.
+    u.ShowWindow(h, 8)
+    assert u.SetWindowPos(h, 1, 20, 20, 0, 0, 0x1 | 0x10)
     # The HWND exists before the renderer has applied the theme and frameless layout.
     until = time.monotonic() + 8
     while time.monotonic() < until:
