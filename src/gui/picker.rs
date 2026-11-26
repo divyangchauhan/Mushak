@@ -776,7 +776,7 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
             .children(|ui| {
                 for (label, search) in [
                     (
-                        "Switch wheel mode",
+                        "Toggle ratchet and free-spin",
                         "switch shift wheel mode ratchet free spin",
                     ),
                     ("Switch pointer speed", "switch change pointer speed dpi"),
@@ -855,8 +855,8 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                             ui,
                             &pal,
                             "picker_wheel_action",
-                            "Switch wheel mode",
-                            "Mushak toggles ratchet and free-spin",
+                            "Toggle ratchet and free-spin",
+                            "Mushak switches the wheel mode on each press",
                             &icons::NAV_SCROLL,
                             wheel_selected,
                             if wheel_selected {
@@ -1344,14 +1344,6 @@ fn browse_categories(
         });
 }
 
-fn preset_label(label: &str) -> &str {
-    match label {
-        "Back" => "Back shortcut",
-        "Forward" => "Forward shortcut",
-        _ => label,
-    }
-}
-
 fn action_groups(query: &str) -> Vec<ActionGroup> {
     let presets = actions::presets();
 
@@ -1401,7 +1393,7 @@ fn action_groups(query: &str) -> Vec<ActionGroup> {
             })
             .map(|p| {
                 (
-                    preset_label(p.label).to_string(),
+                    p.display_label().to_string(),
                     None,
                     p.keys.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
                     (p.action)(),
@@ -1435,7 +1427,7 @@ fn results(
         for preset in actions::presets() {
             if matches!(preset.label, "Copy" | "Paste" | "Back" | "Forward") {
                 quick.1.push((
-                    preset_label(preset.label).into(),
+                    preset.display_label().into(),
                     None,
                     preset.keys.iter().map(|s| s.to_string()).collect(),
                     (preset.action)(),

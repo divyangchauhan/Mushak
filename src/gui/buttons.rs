@@ -292,7 +292,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     }
     rows.sort_by_key(|row| row.number.unwrap_or(usize::MAX));
     ui.element()
-        .width(grow!(0.0, 570.0))
+        .width(grow!())
         .height(fit!())
         .layout(|l| l.direction(TopToBottom).gap(10))
         .children(|ui| {
@@ -310,12 +310,9 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         } else {
             "Swipe actions follow the selected profile."
         };
-        ui.element()
-            .width(grow!(0.0, 570.0))
-            .height(fit!())
-            .children(|ui| {
-                super::mouse_view::gesture_footer(ui, app, hint, "Configure gestures");
-            });
+        ui.element().width(grow!()).height(fit!()).children(|ui| {
+            super::mouse_view::gesture_footer(ui, app, hint, "Configure gestures");
+        });
     } else if app.mouse_awake() {
         ui.element().width(grow!()).height(fixed!(16.0)).empty();
         ui.text("Windows handles left click and scrolling.", |t| {
@@ -443,7 +440,7 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
         .floating(|f| {
             f.attach_id("profile_btn")
                 .anchor((Right, Top), (Right, Top))
-                .offset((0.0, if wide { 42.0 } else { 65.0 }))
+                .offset((0.0, if wide { 41.0 } else { 65.0 }))
                 .z_index(50)
         })
         .corner_radius(11.0)
@@ -458,7 +455,7 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
                 ui.element()
                     .id(id)
                     .width(grow!())
-                    .height(fit!(28.0))
+                    .height(fit!(26.0))
                     .corner_radius(8.0)
                     .background_color(if active || hovered {
                         super::theme::Palette::mix(pal.accent, 12.0, pal.pop)

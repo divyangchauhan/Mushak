@@ -943,7 +943,19 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
             }
             if section == Section::Scroll {
                 let before = ply.bounding_box("sw_invert").unwrap();
+                let hires_before = ply.bounding_box("sw_hires").unwrap();
                 click(ply, app, ("mode", 0)).await;
+                let hires_after = ply.bounding_box("sw_hires").unwrap();
+                assert_eq!(
+                    (hires_before.x, hires_before.y),
+                    (hires_after.x, hires_after.y)
+                );
+                let threshold = app.draft.device.smartshift_threshold;
+                click(ply, app, "flick").await;
+                assert_eq!(
+                    app.draft.device.smartshift_threshold, threshold,
+                    "Disabled flick slider accepted an edit"
+                );
                 let after = ply.bounding_box("sw_invert").unwrap();
                 assert_eq!(
                     (before.x, before.y),
@@ -1389,6 +1401,11 @@ async fn extra_states(
             slot: "control_01ff".into(),
         });
     settle(ply, app).await;
+    let gestures = ply.bounding_box("mouse_gestures").unwrap();
+    assert!(
+        gestures.y + gestures.height <= screen_height(),
+        "Extra button pushed Configure gestures below the window"
+    );
     snapshot(dir, "extra-button");
     click(ply, app, ("mouse_extra", 0x01ff + 3)).await;
     assert!(app.picker == Some(PickerTarget::Button("control_01ff".into())));

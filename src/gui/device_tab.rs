@@ -432,15 +432,17 @@ fn feature_details(ui: &mut Ui2, app: &mut App) {
                                         l.direction(LeftToRight).align(Left, CenterY).gap(10)
                                     })
                                     .children(|ui| {
+                                        ui.element().width(grow!()).height(fit!()).children(|ui| {
+                                            ui.text(name, |t| {
+                                                t.font(&fonts::SANS_MEDIUM)
+                                                    .font_size(15)
+                                                    .color(pal.text)
+                                            });
+                                        });
                                         ui.text(&format!("{id:#06x}"), |t| {
                                             t.font(&fonts::MONO_MEDIUM)
                                                 .font_size(14)
-                                                .color(pal.accent)
-                                        });
-                                        ui.text(name, |t| {
-                                            t.font(&fonts::SANS_MEDIUM)
-                                                .font_size(15)
-                                                .color(pal.text)
+                                                .color(pal.muted)
                                         });
                                     });
                             }
@@ -482,28 +484,22 @@ fn feature_details(ui: &mut Ui2, app: &mut App) {
             "Use these IDs when reporting a device compatibility issue.",
             |t| t.font(&fonts::SANS).font_size(13).color(pal.muted),
         );
-        let per_line = ((screen_width() - 260.0).clamp(70.0, 700.0) / 70.0) as usize;
-        for row in other.chunks(per_line) {
-            ui.element().height(fixed!(6.0)).empty();
-            ui.element()
-                .width(grow!())
-                .height(fit!())
-                .layout(|l| l.direction(LeftToRight).gap(6))
-                .children(|ui| {
-                    for id in row {
-                        ui.element()
-                            .height(fixed!(26.0))
-                            .corner_radius(5.0)
-                            .background_color(pal.s2)
-                            .layout(|l| l.align(CenterX, CenterY).padding((0, 8, 0, 8)))
-                            .children(|ui| {
-                                ui.text(id, |t| {
-                                    t.font(&fonts::MONO_MEDIUM).font_size(13).color(pal.text)
-                                });
-                            });
-                    }
-                });
-        }
+        ui.element()
+            .width(grow!())
+            .height(fit!())
+            .layout(|l| {
+                l.direction(LeftToRight)
+                    .wrap()
+                    .gap(12)
+                    .padding((8, 0, 0, 0))
+            })
+            .children(|ui| {
+                for id in &other {
+                    ui.text(id, |t| {
+                        t.font(&fonts::MONO_MEDIUM).font_size(14).color(pal.text)
+                    });
+                }
+            });
     }
 }
 

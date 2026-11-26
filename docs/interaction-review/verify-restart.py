@@ -421,12 +421,13 @@ def check_resume_command():
             with help_bounds.open() as stream:
                 box = next(csv.DictReader(stream))
             x, y = round(float(box["x"])), round(float(box["y"]))
-            help_region = (x + 43, y + 4, x + 360, y + 39)
+            width, height = round(float(box["w"])), round(float(box["h"]))
+            help_region = (x + 4, y + 2, x + min(width - 4, 220), y + min(height - 2, 38))
 
         def wait_for_help(reference):
             deadline = time.monotonic() + 4
             while time.monotonic() < deadline:
-                if matches_capture(reference, help_region):
+                if matches_capture(reference, help_region) and matches_capture(reference, (245, 10, 420, 36)):
                     return
                 time.sleep(0.1)
             raise AssertionError(f"Settings did not show {reference} instructions")

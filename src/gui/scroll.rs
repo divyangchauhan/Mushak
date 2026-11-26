@@ -150,6 +150,73 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
 
         ui.element().width(grow!()).height(fixed!(22.0)).empty();
     }
+    if caps.smartshift {
+        // Flick sensitivity applies only in SmartShift mode.
+        widgets::card(ui, &pal)
+            .layout(|l| l.direction(TopToBottom).gap(3).padding((16, 17, 16, 17)))
+            .children(|ui| {
+                ui.element()
+                    .width(grow!())
+                    .height(fit!())
+                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
+                    .children(|ui| {
+                        ui.element().width(grow!()).height(fit!()).children(|ui| {
+                            ui.text("SmartShift flick sensitivity", |t| {
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                            });
+                        });
+                        ui.text(
+                            &format!("Level {} of {flick_max}", flick.min(flick_max)),
+                            |t| {
+                                t.font(&fonts::MONO_BOLD).font_size(15).color(if flick_on {
+                                    pal.accent
+                                } else {
+                                    pal.muted
+                                })
+                            },
+                        );
+                    });
+                ui.text(
+                    if flick_on {
+                        "Lower for a gentler flick. Higher for a firmer flick."
+                    } else {
+                        "Select SmartShift to adjust the saved sensitivity."
+                    },
+                    |t| {
+                        t.font(&fonts::SANS)
+                            .font_size(widgets::px(12.5))
+                            .color(pal.muted)
+                    },
+                );
+                ui.element().width(grow!()).height(fixed!(12.0)).empty();
+                ui.element()
+                    .width(grow!())
+                    .height(fit!())
+                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
+                    .children(|ui| {
+                        ui.text("1", |t| {
+                            t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted)
+                        });
+
+                        if let Some(v) = widgets::slider_enabled(
+                            ui,
+                            &pal,
+                            "flick",
+                            flick.min(flick_max),
+                            1..=flick_max,
+                            1,
+                            flick_on,
+                        ) {
+                            new_flick = Some(v);
+                        }
+                        ui.text(&flick_max.to_string(), |t| {
+                            t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted)
+                        });
+                    });
+            });
+
+        ui.element().width(grow!()).height(fixed!(14.0)).empty();
+    }
     let deadzone = i64::from(app.draft.device.scroll_deadzone);
     let threshold = if deadzone == 0 {
         "off".to_owned()
@@ -160,9 +227,9 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     };
     if caps.hires_scroll {
         let detail = if hires {
-            "Use finer scroll steps. Adjust the nudge threshold below.".to_owned()
+            "Use finer steps for each wheel turn.".to_owned()
         } else {
-            format!("Turn on to adjust the nudge filter. Saved threshold: {threshold}.")
+            "Use standard wheel steps.".to_owned()
         };
         toggle_hires = switch_row(
             ui,
@@ -174,71 +241,12 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         );
         ui.element().width(grow!()).height(fixed!(10.0)).empty();
     }
-    if caps.smartshift {
-        // Flick sensitivity applies only in SmartShift mode.
-        if flick_on {
-            widgets::card(ui, &pal)
-                .layout(|l| l.direction(TopToBottom).gap(3).padding((16, 17, 16, 17)))
-                .children(|ui| {
-                    ui.element()
-                        .width(grow!())
-                        .height(fit!())
-                        .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
-                        .children(|ui| {
-                            ui.element().width(grow!()).height(fit!()).children(|ui| {
-                                ui.text("Flick sensitivity", |t| {
-                                    t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                                });
-                            });
-                            ui.text(
-                                &format!("Level {} of {flick_max}", flick.min(flick_max)),
-                                |t| t.font(&fonts::MONO_BOLD).font_size(15).color(pal.accent),
-                            );
-                        });
-                    ui.text(
-                        "Lower for a gentler flick. Higher for a firmer flick.",
-                        |t| {
-                            t.font(&fonts::SANS)
-                                .font_size(widgets::px(12.5))
-                                .color(pal.muted)
-                        },
-                    );
-                    ui.element().width(grow!()).height(fixed!(12.0)).empty();
-                    ui.element()
-                        .width(grow!())
-                        .height(fit!())
-                        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
-                        .children(|ui| {
-                            ui.text("1", |t| {
-                                t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted)
-                            });
-
-                            if let Some(v) = widgets::slider(
-                                ui,
-                                &pal,
-                                "flick",
-                                flick.min(flick_max),
-                                1,
-                                flick_max,
-                                1,
-                            ) {
-                                new_flick = Some(v);
-                            }
-                            ui.text(&flick_max.to_string(), |t| {
-                                t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted)
-                            });
-                        });
-                });
-
-            ui.element().width(grow!()).height(fixed!(18.0)).empty();
-        }
-    }
     // Wheel deadzone. Only meaningful with hi-res on: that is the only mode
     // where the wheel reports to us rather than straight to Windows, so it is
     // the only mode we can filter.
     let multiplier = caps.wheel_multiplier.unwrap_or(1) as i64;
     let mut new_deadzone: Option<i64> = None;
-    if caps.hires_scroll && hires {
+    if caps.hires_scroll {
         widgets::card(ui, &pal)
             .layout(|l| l.direction(TopToBottom).gap(3).padding((16, 17, 16, 17)))
             .children(|ui| {
@@ -256,7 +264,9 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             t.font(&fonts::MONO_BOLD).font_size(15).color(pal.accent)
                         });
                     });
-                let hint = if deadzone == 0 {
+                let hint = if !hires {
+                    "Turn on high-resolution scrolling to adjust the saved threshold."
+                } else if deadzone == 0 {
                     "Every movement scrolls."
                 } else {
                     "After a pause or reversal, turn the wheel this far to start scrolling."
@@ -275,14 +285,14 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         ui.text("off", |t| {
                             t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted)
                         });
-                        if let Some(v) = widgets::slider(
+                        if let Some(v) = widgets::slider_enabled(
                             ui,
                             &pal,
                             "deadzone",
                             deadzone.min(multiplier),
-                            0,
-                            multiplier,
+                            0..=multiplier,
                             1,
+                            hires,
                         ) {
                             new_deadzone = Some(v);
                         }

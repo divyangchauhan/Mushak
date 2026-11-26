@@ -312,7 +312,8 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                         .id("extend_window_pick")
                                         .height(fixed!(28.0))
                                         .corner_radius(8.0)
-                                        .background_color(pal.s2)
+                                        .background_color(pal.surface)
+                                        .border(|b| b.all(1).color(pal.line_strong))
                                         .accessibility(|a| a.button("Add 6 seconds"))
                                         .layout(|l| {
                                             l.direction(LeftToRight)
@@ -321,8 +322,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                                 .padding((0, 8, 0, 8))
                                         })
                                         .children(|ui| {
-                                            widgets::icon(ui, &icons::PLUS, 12.0, pal.text);
-                                            ui.text("6 seconds", |t| {
+                                            ui.text("Add 6 seconds", |t| {
                                                 t.font(&fonts::SANS_SEMIBOLD)
                                                     .font_size(13)
                                                     .color(pal.text)

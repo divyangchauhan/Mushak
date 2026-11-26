@@ -758,16 +758,6 @@ fn window(ui: &mut Ui2, app: &mut App) {
                         .layout(|l| l.direction(TopToBottom))
                         .children(|ui| {
                             content(ui, app);
-                            if screen_height() >= 430.0
-                                && app.resume_steps_visible()
-                                && widgets::resume_help(
-                                    ui,
-                                    &pal,
-                                    matches!(app.resume, ResumeState::Failed),
-                                )
-                            {
-                                app.show_resume_steps = Some(false);
-                            }
                             if app.show_conflict() {
                                 widgets::conflict_banner(ui, app);
                             }
@@ -839,22 +829,19 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
                 24.0,
                 theme::WHITE,
             );
-            if screen_height() < 430.0 && app.resume_steps_visible() {
-                widgets::compact_resume_help(ui, app);
-                widgets::titlebar_buttons(ui, app);
-                return;
-            }
             ui.text("Mushak", |t| {
                 t.font(&fonts::DISPLAY_BOLD).font_size(17).color(pal.text)
             });
-            ui.element()
-                .width(fixed!(1.0))
-                .height(fixed!(15.0))
-                .background_color(pal.line_strong)
-                .empty();
-            ui.text("Mouse settings", |t| {
-                t.font(&fonts::SANS).font_size(13).color(pal.muted)
-            });
+            if screen_width() >= 840.0 {
+                ui.element()
+                    .width(fixed!(1.0))
+                    .height(fixed!(15.0))
+                    .background_color(pal.line_strong)
+                    .empty();
+                ui.text("Mouse settings", |t| {
+                    t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                });
+            }
             if paused {
                 widgets::paused_status(ui, app);
             } else if matches!(app.resume, ResumeState::Confirmed(_)) {
@@ -875,8 +862,11 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
                         });
                     });
             }
-            // Push the window controls to the right.
-            ui.element().width(grow!()).height(fixed!(1.0)).empty();
+            if app.resume_steps_visible() {
+                widgets::resume_help(ui, app);
+            } else {
+                ui.element().width(grow!()).height(fixed!(1.0)).empty();
+            }
             widgets::titlebar_buttons(ui, app);
         });
 }

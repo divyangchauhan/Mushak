@@ -425,7 +425,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         .iter()
         .filter(|p| p.target(&app.device_view.device).is_some())
         .count();
-    let row_pitch = 55.0;
+    let row_pitch = if model == Model::Master4 { 48.0 } else { 55.0 };
     let extra_heading = if extras.is_empty() { 0.0 } else { 21.0 };
     let list_height = (count + extras.len()) as f32 * row_pitch + extra_heading;
     let list_top = ((STAGE_HEIGHT - count as f32 * row_pitch) / 2.0).max(5.0);

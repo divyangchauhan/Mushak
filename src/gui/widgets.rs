@@ -72,22 +72,21 @@ fn resume_button(ui: &mut Ui2, app: &mut App) {
     }
 }
 
-pub(super) fn compact_resume_help(ui: &mut Ui2, app: &mut App) {
+pub(super) fn resume_help(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
     ui.element()
+        .id("resume_help")
         .width(grow!())
         .height(fit!())
-        .layout(|l| l.direction(TopToBottom).gap(2))
+        .layout(|l| l.direction(TopToBottom).gap(1))
         .children(|ui| {
-            ui.text("Remapping paused. Right-click Mushak by the clock", |t| {
-                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+            ui.text("Right-click Mushak by the clock or in hidden icons.", |t| {
+                t.font(&fonts::SANS).font_size(12).color(pal.muted)
             });
-            ui.text(
-                "Choose Resume remapping. Check hidden icons if needed.",
-                |t| t.font(&fonts::SANS).font_size(13).color(pal.muted),
-            );
+            ui.text("Choose Resume remapping.", |t| {
+                t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
+            });
         });
-    resume_button(ui, app);
     if pause_command(ui, &pal, "hide_resume_steps", "Hide steps") {
         app.show_resume_steps = Some(false);
     }
@@ -111,34 +110,6 @@ fn pause_command(ui: &mut Ui2, pal: &Palette, id: &'static str, label: &str) -> 
             clicked = ui.just_pressed();
         });
     clicked
-}
-
-/// Keep the tray steps visible while Settings cannot send the resume command.
-pub fn resume_help(ui: &mut Ui2, pal: &Palette, failed: bool) -> bool {
-    let mut hide = false;
-    let title = if failed {
-        "Resume unconfirmed"
-    } else {
-        "Resume from the tray"
-    };
-    ui.element()
-        .id("resume_help")
-        .width(grow!())
-        .height(fit!(46.0))
-        .background_color(Palette::mix(pal.warn, 9.0, pal.win))
-        .border(|b| b.top(1).color(pal.line_strong))
-        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(10).padding((5, 14, 5, 14)))
-        .children(|ui| {
-            icon(ui, &icons::MODAK_PAUSED, 24.0, pal.text);
-            ui.element().width(grow!()).height(fit!())
-                .layout(|l| l.direction(TopToBottom).gap(3)).children(|ui| {
-                    ui.text(title, |t| t.font(&fonts::SANS_BOLD).font_size(15).color(pal.text));
-                    ui.text("By the Windows clock, right-click Mushak and choose Resume remapping. Use Show hidden icons if needed.",
-                        |t| t.font(&fonts::SANS).font_size(14).color(pal.text));
-                });
-            hide = pause_command(ui, pal, "hide_resume_steps", "Hide steps");
-        });
-    hide
 }
 
 /// A tinted icon. Ply multiplies the texture by the element's background
@@ -556,9 +527,23 @@ pub fn slider(
     max: i64,
     step: i64,
 ) -> Option<i64> {
+    slider_enabled(ui, pal, id, value, min..=max, step, true)
+}
+
+pub fn slider_enabled(
+    ui: &mut Ui2,
+    pal: &Palette,
+    id: &'static str,
+    value: i64,
+    range: std::ops::RangeInclusive<i64>,
+    step: i64,
+    enabled: bool,
+) -> Option<i64> {
+    let (min, max) = range.into_inner();
+    let ink = if enabled { pal.accent } else { pal.faint };
     let mut out = None;
     let frac = ((value - min) as f32 / (max - min).max(1) as f32).clamp(0.0, 1.0);
-    let active = ui.is_pressed(id);
+    let active = enabled && ui.is_pressed(id);
 
     // Pointer x within the track, resolved from last frame's geometry.
     if active {
@@ -594,7 +579,7 @@ pub fn slider(
                         .width(Sizing::Percent(frac.max(0.001)))
                         .height(fixed!(4.0))
                         .corner_radius(2.0)
-                        .background_color(pal.accent)
+                        .background_color(ink)
                         .layout(|l| l.direction(LeftToRight).align(Right, CenterY))
                         .children(|ui| {
                             // Knob rides the end of the fill.
@@ -602,7 +587,7 @@ pub fn slider(
                                 .width(fixed!(14.0))
                                 .height(fixed!(14.0))
                                 .corner_radius(99.0)
-                                .background_color(pal.accent)
+                                .background_color(ink)
                                 .empty();
                         });
                 });
