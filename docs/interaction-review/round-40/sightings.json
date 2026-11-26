@@ -1,0 +1,218 @@
+{
+  "sol": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "The open menu places a check beside Default and lists Preview app beneath it. The status card shows MX Master 2S connected at 50%."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "On MX Master 4, Haptic Sense Panel is marker 6. Button 0x01FF sits under Outside the diagram and can be renamed Spare button. The factory variant displays Mute."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "The compact list shows a Win and Tab keycap pair for Task View and a labeled Edit button on each row. With No device, the list replaces number badges with control icons."
+    },
+    {
+      "id": 4,
+      "label": "Save action",
+      "detail": "In the Preview app editor, Copy appears with a Draft tag and enables Save action. The saved screen updates Back button to Copy and confirms it at bottom right."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "Copy returns a single Edit result with Ctrl and C keycaps. The empty state offers Clear search and Record a keyboard shortcut."
+    },
+    {
+      "id": 6,
+      "label": "Switch between two pointer speeds",
+      "detail": "The editor shows 800 and 1600 DPI, a supported range of 200 to 4000 DPI, and Current 1000 DPI with Next press 800 DPI."
+    },
+    {
+      "id": 7,
+      "label": "Save shortcut",
+      "detail": "The M draft survives a switch to Actions and a resize. Cancel returns to the prior mapping. Saving K updates the list, and reopening shows K as assigned. The native restart frame still shows K under Assigned now and carries a green Saved label."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "The active view shows SmartShift at Level 10 of 50 and a 50% notch threshold. The limited view keeps those values and explains which controls enable editing. The compact limited view keeps all three wheel-mode choices and both disabled values visible."
+    },
+    {
+      "id": 9,
+      "label": "Saved swipe distance",
+      "detail": "With gestures off, the direction icons lose their accent, the mappings stay editable, and the saved 60 counts show as about 1.5 mm at 1000 DPI. The compact view fits the five assignments and the distance slider in one frame."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "The countdown replaces Pick a window with a 6s indicator, Add 6 seconds and Cancel. Profile order is numbered and Default carries All other apps. The completed capture adds a python.exe chip to Preview app and names both in the confirmation. In compact mode, Photo editing and color correction wraps without covering the reorder controls."
+    },
+    {
+      "id": 11,
+      "label": "Edit button mappings",
+      "detail": "Disconnected and No device both offer offline mapping edits. The standard USB mouse view explains the capability limit and shows only Device and Profiles in navigation."
+    },
+    {
+      "id": 12,
+      "label": "Copy unnamed IDs",
+      "detail": "HID++ features lists 29 reported IDs. Named features pair plain names with hex IDs, and a separate section shows 18 unnamed features."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused",
+      "detail": "A title-bar indicator persists after dismissing the bottom Logi Options+ warning. The compact shortcut editor says Applies after resume, and failed saves preserve the Copy draft. Retrying resume from Profiles returns to that page, and retrying from Buttons likewise restores Buttons with Remapping resumed."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "The Windows tray menu swaps Pause remapping for Resume remapping in the same slot. Start with Windows stays checked and separators set apart settings and Quit Mushak."
+    }
+  ],
+  "terra": [
+    {
+      "id": 1,
+      "label": "Buttons",
+      "detail": "The Edit profile menu marks Default and offers Preview app."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "An unidentified Button 0x01FF can be named Spare button; hovering marker 2 highlights Back button."
+    },
+    {
+      "id": 3,
+      "label": "Buttons",
+      "detail": "The compact list shows Ctrl W for Close tab and explicit Edit buttons."
+    },
+    {
+      "id": 4,
+      "label": "Back button",
+      "detail": "The picker pairs a thumb-button crop with categories and an Unsaved: Copy state."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "A search for Copy shows its shortcut; an empty search offers Clear search and Record a keyboard shortcut."
+    },
+    {
+      "id": 6,
+      "label": "Wheel mode button",
+      "detail": "The pointer speed editor shows 800 and 1600 DPI and the next press value."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut",
+      "detail": "Recording shows Press a key, then an M draft; switching tabs retains the draft and warns that saving an action replaces it."
+    },
+    {
+      "id": 8,
+      "label": "Scroll",
+      "detail": "SmartShift shows Level 10 of 50 and a 50% accidental-nudge threshold."
+    },
+    {
+      "id": 9,
+      "label": "Gestures",
+      "detail": "Tap maps to Task View and directional rows show their assignments; the threshold reports 60 counts."
+    },
+    {
+      "id": 10,
+      "label": "Profiles",
+      "detail": "Preview app has preview.exe and a six-second window capture countdown with an extension button."
+    },
+    {
+      "id": 11,
+      "label": "Device",
+      "detail": "A connected MX Master 2S shows Bluetooth, firmware, 50% battery and a DPI slider."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "The diagnostic page lists 29 feature IDs, including 18 unnamed features, with copy actions."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused",
+      "detail": "The conflict banner offers Quit Logi Options+ and a failed quit offers Retry quit; the save error preserves the unsaved Copy draft."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "The native tray menu changes Pause remapping to Resume remapping and shows Start with Windows checked."
+    }
+  ],
+  "astra": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "The Default dropdown opens directly above the assignment cards, with a checkmark beside Default and Preview app beneath. The sidebar keeps the connected MX Master 2S and 50% battery visible."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "Numbered markers match the assignment cards across MX Master 2S, 3S and 4 artwork. Hovering Back button turns marker 2 orange and outlines its card. An extra control can be renamed Spare button."
+    },
+    {
+      "id": 3,
+      "label": "Configure gestures",
+      "detail": "The compact Buttons layout replaces the mouse artwork with five clean rows. Ctrl and W keycaps sit beside Close tab, and each row has a labeled Edit button."
+    },
+    {
+      "id": 4,
+      "label": "Select an action",
+      "detail": "The Back button editor pairs a cropped Thumb buttons illustration with a category column. Selecting Copy changes the header to Unsaved: Copy, adds Draft to the row and enables Save action."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "Searching Copy returns a single result under Edit with Ctrl and C keycaps. The empty state offers Clear search and Record a keyboard shortcut as direct recovery actions."
+    },
+    {
+      "id": 6,
+      "label": "Switch between two pointer speeds",
+      "detail": "The DPI editor shows Speed 1 at 800 and Speed 2 at 1600, the supported 200 to 4000 DPI range, Current: 1000 DPI and Next press: 800 DPI."
+    },
+    {
+      "id": 7,
+      "label": "Recorded key",
+      "detail": "The sequence shows an M draft surviving an Actions-tab visit and resize, cancellation restoring the prior assignment, then K saved and shown as Assigned now on reopen and the native restart image."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "SmartShift has an orange selected radio card. The flick sensitivity is Level 10 of 50 and the nudge threshold is 50% of a notch. Disabled states explicitly explain which option enables each slider."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "Five gesture rows pair tap and directional icons with their assignments. The 60 counts threshold is explained as about 1.5 mm at 1000 DPI, and the off state keeps saved actions editable."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "The capture state shows a 6s badge with Add 6 seconds and Cancel. A later native state shows python.exe added to Preview app with a success toast. Long profile names wrap without covering Up, Down or Delete."
+    },
+    {
+      "id": 11,
+      "label": "Reported mouse features",
+      "detail": "The connected device page separates Bluetooth, firmware MPM 12.01.B0006, a 50% battery bar and a 1000 DPI slider. Disconnected and No device states offer Edit button mappings."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "The diagnostics page lists named features in two columns with hexadecimal IDs beneath. It separates 18 unnamed features and provides Copy device report and Copy unnamed IDs."
+    },
+    {
+      "id": 13,
+      "label": "Couldn't save assignment",
+      "detail": "The save-error panel states that Copy is still unsaved and the previous assignment remains active. It offers Try again and Back to editing. Native resume failure opens tray instructions, and retry returns to the previous page with Remapping resumed."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "The Windows menu changes Pause remapping to Resume remapping while retaining Open mouse settings, a checked Start with Windows item and Quit Mushak. Separators isolate settings and quitting from the two state controls."
+    }
+  ]
+}
