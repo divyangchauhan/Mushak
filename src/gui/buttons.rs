@@ -182,36 +182,69 @@ pub(super) fn profile_heading(ui: &mut Ui2, app: &mut App, title: &str, subtitle
                 "Mapping saved"
             }
         });
+    let offer_diagram = app.section == super::Section::Buttons
+        && screen_width() < 840.0
+        && super::mouse_view::matches_device(&app.device_view.device);
     ui.element()
-        .id("profile_caption")
-        .width(fit!())
+        .width(grow!())
         .height(fit!())
+        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(8))
         .children(|ui| {
-            // The caption sets the row height even when an offline hint wraps.
-            ui.text(subtitle, |t| {
-                t.font(&fonts::SANS)
-                    .font_size(14)
-                    .color(if notice.is_some() {
-                        super::theme::TRANSPARENT
-                    } else {
-                        pal.muted
-                    })
-            });
-            if let Some(message) = notice {
+            ui.element()
+                .id("profile_caption")
+                .width(if offer_diagram { grow!(0.0) } else { fit!() })
+                .height(fit!())
+                .children(|ui| {
+                    // The caption sets the row height even when an offline hint wraps.
+                    ui.text(subtitle, |t| {
+                        t.font(&fonts::SANS)
+                            .font_size(14)
+                            .color(if notice.is_some() {
+                                super::theme::TRANSPARENT
+                            } else {
+                                pal.muted
+                            })
+                    });
+                    if let Some(message) = notice {
+                        ui.element()
+                            .width(fit!())
+                            .height(fit!())
+                            .floating(|f| {
+                                f.attach_id("profile_caption")
+                                    .anchor((Left, CenterY), (Left, CenterY))
+                                    .passthrough()
+                            })
+                            .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(6))
+                            .children(|ui| {
+                                widgets::icon(ui, &icons::CHECK, 14.0, pal.good);
+                                ui.text(message, |t| {
+                                    t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                                });
+                            });
+                    }
+                });
+            if offer_diagram {
+                let label = if app.compact_diagram {
+                    "Button list"
+                } else {
+                    "Show diagram"
+                };
                 ui.element()
-                    .width(fit!())
-                    .height(fit!())
-                    .floating(|f| {
-                        f.attach_id("profile_caption")
-                            .anchor((Left, CenterY), (Left, CenterY))
-                            .passthrough()
-                    })
-                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(6))
+                    .id("compact_diagram_toggle")
+                    .height(fixed!(26.0))
+                    .width(fixed!(112.0))
+                    .corner_radius(6.0)
+                    .background_color(pal.surface)
+                    .border(|b| b.all(1).color(pal.line_strong))
+                    .accessibility(|a| a.button(label))
+                    .layout(|l| l.align(CenterX, CenterY))
                     .children(|ui| {
-                        widgets::icon(ui, &icons::CHECK, 14.0, pal.good);
-                        ui.text(message, |t| {
-                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                        ui.text(label, |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
                         });
+                        if ui.just_pressed() {
+                            app.compact_diagram = !app.compact_diagram;
+                        }
                     });
             }
         });
@@ -234,9 +267,14 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         "Choose an assignment to edit. Offline changes apply when your mouse connects."
     };
     profile_heading(ui, app, "Buttons", subtitle);
-    ui.element().width(grow!()).height(fixed!(22.0)).empty();
+    ui.element()
+        .width(grow!())
+        .height(fixed!(if screen_width() < 840.0 { 12.0 } else { 22.0 }))
+        .empty();
 
-    if super::mouse_view::matches_device(&app.device_view.device) && screen_width() >= 840.0 {
+    if super::mouse_view::matches_device(&app.device_view.device)
+        && (screen_width() >= 840.0 || app.compact_diagram)
+    {
         super::mouse_view::section(ui, app);
         return;
     }

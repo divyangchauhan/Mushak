@@ -747,9 +747,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                 } else {
                                     &action_label
                                 };
-                                ui.text(label, |t| {
-                                    t.font(&fonts::SANS_MEDIUM).font_size(14).color(pal.accent)
-                                });
+                                if screen_width() >= 840.0 {
+                                    ui.text(label, |t| {
+                                        t.font(&fonts::SANS_MEDIUM).font_size(14).color(pal.accent)
+                                    });
+                                }
                             });
                         widgets::icon(
                             ui,

@@ -943,6 +943,18 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         chrome::make_frameless(720.0, 360.0);
         settle(ply, app).await;
         assert_panel_fits(ply, app);
+        let footer = ply.bounding_box("save_action").unwrap();
+        for id in [
+            Id::from(("dpi_value", 0)),
+            Id::from(("dpi_value", 1)),
+            Id::from("dpi_outlook"),
+        ] {
+            let rect = ply.bounding_box(id).unwrap();
+            assert!(
+                rect.y + rect.height <= footer.y - 4.0,
+                "Speed editor clipped above Save: {rect:?}, {footer:?}"
+            );
+        }
         snapshot(&dir, "dpi-compact");
         chrome::make_frameless(DESIGN_W, DESIGN_H);
         settle(ply, app).await;
@@ -1694,6 +1706,17 @@ async fn extra_states(
     chrome::make_frameless(720.0, 540.0);
     settle(ply, app).await;
     snapshot(dir, "compact");
+    let first_row = ply.bounding_box(("btn_chip", 0)).unwrap();
+    click(ply, app, "compact_diagram_toggle").await;
+    assert!(app.compact_diagram);
+    snapshot(dir, "compact-diagram");
+    click(ply, app, "mouse_back").await;
+    assert!(app.picker == Some(PickerTarget::Button("back".into())));
+    assert_panel_fits(ply, app);
+    click(ply, app, "picker_close").await;
+    click(ply, app, "compact_diagram_toggle").await;
+    let returned = ply.bounding_box(("btn_chip", 0)).unwrap();
+    assert_eq!((first_row.x, first_row.y), (returned.x, returned.y));
     click(ply, app, "mouse_gestures").await;
     assert_eq!(app.section, Section::Gestures);
     for slot in 0..5 {

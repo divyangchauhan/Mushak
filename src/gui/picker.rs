@@ -854,6 +854,7 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
     let wheel_selected =
         app.pending_action.as_ref().or(assigned.as_ref()) == Some(&Action::ShiftWheelMode);
     let editing = app.picker_speed_editor;
+    let side_by_side = screen_height() < 430.0 && screen_width() >= 640.0;
     let wheel = !editing
         && d.capabilities.smartshift
         && (query.is_empty() || "shift wheel mode ratchet free spin".contains(query));
@@ -872,17 +873,23 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
         .layout(|l| l.direction(TopToBottom).gap(6).padding((8, 16, 8, 16)))
         .children(|ui| {
             if editing {
-                ui.text("Switch between two pointer speeds", |t| {
-                    t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
-                });
                 let range = format!(
                     "{} to {} DPI",
                     choices.iter().min().unwrap(),
                     choices.iter().max().unwrap()
                 );
-                ui.text(&format!("Supported range: {range}"), |t| {
-                    t.font(&fonts::SANS).font_size(14).color(pal.muted)
-                });
+                if side_by_side {
+                    ui.text(&format!("Two pointer speeds · {range}"), |t| {
+                        t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                    });
+                } else {
+                    ui.text("Switch between two pointer speeds", |t| {
+                        t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
+                    });
+                    ui.text(&format!("Supported range: {range}"), |t| {
+                        t.font(&fonts::SANS).font_size(14).color(pal.muted)
+                    });
+                }
             }
             ui.element()
                 .width(grow!())
@@ -932,76 +939,95 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                 });
             if dpi && editing {
                 let mut valid = true;
-                for (i, slider_id) in ["picker_dpi_first", "picker_dpi_second"].iter().enumerate() {
-                    let field: Id = ("dpi_value", i as u32).into();
-                    let selected = choices
-                        .iter()
-                        .position(|v| *v == app.picker_dpi[i])
-                        .unwrap_or(0);
-                    ui.element()
-                        .width(grow!())
-                        .height(fixed!(32.0))
-                        .layout(|l| l.direction(LeftToRight).gap(8).align(Left, CenterY))
-                        .children(|ui| {
-                            ui.text(&format!("Speed {}", i + 1), |t| {
-                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                            });
-                            let focused = ui.focused_element() == Some(field.clone());
+                ui.element()
+                    .width(grow!())
+                    .height(fit!())
+                    .layout(|l| {
+                        l.direction(if side_by_side {
+                            LeftToRight
+                        } else {
+                            TopToBottom
+                        })
+                        .gap(if side_by_side { 18 } else { 6 })
+                    })
+                    .children(|ui| {
+                        for (i, slider_id) in
+                            ["picker_dpi_first", "picker_dpi_second"].iter().enumerate()
+                        {
+                            let field: Id = ("dpi_value", i as u32).into();
+                            let selected = choices
+                                .iter()
+                                .position(|v| *v == app.picker_dpi[i])
+                                .unwrap_or(0);
                             ui.element()
-                                .width(fixed!(64.0))
-                                .height(fixed!(30.0))
-                                .corner_radius(5.0)
-                                .background_color(pal.win)
-                                .border(|b| {
-                                    b.all(1).color(if focused {
-                                        pal.accent
-                                    } else {
-                                        pal.line_strong
-                                    })
-                                })
-                                .layout(|l| l.align(Left, CenterY).padding((0, 6, 0, 6)))
+                                .width(grow!())
+                                .height(fixed!(32.0))
+                                .layout(|l| l.direction(LeftToRight).gap(8).align(Left, CenterY))
                                 .children(|ui| {
+                                    ui.text(&format!("Speed {}", i + 1), |t| {
+                                        t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                                    });
+                                    let focused = ui.focused_element() == Some(field.clone());
                                     ui.element()
-                                        .id(field.clone())
-                                        .width(grow!())
-                                        .height(fixed!(24.0))
-                                        .text_input(|t| {
-                                            t.font(&fonts::MONO_MEDIUM)
-                                                .font_size(14)
-                                                .text_color(pal.text)
-                                                .cursor_color(pal.accent)
+                                        .width(fixed!(64.0))
+                                        .height(fixed!(30.0))
+                                        .corner_radius(5.0)
+                                        .background_color(pal.win)
+                                        .border(|b| {
+                                            b.all(1).color(if focused {
+                                                pal.accent
+                                            } else {
+                                                pal.line_strong
+                                            })
                                         })
-                                        .empty();
+                                        .layout(|l| l.align(Left, CenterY).padding((0, 6, 0, 6)))
+                                        .children(|ui| {
+                                            ui.element()
+                                                .id(field.clone())
+                                                .width(grow!())
+                                                .height(fixed!(24.0))
+                                                .text_input(|t| {
+                                                    t.font(&fonts::MONO_MEDIUM)
+                                                        .font_size(14)
+                                                        .text_color(pal.text)
+                                                        .cursor_color(pal.accent)
+                                                })
+                                                .empty();
+                                        });
+                                    ui.text("DPI", |t| {
+                                        t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                                    });
+                                    if let Some(v) = widgets::slider(
+                                        ui,
+                                        &pal,
+                                        *slider_id,
+                                        selected as i64,
+                                        0,
+                                        (choices.len() - 1) as i64,
+                                        1,
+                                    ) {
+                                        ui.set_text_value(
+                                            field.clone(),
+                                            &choices[v as usize].to_string(),
+                                        );
+                                    }
+                                    let value = ui
+                                        .get_text_value(field)
+                                        .trim()
+                                        .parse::<u16>()
+                                        .ok()
+                                        .filter(|v| choices.contains(v));
+                                    if let Some(v) = value {
+                                        app.picker_dpi[i] = v;
+                                    } else {
+                                        valid = false;
+                                    }
                                 });
-                            ui.text("DPI", |t| {
-                                t.font(&fonts::SANS).font_size(13).color(pal.muted)
-                            });
-                            if let Some(v) = widgets::slider(
-                                ui,
-                                &pal,
-                                *slider_id,
-                                selected as i64,
-                                0,
-                                (choices.len() - 1) as i64,
-                                1,
-                            ) {
-                                ui.set_text_value(field.clone(), &choices[v as usize].to_string());
-                            }
-                            let value = ui
-                                .get_text_value(field)
-                                .trim()
-                                .parse::<u16>()
-                                .ok()
-                                .filter(|v| choices.contains(v));
-                            if let Some(v) = value {
-                                app.picker_dpi[i] = v;
-                            } else {
-                                valid = false;
-                            }
-                        });
-                }
+                        }
+                    });
                 let distinct = valid && app.picker_dpi[0] != app.picker_dpi[1];
                 ui.element()
+                    .id("dpi_outlook")
                     .width(grow!())
                     .height(fixed!(24.0))
                     .layout(|l| l.align(Left, CenterY))

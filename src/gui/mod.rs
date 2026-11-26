@@ -126,6 +126,7 @@ pub struct App {
     status_next_check: Instant,
     resume: ResumeState,
     show_resume_steps: Option<bool>,
+    compact_diagram: bool,
     /// The OS title bar is stripped after the first frame, once the window exists.
     framed: bool,
     /// Buttons section: is the profile dropdown open?
@@ -209,6 +210,7 @@ impl App {
             device_view: statusfile::read(),
             resume: ResumeState::Idle,
             show_resume_steps: None,
+            compact_diagram: false,
             status_next_check: Instant::now() + Duration::from_millis(500),
             framed: false,
             profile_menu_open: false,
