@@ -465,7 +465,9 @@ def check_resume_command():
                 box = next(csv.DictReader(stream))
             x, y = round(float(box["x"])), round(float(box["y"]))
             width, height = round(float(box["w"])), round(float(box["h"]))
-            help_region = (x + 4, y + 2, x + min(width - 4, 220), y + min(height - 2, 38))
+            # The help page begins with a section-specific Back button. Compare its heading.
+            offset = 40 if args.bounds.with_name("tray-help-button.csv").is_file() else 0
+            help_region = (x + 4, y + offset + 2, x + min(width - 4, 220), y + min(height - 2, offset + 38))
 
         def wait_for_help(reference):
             deadline = time.monotonic() + 4
@@ -491,6 +493,12 @@ def check_resume_command():
             wait_for_header("resumed")
             shot("08b-retry-confirmed")
         publish(dict(original, paused=True))
+        tray_help = args.bounds.with_name("tray-help-button.csv")
+        if tray_help.is_file():
+            with tray_help.open() as stream:
+                help_button = next(csv.DictReader(stream))
+            wait_for_header("resume-legacy")
+            click(float(help_button["x"]), float(help_button["y"]))
         if has_recovery_help:
             wait_for_help("resume-legacy")
         else:

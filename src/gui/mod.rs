@@ -470,7 +470,7 @@ impl App {
     fn resume_steps_visible(&self) -> bool {
         self.device_view.paused
             && (matches!(self.resume, ResumeState::Failed) || self.device_view.resume_pid.is_none())
-            && self.show_resume_steps.unwrap_or(screen_height() >= 430.0)
+            && self.show_resume_steps.unwrap_or(false)
     }
 
     fn accept_status(&mut self, update: SharedStatus) {
@@ -866,9 +866,6 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
                         });
                     });
             }
-            if app.resume_steps_visible() {
-                widgets::resume_help(ui, app);
-            }
             ui.element().width(grow!()).height(fixed!(1.0)).empty();
             widgets::titlebar_buttons(ui, app);
         });
@@ -922,6 +919,7 @@ fn rail(ui: &mut Ui2, app: &mut App) {
     if let Some(s) = clicked {
         app.profile_menu_open = false;
         app.section = s;
+        app.show_resume_steps = Some(false);
     }
 }
 
@@ -934,8 +932,13 @@ fn content(ui: &mut Ui2, app: &mut App) {
         app.section = Section::Device;
     }
     let pal = app.pal;
+    let help = app.resume_steps_visible();
     ui.element()
-        .id("settings_content")
+        .id(if help {
+            "tray_help_content"
+        } else {
+            "settings_content"
+        })
         .width(grow!())
         .height(grow!())
         .overflow(|o| {
@@ -951,12 +954,18 @@ fn content(ui: &mut Ui2, app: &mut App) {
                 .width(grow!(0.0, 824.0))
                 .height(fit!())
                 .layout(|l| l.direction(TopToBottom).padding((24, 28, 24, 28)))
-                .children(|ui| match app.section {
-                    Section::Buttons => buttons::section(ui, app),
-                    Section::Scroll => scroll::section(ui, app),
-                    Section::Gestures => gestures_tab::section(ui, app),
-                    Section::Profiles => profiles_tab::section(ui, app),
-                    Section::Device => device_tab::section(ui, app),
+                .children(|ui| {
+                    if help {
+                        widgets::resume_help(ui, app);
+                    } else {
+                        match app.section {
+                            Section::Buttons => buttons::section(ui, app),
+                            Section::Scroll => scroll::section(ui, app),
+                            Section::Gestures => gestures_tab::section(ui, app),
+                            Section::Profiles => profiles_tab::section(ui, app),
+                            Section::Device => device_tab::section(ui, app),
+                        }
+                    }
                 });
         });
 }

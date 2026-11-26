@@ -49,9 +49,9 @@ pub fn paused_status(ui: &mut Ui2, app: &mut App) {
             resume_button(ui, app);
             if has_steps {
                 let (id, label) = if expanded {
-                    ("hide_resume_steps", "Hide steps")
+                    ("hide_resume_steps", "Close help")
                 } else {
-                    ("show_resume_steps", "Tray steps")
+                    ("show_resume_steps", "Tray help")
                 };
                 if pause_command(ui, &pal, id, label) {
                     app.show_resume_steps = Some(!expanded);
@@ -81,39 +81,43 @@ fn resume_button(ui: &mut Ui2, app: &mut App) {
     }
 }
 
-pub(super) fn resume_help(ui: &mut Ui2, app: &App) {
+pub(super) fn resume_help(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
     let failed = matches!(app.resume, super::ResumeState::Failed);
     ui.element()
         .id("resume_help")
-        .width(fixed!(334.0))
+        .width(grow!())
         .height(fit!())
-        .floating(|f| {
-            f.attach_id("pause_state")
-                .anchor((Left, Top), (Left, Top))
-                .offset((0.0, 39.0))
-                .z_index(55)
-        })
-        .corner_radius(9.0)
-        .background_color(pal.pop)
-        .border(|b| b.all(1).color(pal.line_strong))
-        .layout(|l| l.direction(TopToBottom).gap(5).padding((10, 12, 10, 12)))
+        .layout(|l| l.direction(TopToBottom).gap(14))
         .children(|ui| {
-            ui.text(
-                if failed {
-                    "Resume failed"
-                } else {
-                    "Resume from the tray"
-                },
-                |t| t.font(&fonts::SANS_BOLD).font_size(15).color(pal.text),
-            );
-            ui.text(
-                "Right-click Mushak by the Windows clock or in hidden icons.",
-                |t| t.font(&fonts::SANS).font_size(14).color(pal.text),
-            );
-            ui.text("Choose Resume remapping.", |t| {
-                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-            });
+            let back = format!("Back to {}", app.section.label());
+            if pause_command(ui, &pal, "return_from_tray_help", &back) {
+                app.show_resume_steps = Some(false);
+            }
+            heading(ui, &pal,
+                if failed { "Resume failed" } else { "Resume from the tray" },
+                if failed { "Mushak is still paused. Use Retry or resume remapping from the tray." }
+                else { "Your saved button assignments will apply when remapping resumes." });
+            card(ui, &pal)
+                .layout(|l| l.direction(TopToBottom).gap(12).padding((16,18,16,18)))
+                .children(|ui| {
+                    for (step, instruction) in [
+                        ("1", "Right-click Mushak by the Windows clock. Check hidden icons if needed."),
+                        ("2", "Choose Resume remapping."),
+                    ] {
+                        ui.element().width(grow!()).height(fit!())
+                            .layout(|l| l.direction(LeftToRight).gap(12).align(Left,CenterY))
+                            .children(|ui| {
+                                ui.element().width(fixed!(26.0)).height(fixed!(26.0)).corner_radius(13.0)
+                                    .background_color(pal.s2)
+                                    .layout(|l| l.align(CenterX, CenterY))
+                                    .children(|ui| { ui.text(step, |t| t.font(&fonts::SANS_BOLD).font_size(14).color(pal.accent)); });
+                                ui.element().width(grow!(0.0)).height(fit!()).children(|ui| {
+                                    ui.text(instruction, |t| t.font(&fonts::SANS_MEDIUM).font_size(15).color(pal.text));
+                                });
+                            });
+                    }
+                });
         });
 }
 

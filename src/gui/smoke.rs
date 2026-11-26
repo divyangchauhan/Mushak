@@ -1062,8 +1062,16 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         chrome::make_frameless(720.0, 540.0);
         ply.set_scroll_position("settings_content", (0.0, 0.0));
         settle(ply, app).await;
-        let report_button = ply.bounding_box("copy_device_report").unwrap();
-        assert!(report_button.x + report_button.width <= screen_width() + 0.25);
+        for id in ["copy_device_report", "copy_feature_ids"] {
+            let rect = ply.bounding_box(id).unwrap();
+            assert!(
+                rect.x >= 0.0
+                    && rect.y >= 0.0
+                    && rect.x + rect.width <= screen_width() + 0.25
+                    && rect.y + rect.height <= screen_height(),
+                "Diagnostics copy action outside compact window"
+            );
+        }
         snapshot(&dir, "diagnostics-compact");
         chrome::make_frameless(DESIGN_W, DESIGN_H);
         ply.set_scroll_position("settings_content", (0.0, 0.0));
@@ -1161,7 +1169,19 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
             ..app.device_view.clone()
         });
         settle(ply, app).await;
+        let show = ply.bounding_box("show_resume_steps").unwrap();
+        std::fs::write(
+            dir.join("tray-help-button.csv"),
+            format!(
+                "x,y\n{},{}\n",
+                show.x + show.width / 2.0,
+                show.y + show.height / 2.0
+            ),
+        )
+        .unwrap();
+        click(ply, app, "show_resume_steps").await;
         snapshot(&dir, "resume-legacy");
+        click(ply, app, "return_from_tray_help").await;
         chrome::make_frameless(720.0, 360.0);
         settle(ply, app).await;
         let card = ply.bounding_box("rail_device_status").unwrap();
@@ -1180,15 +1200,24 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
             (show.x, show.y, show.width, show.height),
             (hide.x, hide.y, hide.width, hide.height)
         );
-        let after = ply.bounding_box(mapping).unwrap();
-        assert_eq!(
-            (before.x, before.y, before.width, before.height),
-            (after.x, after.y, after.width, after.height),
-            "Tray steps moved the compact mapping"
+        let help = ply.bounding_box("resume_help").unwrap();
+        let title = ply.bounding_box("titlebar").unwrap();
+        assert!(
+            help.x >= super::rail_width()
+                && help.y >= title.y + title.height
+                && help.x + help.width <= screen_width() + 0.25
+                && help.y + help.height <= screen_height() + 0.25,
+            "Tray help must fit inside the compact content pane"
         );
         assert!(app.resume_steps_visible());
         snapshot(&dir, "resume-compact-steps");
         click(ply, app, "hide_resume_steps").await;
+        let after = ply.bounding_box(mapping).unwrap();
+        assert_eq!(
+            (before.x, before.y, before.width, before.height),
+            (after.x, after.y, after.width, after.height),
+            "Returning from tray help moved the compact mapping"
+        );
         assert!(!app.resume_steps_visible());
         let target = PickerTarget::Button("back".into());
         let original = app.action_for(&target);

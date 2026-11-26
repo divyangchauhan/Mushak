@@ -361,48 +361,6 @@ fn feature_details(ui: &mut Ui2, app: &mut App) {
                 t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
             });
         });
-    ui.element().height(fixed!(12.0)).empty();
-    ui.element()
-        .width(grow!())
-        .height(fit!())
-        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(14))
-        .children(|ui| {
-            ui.element().width(grow!()).height(fit!()).children(|ui| {
-                widgets::heading(
-                    ui,
-                    &pal,
-                    "HID++ features",
-                    &format!(
-                        "{} hardware feature IDs reported by {}.",
-                        d.features.len(),
-                        d.display_name()
-                    ),
-                );
-            });
-            ui.element()
-                .id("copy_device_report")
-                .height(fixed!(34.0))
-                .corner_radius(7.0)
-                .background_color(pal.surface)
-                .border(|b| b.all(1).color(pal.line_strong))
-                .accessibility(|a| a.button("Copy device report"))
-                .layout(|l| {
-                    l.direction(LeftToRight)
-                        .align(CenterX, CenterY)
-                        .gap(6)
-                        .padding((0, 12, 0, 12))
-                })
-                .children(|ui| {
-                    widgets::icon(ui, &icons::EDIT_COPY, 15.0, pal.muted);
-                    ui.text("Copy device report", |t| {
-                        t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
-                    });
-                    if ui.just_pressed() {
-                        miniquad::window::clipboard_set(&device_report(d));
-                    }
-                });
-        });
-    ui.element().height(fixed!(16.0)).empty();
     let mut named = Vec::new();
     let mut other = Vec::new();
     for (id, _) in &d.features {
@@ -413,35 +371,85 @@ fn feature_details(ui: &mut Ui2, app: &mut App) {
             named.push((*id, name));
         }
     }
+    ui.element().height(fixed!(12.0)).empty();
+    widgets::heading(
+        ui,
+        &pal,
+        "HID++ features",
+        &format!(
+            "{} hardware feature IDs reported by {}.",
+            d.features.len(),
+            d.display_name()
+        ),
+    );
+    ui.element()
+        .width(grow!())
+        .height(fit!())
+        .layout(|l| l.direction(LeftToRight).gap(8).padding((12, 0, 16, 0)))
+        .children(|ui| {
+            for (id, label) in [
+                ("copy_device_report", "Copy device report"),
+                ("copy_feature_ids", "Copy unnamed IDs"),
+            ] {
+                if id == "copy_feature_ids" && other.is_empty() {
+                    continue;
+                }
+                ui.element()
+                    .id(id)
+                    .height(fixed!(34.0))
+                    .corner_radius(7.0)
+                    .background_color(pal.surface)
+                    .border(|b| b.all(1).color(pal.line_strong))
+                    .accessibility(|a| a.button(label))
+                    .layout(|l| {
+                        l.direction(LeftToRight)
+                            .align(Left, CenterY)
+                            .gap(6)
+                            .padding((0, 12, 0, 12))
+                    })
+                    .children(|ui| {
+                        widgets::icon(ui, &icons::EDIT_COPY, 15.0, pal.muted);
+                        ui.text(label, |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
+                        });
+                        if ui.just_pressed() {
+                            let text = if id == "copy_device_report" {
+                                device_report(d)
+                            } else {
+                                other.join(", ")
+                            };
+                            miniquad::window::clipboard_set(&text);
+                        }
+                    });
+            }
+        });
     if !named.is_empty() {
-        let columns = if screen_width() >= 840.0 { 2 } else { 1 };
+        let available = screen_width() - super::rail_width() - 56.0;
+        let columns = if available >= 464.0 { 2 } else { 1 };
         widgets::card(ui, &pal)
-            .layout(|l| l.direction(TopToBottom).padding((10, 16, 10, 16)))
+            .layout(|l| l.direction(TopToBottom).padding((4, 14, 4, 14)))
             .children(|ui| {
-                for row in named.chunks(columns) {
+                for (index, row) in named.chunks(columns).enumerate() {
                     ui.element()
                         .width(grow!())
-                        .height(fixed!(32.0))
-                        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(16))
+                        .height(fit!())
+                        .border(|b| b.top(if index == 0 { 0 } else { 1 }).color(pal.line))
+                        .layout(|l| l.direction(LeftToRight).gap(18).padding((7, 0, 7, 0)))
                         .children(|ui| {
                             for (id, name) in row {
                                 ui.element()
                                     .width(grow!(0.0))
                                     .height(fit!())
-                                    .layout(|l| {
-                                        l.direction(LeftToRight).align(Left, CenterY).gap(10)
-                                    })
+                                    .layout(|l| l.direction(TopToBottom).gap(2))
                                     .children(|ui| {
-                                        ui.element().width(grow!()).height(fit!()).children(|ui| {
-                                            ui.text(name, |t| {
-                                                t.font(&fonts::SANS_MEDIUM)
-                                                    .font_size(15)
-                                                    .color(pal.text)
-                                            });
+                                        ui.text(name, |t| {
+                                            t.font(&fonts::SANS_MEDIUM)
+                                                .font_size(15)
+                                                .color(pal.text)
                                         });
                                         ui.text(&format!("{id:#06x}"), |t| {
                                             t.font(&fonts::MONO_MEDIUM)
-                                                .font_size(14)
+                                                .font_size(13)
                                                 .color(pal.muted)
                                         });
                                     });
@@ -455,33 +463,9 @@ fn feature_details(ui: &mut Ui2, app: &mut App) {
     }
     if !other.is_empty() {
         ui.element().height(fixed!(16.0)).empty();
-        ui.element()
-            .width(grow!())
-            .height(fit!())
-            .layout(|l| l.align(Left, CenterY).gap(12))
-            .children(|ui| {
-                ui.element().width(grow!()).height(fit!()).children(|ui| {
-                    ui.text(&format!("{} unnamed features", other.len()), |t| {
-                        t.font(&fonts::SANS_SEMIBOLD).font_size(16).color(pal.text)
-                    });
-                });
-                ui.element()
-                    .id("copy_feature_ids")
-                    .height(fixed!(32.0))
-                    .corner_radius(7.0)
-                    .background_color(pal.s2)
-                    .accessibility(|a| a.button("Copy unnamed IDs"))
-                    .layout(|l| l.align(CenterX, CenterY).gap(6).padding((0, 12, 0, 12)))
-                    .children(|ui| {
-                        widgets::icon(ui, &icons::EDIT_COPY, 15.0, pal.accent);
-                        ui.text("Copy unnamed IDs", |t| {
-                            t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
-                        });
-                        if ui.just_pressed() {
-                            miniquad::window::clipboard_set(&other.join(", "));
-                        }
-                    });
-            });
+        ui.text(&format!("{} unnamed features", other.len()), |t| {
+            t.font(&fonts::SANS_SEMIBOLD).font_size(16).color(pal.text)
+        });
         ui.element().height(fixed!(6.0)).empty();
         ui.text(
             "Use these IDs when reporting a device compatibility issue.",
