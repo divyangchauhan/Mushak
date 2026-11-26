@@ -1,0 +1,254 @@
+{
+  "Dark/compact.webp": {
+    "agreement": 0.999995,
+    "size": [
+      720,
+      540
+    ]
+  },
+  "Light/compact.webp": {
+    "agreement": 1.0,
+    "size": [
+      720,
+      540
+    ]
+  },
+  "Dark/button-list.webp": {
+    "agreement": 0.999988,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/button-list.webp": {
+    "agreement": 0.999995,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/scroll.webp": {
+    "agreement": 0.999946,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/scroll.webp": {
+    "agreement": 0.999972,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/scroll-lower.webp": {
+    "agreement": 0.999946,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/scroll-lower.webp": {
+    "agreement": 0.999972,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/scroll-limited.webp": {
+    "agreement": 0.99998,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/scroll-limited.webp": {
+    "agreement": 0.999994,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/gestures.webp": {
+    "agreement": 0.999978,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/gestures.webp": {
+    "agreement": 0.999991,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/gestures-lower.webp": {
+    "agreement": 0.999978,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/gestures-lower.webp": {
+    "agreement": 0.999991,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/gestures-off.webp": {
+    "agreement": 0.999994,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/gestures-off.webp": {
+    "agreement": 0.999997,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/profiles.webp": {
+    "agreement": 0.999997,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/profiles.webp": {
+    "agreement": 1.0,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/profile-order.webp": {
+    "agreement": 0.999997,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/profile-order.webp": {
+    "agreement": 1.0,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/default-only.webp": {
+    "agreement": 0.999997,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/default-only.webp": {
+    "agreement": 1.0,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/window-pick.webp": {
+    "agreement": 0.999997,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/window-pick.webp": {
+    "agreement": 1.0,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/device.webp": {
+    "agreement": 0.999997,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/device.webp": {
+    "agreement": 1.0,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/disconnected.webp": {
+    "agreement": 0.999997,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/disconnected.webp": {
+    "agreement": 1.0,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/empty.webp": {
+    "agreement": 0.999997,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/empty.webp": {
+    "agreement": 1.0,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/standard-mouse.webp": {
+    "agreement": 0.999997,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/standard-mouse.webp": {
+    "agreement": 1.0,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Dark/diagnostics.webp": {
+    "agreement": 0.999997,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Light/diagnostics.webp": {
+    "agreement": 1.0,
+    "size": [
+      968,
+      668
+    ]
+  },
+  "Windows/tray-active.webp": {
+    "agreement": 1.0,
+    "size": [
+      383,
+      198
+    ]
+  },
+  "Windows/tray-paused.webp": {
+    "agreement": 1.0,
+    "size": [
+      383,
+      198
+    ]
+  }
+}

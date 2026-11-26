@@ -1,0 +1,50 @@
+{
+  "sol": {
+    "10": "Pick a window. The capture banner shows 4s and Cancel. The reordered list has Preview app above Photo editor, with Default still below both.",
+    "11": "Current DPI. The connected MX Master 2S shows 1000 and 50% battery. Disconnected, No device, and standard USB mouse have distinct on-page states.",
+    "12": "HID++ features. The named list starts with 0x0000 Root. Unnamed features uses two rows of hexadecimal chips alongside Copy IDs.",
+    "13": "Couldn't save assignment. Copy is still unsaved, with Try again and Back to editing. The conflict warning has Remapping paused, while the quit failure says Access denied.",
+    "14": "Start with Windows. The checkmark persists across both native tray menus while Pause remapping changes to Resume remapping.",
+    "01": "Buttons. Default has the checkmark above Preview app, and the sidebar keeps Connected and 50% visible in both themes.",
+    "02": "Other reported buttons. MX Master 4 has a sixth numbered Haptic Sense Panel, and Additional button 1 gets a separate Edit action row. The disconnected 2S retains the numbered diagram.",
+    "03": "Gesture button tap. Compact layout shows Win and Tab keycaps, while the offline list displays No device and still exposes the saved gesture mapping.",
+    "04": "Back button. Common includes Native action and Disabled, Edit shows six shortcuts, and the compact Tabs & windows picker shows Close tab selected. The Haptic Sense Panel editor points to marker 6 below the thumb wheel.",
+    "05": "No matching actions. The empty state offers Record a keyboard shortcut. The Copy search result shows Ctrl and C keycaps with a separate Assign button.",
+    "06": "Wheel mode button. Switch wheel mode shows Assign, while Switch pointer speed opens sliders displaying 800 DPI and 1600 DPI.",
+    "07": "Keyboard shortcut. The ordered sequence shows Record key, Press a key, draft M, draft M after resize, Native action after Cancel, draft K, the Back button mapped to K after Save, and Saved shortcut K on reopen.",
+    "08": "Wheel mode. SmartShift shows Flick sensitivity at 10 and Ignore accidental nudges at 4. The limited Always ratchet state shows the mode choices and two off toggles.",
+    "09": "Tap vs. swipe threshold. The enabled slider shows 60 counts. With Button gestures off, Saved gesture actions still shows the five editable mappings."
+  },
+  "terra": {
+    "10": "Profiles: Preview app has preview.exe and Pick a window; window capture shows a 4s countdown.",
+    "11": "Device: Bluetooth, firmware, 50% battery, 1000 DPI and disconnected states appear.",
+    "12": "HID++ features: named feature IDs and unnamed feature chips with Copy IDs.",
+    "13": "Logi Options+ is running warning offers Quit Logi Options+; save error says Copy is still unsaved.",
+    "14": "Tray menu: Pause remapping changes to Resume remapping and Start with Windows is checked.",
+    "01": "Buttons: Profile menu shows Default checked and Preview app in both themes.",
+    "02": "Buttons: MX Master 4 has numbered Haptic Sense Panel and an Other reported buttons row.",
+    "03": "Buttons: compact mapping list shows Ctrl W Close tab and Ctrl T New tab.",
+    "04": "Back button: action editor shows category menu and six Edit actions.",
+    "05": "Back button: Copy search shows an Assign button; zzzz shows No matching actions.",
+    "06": "Wheel mode button: Switch pointer speed opens two DPI sliders and Save pointer speed action.",
+    "07": "Back button: shortcut sequence records M, cancels, saves K, and reopens with Saved shortcut K.",
+    "08": "Scroll: SmartShift selected with Flick sensitivity 10 and Ignore accidental nudges 4.",
+    "09": "Gestures: tap and four swipe rows show assignments; off state retains saved actions."
+  },
+  "astra": {
+    "10": "Switch to the window you want to add. Window capture shows a 4s countdown and Cancel; profile ordering shows Move down on Preview app and Move up on Photo editor.",
+    "11": "Current DPI. Connected device shows Bluetooth, firmware MPM 12.01.B0006, 50% battery and 1000 DPI. Separate panels show Disconnected, No device, and USB mouse.",
+    "12": "HID++ features. Named rows begin with 0x0000 Root and include 0x2201 Adjustable DPI; Unnamed features appear as ID chips beside Copy IDs.",
+    "13": "Couldn't save assignment. The editor explicitly says Copy is still unsaved and offers Try again and Back to editing. Conflict states show a Logi Options+ warning with Quit Logi Options+ and an access-denied error.",
+    "14": "Quit Mushak. Native tray menus show Pause remapping or Resume remapping and a check beside Start with Windows.",
+    "01": "Buttons. Dark and light shells show the Profile dropdown with Default checked and Preview app below; amber selection marks Buttons in the left navigation.",
+    "02": "Haptic Sense Panel. MX Master 4 artwork has six numbered markers; Additional button 1 appears separately with Control ID 0x01FF. MX Master 2S dark artwork has a conspicuous gray rectangular background. Offline screens say changes apply when a mouse connects.",
+    "03": "Gesture button tap. Compact rows pair Ctrl W with Close tab and Ctrl T with New tab; the offline Preview app list shows Native action for Back, Forward, and Middle click.",
+    "04": "Back button. The Common category separates Button behavior from Shortcuts, the category menu lists Edit and Tabs & windows, and the compact picker highlights Close tab. Haptic Sense Panel has a marked thumb-panel crop.",
+    "05": "No matching actions. Copy search returns one Edit result with Ctrl and C keycaps plus Assign; the empty search offers Record a keyboard shortcut.",
+    "06": "Switch between two pointer speeds. The wheel editor shows Speed 1: 800 DPI and Speed 2: 1600 DPI above Save pointer speed action. The preceding action list contains Switch wheel mode and Switch pointer speed.",
+    "07": "Saved shortcut. Ordered states show Actions, empty shortcut, Press a key, draft M, a compact resized draft M, Cancel returning to Native action, draft K, saved K on the button list, and reopened Saved shortcut K. Both themes show the same sequence.",
+    "08": "Flick sensitivity. SmartShift is selected with value 10, Ignore accidental nudges is 4, and High-resolution scrolling is enabled. The limited screen selects Always ratchet and omits both sliders.",
+    "09": "Gesture recognition is off. Enabled gestures show a 60 counts threshold and five mappings; disabled gestures retain editable Saved gesture actions while omitting the threshold."
+  }
+}

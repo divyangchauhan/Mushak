@@ -95,6 +95,14 @@ impl Section {
     }
 }
 
+#[derive(Clone, Copy)]
+enum ResumeState {
+    Idle,
+    Requested { pid: u32, at: Instant },
+    Failed,
+    Confirmed(Instant),
+}
+
 pub struct App {
     pub section: Section,
     /// Editable working copy, persisted to config.toml on change.
@@ -116,6 +124,8 @@ pub struct App {
     /// Live device status read from the resident process.
     pub device_view: SharedStatus,
     status_next_check: Instant,
+    resume: ResumeState,
+    show_resume_steps: Option<bool>,
     /// The OS title bar is stripped after the first frame, once the window exists.
     framed: bool,
     /// Buttons section: is the profile dropdown open?
@@ -126,14 +136,20 @@ pub struct App {
     pub picker: Option<PickerTarget>,
     /// A mouse marker to attach the action picker to. List pickers stay centered.
     pub picker_anchor: Option<&'static str>,
+    pub picker_row_label: Option<String>,
+    pub naming_button: bool,
+    renaming_profile: Option<usize>,
+    profile_name_error: Option<&'static str>,
+    pub name_save_failed: bool,
     shortcut_editor: bool,
     picker_fresh: bool,
     pub picker_query: String,
     picker_category: usize,
-    picker_categories_open: bool,
     picker_dpi: [u16; 2],
     picker_speed_editor: bool,
-    save_notice: Option<(String, Instant)>,
+    wheel_presets: bool,
+    saved_notice: Option<(String, Section, usize, Instant)>,
+    failed_assignment: Option<(crate::config::Action, &'static str)>,
     picker_feedback: Option<Instant>,
     pub custom_mods: Vec<Modifier>,
     pub custom_key: Option<u16>,
@@ -179,8 +195,8 @@ impl App {
         App {
             section: Section::Buttons,
             draft: (*state::config()).clone(),
-            prefs,
             pal: Palette::resolve(prefs.theme, prefs.accent),
+            prefs,
             selected_profile: 0,
             pick_deadline: None,
             pick_target: 0,
@@ -190,20 +206,28 @@ impl App {
             kill_outcome: None,
             conflict_next_check: Instant::now() + Duration::from_secs(3),
             device_view: statusfile::read(),
+            resume: ResumeState::Idle,
+            show_resume_steps: None,
             status_next_check: Instant::now() + Duration::from_millis(500),
             framed: false,
             profile_menu_open: false,
             hidpp_expanded: false,
             picker: None,
             picker_anchor: None,
+            picker_row_label: None,
+            naming_button: false,
+            renaming_profile: None,
+            profile_name_error: None,
+            name_save_failed: false,
             shortcut_editor: false,
             picker_fresh: false,
             picker_query: String::new(),
             picker_category: 0,
-            picker_categories_open: false,
             picker_dpi: [800, 1600],
             picker_speed_editor: false,
-            save_notice: None,
+            wheel_presets: false,
+            saved_notice: None,
+            failed_assignment: None,
             picker_feedback: None,
             custom_mods: Vec::new(),
             custom_key: None,
@@ -248,16 +272,21 @@ impl App {
         }
         self.shortcut_editor = self.custom_key.is_some();
         self.picker_feedback = None;
+        self.saved_notice = None;
+        self.wheel_presets = false;
         self.picker_speed_editor = false;
         self.picker_dpi = match current {
             Action::ChangePointerSpeed { first, second } => [first, second],
             _ => [800, 1600],
         };
+        self.failed_assignment = None;
         self.picker = Some(target);
         self.picker_anchor = None;
+        self.picker_row_label = None;
+        self.naming_button = false;
+        self.name_save_failed = false;
         self.picker_fresh = true;
         self.picker_query.clear();
-        self.picker_categories_open = false;
         self.picker_category = actions::presets()
             .iter()
             .find(|p| (p.action)() == current)
@@ -272,8 +301,12 @@ impl App {
     }
 
     pub fn close_picker(&mut self) {
+        self.failed_assignment = None;
         self.picker = None;
         self.picker_anchor = None;
+        self.picker_row_label = None;
+        self.naming_button = false;
+        self.name_save_failed = false;
         self.capturing_key = false;
     }
 
@@ -312,6 +345,8 @@ impl App {
     }
 
     pub fn assign_action(&mut self, target: &PickerTarget, action: crate::config::Action) {
+        let previous = self.draft.clone();
+        let pending = action.clone();
         match target {
             PickerTarget::Button(slot) => {
                 let idx = self.selected_profile;
@@ -344,20 +379,25 @@ impl App {
                 }
             }
         }
-        let message = match self.draft.save() {
+        self.failed_assignment = match self.draft.save() {
             Ok(()) => {
                 state::set_config(self.draft.clone());
-                String::new()
+                None
             }
-            Err(e) => {
-                tracing::error!("saving action failed: {e:#}");
-                "Could not save the action. Please try again.".to_string()
+            Err(error) => {
+                tracing::error!("saving action failed: {error:#}");
+                self.draft = previous;
+                let cause = error
+                    .downcast_ref::<std::io::Error>()
+                    .and_then(|e| e.raw_os_error());
+                let recovery = match cause {
+                    Some(32 | 33) => "Close any editor using the settings file, then try again. Your previous assignment is still active.",
+                    Some(5) => "Windows denied write access. Check the settings file permissions and try again.",
+                    Some(112) => "The drive is full. Free up space and try again.",
+                    _ => "Check that the settings folder is writable, then try again.",
+                };
+                Some((pending, recovery))
             }
-        };
-        self.save_notice = if message.is_empty() {
-            None
-        } else {
-            Some((message, Instant::now()))
         };
     }
 
@@ -398,11 +438,13 @@ impl App {
 
     /// Persist the draft. The resident process notices the file change and
     /// applies any device-affecting settings.
-    pub fn commit_config(&mut self) {
+    pub fn commit_config(&mut self) -> bool {
         if let Err(e) = self.draft.save() {
             tracing::error!("saving config failed: {e:#}");
+            return false;
         }
         state::set_config(self.draft.clone());
+        true
     }
 
     pub fn toggle_theme(&mut self) {
@@ -421,6 +463,42 @@ impl App {
         !self.conflict_names.is_empty() && !self.conflict_dismissed
     }
 
+    fn resume_steps_visible(&self) -> bool {
+        self.device_view.paused
+            && (matches!(self.resume, ResumeState::Failed) || self.device_view.resume_pid.is_none())
+            && self.show_resume_steps.unwrap_or(screen_height() >= 430.0)
+    }
+
+    fn accept_status(&mut self, update: SharedStatus) {
+        let changed = self.device_view.paused != update.paused
+            || self.device_view.resume_pid != update.resume_pid;
+        if changed {
+            self.show_resume_steps = None;
+            self.resume = match self.resume {
+                ResumeState::Requested { pid, .. }
+                    if !update.paused && update.resume_pid == Some(pid) =>
+                {
+                    ResumeState::Confirmed(Instant::now())
+                }
+                _ => ResumeState::Idle,
+            };
+        }
+        self.device_view = update;
+    }
+
+    fn expire_resume_feedback(&mut self) {
+        match self.resume {
+            ResumeState::Confirmed(at) if at.elapsed() >= Duration::from_secs(3) => {
+                self.resume = ResumeState::Idle
+            }
+            ResumeState::Requested { at, .. } if at.elapsed() >= Duration::from_secs(5) => {
+                self.resume = ResumeState::Failed;
+                self.show_resume_steps = Some(true);
+            }
+            _ => {}
+        }
+    }
+
     fn poll_timers(&mut self) {
         let now = Instant::now();
         if now >= self.conflict_next_check {
@@ -434,7 +512,10 @@ impl App {
             self.conflict_next_check = now + Duration::from_secs(3);
         }
         if now >= self.status_next_check {
-            self.device_view = statusfile::read();
+            if let Some(update) = statusfile::read_update() {
+                self.accept_status(update);
+            }
+            self.expire_resume_feedback();
             if self
                 .picker
                 .as_ref()
@@ -466,10 +547,24 @@ impl App {
                 .iter()
                 .any(|p| p.eq_ignore_ascii_case(&proc))
             {
+                let confirmation = format!("Added {proc} to {}", profile.name);
                 profile.match_processes.push(proc);
-                self.commit_config();
+                if self.commit_config() {
+                    self.saved_notice = Some((
+                        confirmation,
+                        Section::Profiles,
+                        self.selected_profile,
+                        Instant::now(),
+                    ));
+                } else if let Some(profile) = self.profile_at_mut(target) {
+                    profile.match_processes.pop();
+                }
             }
         }
+    }
+
+    fn inline_mapping_notice(&self) -> bool {
+        screen_width() < 840.0 && matches!(self.section, Section::Buttons | Section::Gestures)
     }
 
     pub fn profile_at_mut(&mut self, idx: usize) -> Option<&mut crate::config::Profile> {
@@ -613,12 +708,16 @@ async fn frame_loop() {
             // miniquad has created the window by the time the first frame is
             // presented, so the HWND is live now.
             chrome::make_frameless(DESIGN_W, DESIGN_H);
+            chrome::start_status_timer();
             app.framed = true;
         }
 
         // blocking_event_loop parks the loop until input arrives; anything
         // time-driven has to ask for its own frame.
-        if app.pick_deadline.is_some() || app.picker_feedback.is_some() || app.save_notice.is_some() {
+        if app.pick_deadline.is_some()
+            || app.picker_feedback.is_some()
+            || app.saved_notice.is_some()
+        {
             miniquad::window::schedule_update();
         }
 
@@ -629,6 +728,17 @@ async fn frame_loop() {
 /// The whole window: title bar, optional conflict banner, then rail + content.
 fn window(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
+    if app
+        .saved_notice
+        .as_ref()
+        .is_some_and(|(_, section, profile, when)| {
+            *section != app.section
+                || *profile != app.selected_profile
+                || when.elapsed() >= Duration::from_secs(2)
+        })
+    {
+        app.saved_notice = None;
+    }
     ui.element()
         .width(grow!())
         .height(grow!())
@@ -636,6 +746,11 @@ fn window(ui: &mut Ui2, app: &mut App) {
         .layout(|l| l.direction(TopToBottom))
         .children(|ui| {
             titlebar(ui, app);
+            if app.resume_steps_visible()
+                && widgets::resume_help(ui, &pal, matches!(app.resume, ResumeState::Failed))
+            {
+                app.show_resume_steps = Some(false);
+            }
             if app.show_conflict() {
                 widgets::conflict_banner(ui, app);
             }
@@ -649,7 +764,35 @@ fn window(ui: &mut Ui2, app: &mut App) {
                 });
             // Last, so it floats over everything.
             picker::overlay(ui, app);
-            picker::save_notice(ui, app);
+            if let Some((message, _, _, _)) = &app.saved_notice {
+                if app.picker.is_none() && !app.inline_mapping_notice() {
+                    ui.element()
+                        .height(fixed!(36.0))
+                        .width(fit!())
+                        .corner_radius(8.0)
+                        .floating(|f| {
+                            f.attach_root()
+                                .anchor((Right, Bottom), (Right, Bottom))
+                                .offset((-20.0, -16.0))
+                                .z_index(60)
+                                .passthrough()
+                        })
+                        .background_color(pal.pop)
+                        .border(|b| b.all(1).color(pal.line_strong))
+                        .layout(|l| {
+                            l.direction(LeftToRight)
+                                .gap(8)
+                                .align(CenterX, CenterY)
+                                .padding((0, 14, 0, 14))
+                        })
+                        .children(|ui| {
+                            widgets::icon(ui, &icons::CHECK, 16.0, pal.good);
+                            ui.text(message, |t| {
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                            });
+                        });
+                }
+            }
         });
 }
 
@@ -697,7 +840,24 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
                 t.font(&fonts::SANS).font_size(13).color(pal.muted)
             });
             if paused {
-                widgets::paused_pill(ui, &pal);
+                widgets::paused_status(ui, app);
+            } else if matches!(app.resume, ResumeState::Confirmed(_)) {
+                ui.element()
+                    .height(fixed!(28.0))
+                    .corner_radius(8.0)
+                    .background_color(Palette::mix(pal.good, 15.0, pal.win))
+                    .layout(|l| {
+                        l.direction(LeftToRight)
+                            .align(Left, CenterY)
+                            .gap(6)
+                            .padding((0, 9, 0, 9))
+                    })
+                    .children(|ui| {
+                        widgets::icon(ui, &icons::CHECK, 14.0, pal.good);
+                        ui.text("Remapping resumed", |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
+                        });
+                    });
             }
             // Push the window controls to the right.
             ui.element().width(grow!()).height(fixed!(1.0)).empty();
@@ -708,32 +868,50 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
 fn rail(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
     let current = app.section;
+    let short = screen_height() < 430.0;
     let mut clicked: Option<Section> = None;
     ui.element()
         .width(fixed!(if screen_width() < 840.0 { 158.0 } else { 204.0 }))
         .height(grow!())
         .background_color(pal.rail)
-        .layout(|l| l.direction(TopToBottom).gap(4).padding((20, 12, 12, 12)))
+        .overflow(|o| {
+            if short {
+                o.scroll_y();
+            }
+            o
+        })
+        .layout(|l| {
+            if short {
+                l.direction(TopToBottom).gap(2).padding((6, 10, 6, 10))
+            } else {
+                l.direction(TopToBottom).gap(4).padding((20, 12, 12, 12))
+            }
+        })
         .border(|b| b.right(1).color(pal.line))
         .children(|ui| {
             for s in Section::ALL {
                 if !s.available(&app.device_view.device) {
                     continue;
                 }
-                if widgets::nav_item(ui, &pal, s, s == current) {
+                if widgets::nav_item(ui, &pal, s, s == current, short) {
                     clicked = Some(s);
                 }
             }
             // Status card sits at the bottom of the rail.
             ui.element().width(grow!()).height(grow!()).empty();
-            widgets::status_card(ui, app);
+            widgets::status_card(ui, app, short);
         });
     if let Some(s) = clicked {
+        app.profile_menu_open = false;
         app.section = s;
     }
 }
 
 fn content(ui: &mut Ui2, app: &mut App) {
+    if app.section != Section::Profiles {
+        app.renaming_profile = None;
+        app.profile_name_error = None;
+    }
     if !app.section.available(&app.device_view.device) {
         app.section = Section::Device;
     }

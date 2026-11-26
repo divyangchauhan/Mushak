@@ -25,6 +25,7 @@ pub(super) fn editable_buttons(device: &DeviceStatus, saved: &Config) -> Vec<But
     let mut buttons: Vec<_> = ROWS
         .iter()
         .map(|(slot, name)| ButtonInfo {
+            default_task_id: None,
             cid: match *slot {
                 "middle" => 0x0052,
                 "back" => 0x0053,
@@ -52,6 +53,7 @@ pub(super) fn editable_buttons(device: &DeviceStatus, saved: &Config) -> Vec<But
         );
     }
     buttons.extend(controls.into_iter().map(|cid| ButtonInfo {
+        default_task_id: None,
         cid,
         slot: format!("control_{cid:04x}"),
         name: control_name(cid),
@@ -74,7 +76,7 @@ fn row_icon(slot: &str) -> &'static GraphicAsset {
         "back" => &icons::BTN_BACK,
         "forward" => &icons::BTN_FORWARD,
         "middle" => &icons::BTN_MIDDLE,
-        "control_00c4" => &icons::NAV_SCROLL,
+        "control_00c4" => &icons::WHEEL_MODE,
         _ => &icons::NAV_BUTTONS,
     }
 }
@@ -93,9 +95,8 @@ pub(super) fn slot_index(slot: &str) -> u32 {
     }
 }
 
-pub fn section(ui: &mut Ui2, app: &mut App) {
+pub(super) fn profile_heading(ui: &mut Ui2, app: &mut App, title: &str, subtitle: &str) {
     let pal = app.pal;
-    let mut open_picker: Option<PickerTarget> = None;
     let mut toggle_menu = false;
     let mut pick_profile: Option<usize> = None;
 
@@ -107,24 +108,17 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     {
         app.profile_menu_open = false;
     }
-    // Heading + profile dropdown.
     ui.element()
         .width(grow!())
         .height(fit!())
-        .layout(|l| l.direction(LeftToRight).align(Left, Top).gap(16))
+        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(16))
         .children(|ui| {
-            ui.element().width(grow!()).height(fit!()).children(|ui| {
-                widgets::heading(
-                    ui,
-                    &pal,
-                    "Buttons",
-                    if app.mouse_awake() {
-                        "Choose a button to edit its action for this profile."
-                    } else {
-                        "Edit saved mappings offline. Changes apply when a mouse connects."
-                    },
-                );
+            ui.text(title, |t| {
+                t.font(&fonts::DISPLAY_BOLD).font_size(30).color(pal.text)
             });
+            if screen_width() >= 840.0 {
+                ui.element().width(grow!()).height(fixed!(1.0)).empty();
+            }
             // Profile picker.
             let names = app.profile_names();
             let current = names
@@ -136,11 +130,10 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 .height(fit!())
                 .layout(|l| l.direction(TopToBottom).align(Right, Top).gap(5))
                 .children(|ui| {
-                    widgets::eyebrow(ui, &pal, "Profile");
                     let hovered = ui.pointer_over("profile_btn");
                     ui.element()
                         .id("profile_btn")
-                        .width(fit!(168.0))
+                        .width(fixed!(212.0))
                         .height(fixed!(38.0))
                         .corner_radius(10.0)
                         .background_color(pal.surface)
@@ -158,6 +151,9 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             if ui.just_pressed() {
                                 toggle_menu = true;
                             }
+                            ui.text("Edit profile", |t| {
+                                t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
+                            });
                             ui.element().width(grow!()).height(fit!()).children(|ui| {
                                 ui.text(&current, |t| {
                                     t.font(&fonts::SANS_SEMIBOLD)
@@ -174,148 +170,56 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 });
         });
 
-    ui.element().width(grow!()).height(fixed!(22.0)).empty();
-
-    if super::mouse_view::matches_device(&app.device_view.device) && screen_width() >= 840.0 {
-        if toggle_menu {
-            app.profile_menu_open = !app.profile_menu_open;
-        }
-        if let Some(i) = pick_profile {
-            app.selected_profile = i;
-            app.profile_menu_open = false;
-        }
-        super::mouse_view::section(ui, app);
-        return;
-    }
-
-    // Standard buttons and any extra controls reported by the mouse.
-    let idx = app.selected_profile;
-    let rows: Vec<(String, String, String)> = editable_buttons(&app.device_view.device, &app.draft)
-        .into_iter()
-        .map(|button| {
-            (
-                button.slot.clone(),
-                button.name.clone(),
-                if button.slot.starts_with("control_") {
-                    "Pass through keeps its normal action."
-                } else {
-                    "Choose an action for this button."
-                }
-                .to_owned(),
-            )
-        })
-        .collect();
-    let bindings: Vec<(String, String, String, actions::Display)> = rows
-        .iter()
-        .map(|(slot, name, desc)| {
-            let action = app
-                .profile_at(idx)
-                .map(|p| match slot.as_str() {
-                    "back" => p.buttons.back.clone(),
-                    "forward" => p.buttons.forward.clone(),
-                    "middle" => p.buttons.middle.clone(),
-                    _ => slot
-                        .strip_prefix("control_")
-                        .and_then(|key| p.buttons.controls.get(key))
-                        .cloned()
-                        .unwrap_or_default(),
-                })
-                .unwrap_or_default();
-            (
-                slot.to_string(),
-                name.to_string(),
-                desc.to_string(),
-                actions::display(&action),
-            )
-        })
-        .collect();
-
+    ui.element().height(fixed!(5.0)).empty();
+    let notice = app
+        .saved_notice
+        .as_ref()
+        .filter(|_| app.inline_mapping_notice() && app.picker.is_none() && !app.profile_menu_open)
+        .map(|(message, _, _, _)| {
+            if message.chars().count() <= 48 {
+                message.as_str()
+            } else {
+                "Mapping saved"
+            }
+        });
     ui.element()
+        .id("profile_caption")
         .width(grow!())
         .height(fit!())
-        .layout(|l| l.direction(TopToBottom).gap(10))
         .children(|ui| {
-            for (slot, name, desc, disp) in &bindings {
-                widgets::card(ui, &pal)
-                    .layout(|l| {
-                        l.direction(LeftToRight)
-                            .align(Left, CenterY)
-                            .gap(16)
-                            .padding((15, 17, 15, 17))
+            let caption = if app.profile_menu_open {
+                "The active app determines which profile runs."
+            } else {
+                subtitle
+            };
+            // The caption sets the row height even when an offline hint wraps.
+            ui.text(caption, |t| {
+                t.font(&fonts::SANS)
+                    .font_size(14)
+                    .color(if notice.is_some() {
+                        super::theme::TRANSPARENT
+                    } else {
+                        pal.muted
                     })
+            });
+            if let Some(message) = notice {
+                ui.element()
+                    .width(fit!())
+                    .height(fit!())
+                    .floating(|f| {
+                        f.attach_id("profile_caption")
+                            .anchor((Left, CenterY), (Left, CenterY))
+                            .passthrough()
+                    })
+                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(6))
                     .children(|ui| {
-                        widgets::icon(ui, row_icon(slot), 26.0, pal.muted);
-                        ui.element()
-                            .width(grow!())
-                            .height(fit!())
-                            .layout(|l| l.direction(TopToBottom).gap(1))
-                            .children(|ui| {
-                                ui.text(name, |t| {
-                                    t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                                });
-                                if !desc.is_empty() {
-                                    ui.text(desc, |t| {
-                                        t.font(&fonts::SANS)
-                                            .font_size(widgets::px(12.5))
-                                            .color(pal.muted)
-                                    });
-                                }
-                            });
-                        let id: Id = ("btn_chip", slot_index(slot)).into();
-                        if widgets::action_chip(ui, &pal, id, disp) {
-                            open_picker = Some(PickerTarget::Button(slot.clone()));
-                        }
+                        widgets::icon(ui, &icons::CHECK, 14.0, pal.good);
+                        ui.text(message, |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                        });
                     });
             }
         });
-
-    let gesture_target = PickerTarget::Gesture("tap".into());
-    if gesture_target.available(&app.device_view.device) {
-        ui.element().height(fixed!(10.0)).empty();
-        let display = actions::display(&app.action_for(&gesture_target));
-        widgets::card(ui, &pal)
-            .layout(|l| {
-                l.direction(LeftToRight)
-                    .align(Left, CenterY)
-                    .gap(16)
-                    .padding((15, 17, 15, 17))
-            })
-            .children(|ui| {
-                widgets::icon(ui, &icons::G_TAP, 26.0, pal.muted);
-                ui.element().width(grow!()).height(fit!()).children(|ui| {
-                    let label =
-                        if app.device_view.device.capabilities.gesture_control == Some(0x01a0) {
-                            "Haptic Sense Panel tap"
-                        } else {
-                            "Gesture button tap"
-                        };
-                    ui.text(label, |t| {
-                        t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                    });
-                    let note = if app.selected_gestures().enabled {
-                        "Uses the selected profile. Configure swipes in Gestures."
-                    } else {
-                        "Gestures are off. Saved actions remain editable."
-                    };
-                    ui.text(note, |t| {
-                        t.font(&fonts::SANS).font_size(12).color(pal.muted)
-                    });
-                });
-                if widgets::action_chip(ui, &pal, "gesture_chip".into(), &display) {
-                    open_picker = Some(gesture_target);
-                }
-            });
-    }
-
-    ui.element().width(grow!()).height(fixed!(16.0)).empty();
-    ui.text(
-        "Changes save immediately. Windows handles left click and scrolling.",
-        |t| {
-            t.font(&fonts::SANS)
-                .font_size(widgets::px(12.5))
-                .color(pal.faint)
-        },
-    );
 
     if toggle_menu {
         app.profile_menu_open = !app.profile_menu_open;
@@ -324,36 +228,240 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         app.selected_profile = i;
         app.profile_menu_open = false;
     }
+}
+
+pub fn section(ui: &mut Ui2, app: &mut App) {
+    let pal = app.pal;
+    let mut open_picker = None;
+    let subtitle = if app.mouse_awake() {
+        "Choose a button to change its assignment."
+    } else {
+        "Choose an assignment to edit. Offline changes apply when your mouse connects."
+    };
+    profile_heading(ui, app, "Buttons", subtitle);
+    ui.element().width(grow!()).height(fixed!(22.0)).empty();
+
+    if super::mouse_view::matches_device(&app.device_view.device) && screen_width() >= 840.0 {
+        super::mouse_view::section(ui, app);
+        return;
+    }
+
+    // Standard buttons and any extra controls reported by the mouse.
+    let mut buttons = editable_buttons(&app.device_view.device, &app.draft);
+    buttons.sort_by_key(|b| match b.slot.as_str() {
+        "middle" => (0, 0),
+        "back" => (1, 0),
+        "forward" => (2, 0),
+        _ => (3, b.cid),
+    });
+    let device = &app.device_view.device;
+    let mut rows = Vec::new();
+    for button in buttons {
+        let slot = button.slot;
+        let name = app
+            .prefs
+            .button_names
+            .get(&format!("{}/{}", device.display_name(), slot))
+            .cloned()
+            .unwrap_or(button.name);
+        let id = ("btn_chip", slot_index(&slot)).into();
+        let glyph = row_icon(&slot);
+        let target = PickerTarget::Button(slot.clone());
+        let action = actions::assignment(app, &target);
+        rows.push(MappingRow {
+            number: super::mouse_view::target_number(device, &target),
+            target,
+            id,
+            glyph,
+            name,
+            action,
+            note: None,
+        });
+    }
+    let target = PickerTarget::Gesture("tap".into());
+    if target.available(device) {
+        let name = if device.capabilities.gesture_control == Some(0x01a0) {
+            "Haptic Sense Panel tap"
+        } else {
+            "Gesture button tap"
+        };
+        rows.push(MappingRow {
+            number: super::mouse_view::target_number(device, &target),
+            action: actions::display(&app.action_for(&target)),
+            id: "gesture_chip".into(),
+            glyph: &icons::G_TAP,
+            name: name.into(),
+            note: (!app.selected_gestures().enabled).then_some("Saved for when gestures are on."),
+            target,
+        });
+    }
+    rows.sort_by_key(|row| row.number.unwrap_or(usize::MAX));
+    ui.element()
+        .width(grow!(0.0, 570.0))
+        .height(fit!())
+        .layout(|l| l.direction(TopToBottom).gap(10))
+        .children(|ui| {
+            for row in &rows {
+                if mapping_row(ui, &pal, row) {
+                    open_picker = Some(row.target.clone());
+                }
+            }
+        });
+
+    if super::Section::Gestures.available(&app.device_view.device) {
+        ui.element().width(grow!()).height(fixed!(10.0)).empty();
+        let hint = if app.mouse_awake() {
+            "Windows handles left click and scrolling."
+        } else {
+            "Swipe actions follow the selected profile."
+        };
+        ui.element()
+            .width(grow!(0.0, 570.0))
+            .height(fit!())
+            .children(|ui| {
+                super::mouse_view::gesture_footer(ui, app, hint, "Configure gestures");
+            });
+    } else if app.mouse_awake() {
+        ui.element().width(grow!()).height(fixed!(16.0)).empty();
+        ui.text("Windows handles left click and scrolling.", |t| {
+            t.font(&fonts::SANS)
+                .font_size(widgets::px(12.5))
+                .color(pal.faint)
+        });
+    }
+
     if let Some(t) = open_picker {
         app.open_picker(t);
     }
 }
 
-/// Dropdown listing the profiles. Floats over the content below it.
-///
-/// `attach_id` is not optional decoration: `FloatingAttachToElement::None` is
-/// the default, and it means *not attached*, so the whole floating config is
-/// skipped and the menu lays out inline — shoving every row below it down the
-/// page. (`attach_parent`'s doc comment calls itself the default; it is not.)
-/// Anchoring the menu's top-right to the button's bottom-right reproduces the
-/// design's `top: 100%; right: 0; margin-top: 6px`.
+struct MappingRow {
+    target: PickerTarget,
+    number: Option<usize>,
+    id: Id,
+    glyph: &'static GraphicAsset,
+    name: String,
+    action: actions::Display,
+    note: Option<&'static str>,
+}
+
+fn mapping_row(ui: &mut Ui2, pal: &super::theme::Palette, row: &MappingRow) -> bool {
+    let MappingRow {
+        id,
+        name,
+        action,
+        note,
+        ..
+    } = row;
+    let hovered = ui.pointer_over(id.clone());
+    let mut clicked = false;
+    widgets::card(ui, pal)
+        .id(id.clone())
+        .border(|b| b.all(1).color(if hovered { pal.accent } else { pal.line }))
+        .accessibility(|a| a.button(name))
+        .layout(|l| {
+            l.direction(LeftToRight)
+                .align(Left, CenterY)
+                .gap(14)
+                .padding((8, 14, 8, 14))
+        })
+        .children(|ui| {
+            clicked = ui.just_pressed();
+            if let Some(number) = row.number.filter(|_| screen_width() >= 840.0) {
+                ui.element()
+                    .width(fixed!(24.0))
+                    .height(fixed!(24.0))
+                    .corner_radius(12.0)
+                    .border(|b| b.all(1).color(pal.line_strong))
+                    .background_color(pal.win)
+                    .layout(|l| l.align(CenterX, CenterY))
+                    .children(|ui| {
+                        ui.text(&number.to_string(), |t| {
+                            t.font(&fonts::MONO_BOLD).font_size(13).color(pal.text)
+                        });
+                    });
+            } else {
+                widgets::icon(ui, row.glyph, 24.0, pal.muted);
+            }
+            ui.element()
+                .width(grow!(0.0))
+                .height(fit!())
+                .layout(|l| l.direction(TopToBottom).gap(4))
+                .children(|ui| {
+                    ui.element()
+                        .width(grow!())
+                        .height(fit!())
+                        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(10).wrap())
+                        .children(|ui| {
+                            ui.text(name, |t| {
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
+                            });
+                            if let Some(note) = note {
+                                ui.text(note, |t| {
+                                    t.font(&fonts::SANS).font_size(12).color(pal.muted)
+                                });
+                            }
+                        });
+                    ui.element()
+                        .height(fixed!(22.0))
+                        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(5))
+                        .children(|ui| {
+                            for key in &action.keys {
+                                widgets::keycap(ui, pal, key);
+                            }
+                            if !action.label.is_empty() {
+                                ui.text(&action.label, |t| {
+                                    t.font(&fonts::SANS_MEDIUM).font_size(14).color(pal.accent)
+                                });
+                            }
+                        });
+                });
+            ui.element()
+                .width(fixed!(52.0))
+                .height(fixed!(28.0))
+                .corner_radius(6.0)
+                .border(|b| b.all(1).color(pal.line_strong))
+                .layout(|l| l.direction(LeftToRight).align(CenterX, CenterY).gap(4))
+                .children(|ui| {
+                    widgets::icon(ui, &icons::CAT_EDIT, 14.0, pal.muted);
+                    ui.text("Edit", |t| {
+                        t.font(&fonts::SANS_MEDIUM).font_size(12).color(pal.text)
+                    });
+                });
+        });
+    clicked
+}
+
+/// Anchor to the trigger so opening the menu does not shift the mappings.
 fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usize>) {
     let pal = app.pal;
     let selected = app.selected_profile;
+    let columns = if screen_width() >= 840.0 && names.iter().all(|n| n.chars().count() <= 18) {
+        2
+    } else {
+        1
+    };
+    let rows = names.len().div_ceil(columns);
     ui.element()
         .id("profile_menu")
-        .width(fixed!(168.0))
-        .height(fit!())
+        .width(fixed!(if columns == 2 { 356.0 } else { 212.0 }))
+        .height(fixed!(
+            (10.0 + rows as f32 * 36.0 - 2.0).min((screen_height() - 178.0).clamp(42.0, 298.0))
+        ))
+        .overflow(|o| {
+            o.scroll_y()
+                .scrollbar(|s| s.width(6.0).thumb_color(pal.track))
+        })
         .floating(|f| {
             f.attach_id("profile_btn")
-                .anchor((Right, Top), (Right, Bottom))
-                .offset((0.0, 6.0))
+                .anchor((Right, Top), (Right, Top))
+                .offset((0.0, if columns == 2 { 59.0 } else { 65.0 }))
                 .z_index(50)
         })
         .corner_radius(11.0)
         .background_color(pal.pop)
         .border(|b| b.all(1).color(pal.line_strong))
-        .layout(|l| l.direction(TopToBottom).gap(2).padding(5))
+        .layout(|l| l.direction(LeftToRight).wrap().gap(2).padding(5))
         .children(|ui| {
             for (i, name) in names.iter().enumerate() {
                 let id: Id = ("profile_opt", i as u32).into();
@@ -361,7 +469,7 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
                 let active = i == selected;
                 ui.element()
                     .id(id)
-                    .width(grow!())
+                    .width(fixed!(if columns == 2 { 168.0 } else { 195.0 }))
                     .height(fixed!(34.0))
                     .corner_radius(8.0)
                     .background_color(if active || hovered {

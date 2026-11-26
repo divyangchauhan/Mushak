@@ -1,0 +1,53 @@
+{
+  "reason": "The capture returned before Windows painted Quit in the active menu. These initial observations are excluded from the score matrix. Three fresh reviewers inspected both complete menu frames.",
+  "excluded": {
+    "sol": {
+      "id": 14,
+      "label": "Start with Windows",
+      "detail": "The visible Windows menu pairs an orange mouse with Open mouse settings and a checkmark with Start with Windows. Pause remapping changes to Resume remapping in the second frame.",
+      "issue": "01-Windows-tray-active.webp shows blank space below the final divider, while 02-Windows-tray-paused.webp shows Quit Mushak there. The captures establish the visible difference only.",
+      "scores": [
+        9,
+        8,
+        8,
+        9,
+        9,
+        8,
+        8,
+        8
+      ]
+    },
+    "terra": {
+      "id": 14,
+      "label": "Pause remapping",
+      "detail": "The native tray menu shows Open mouse settings, a checked Start with Windows item and Pause remapping or Resume remapping.",
+      "issue": "The active frame lacks the Quit Mushak item visible in the paused frame, so available commands appear inconsistent across states. Compare 01-Windows-tray-active.webp and 02-Windows-tray-paused.webp. The crop does not establish why.",
+      "scores": [
+        8,
+        8,
+        8,
+        8,
+        7,
+        7,
+        8,
+        7
+      ]
+    },
+    "astra": {
+      "id": 14,
+      "label": "Pause remapping / Resume remapping",
+      "detail": "The native white tray menu uses a small amber mouse icon beside Open mouse settings and a check beside Start with Windows. The paused frame changes the verb to Resume remapping and visibly includes Quit Mushak below a divider.",
+      "issue": "Visible inconsistency in 14 Tray menu/01-Windows-tray-active.webp: the area below the second divider is blank, while 02-Windows-tray-paused.webp shows Quit Mushak there. Pixels do not establish whether this is a capture-timing artifact or a missing command, so the consistency deduction is limited to the supplied appearance.",
+      "scores": [
+        9,
+        9,
+        8,
+        9,
+        9,
+        8,
+        8,
+        8
+      ]
+    }
+  }
+}

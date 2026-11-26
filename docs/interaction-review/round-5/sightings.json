@@ -1,0 +1,50 @@
+{
+  "sol": {
+    "10": "Switch to the window you want to add. An amber countdown banner shows 4s and Cancel above the Preview app card.",
+    "11": "Disconnected. The device card pairs the message with a slashed mouse icon and the sidebar status dot becomes gray.",
+    "12": "HID++ features. Named entries align gold hexadecimal IDs in a left column, and the unnamed IDs wrap as chips below.",
+    "13": "Could not quit Logi Options+. A red-tinted banner puts Try again and Dismiss together at the right edge.",
+    "14": "Start with Windows. A checkmark appears beside it in both tray captures, where Pause remapping changes to Resume remapping.",
+    "01": "Buttons. The open Profile menu marks Default with a check and lists Preview app below it.",
+    "02": "Haptic Sense Panel. The MX Master 4 diagram adds marker 6 inside the thumb panel, and Additional button 1 appears separately with Control ID 0x01FF.",
+    "03": "Gesture button tap. Win and Tab appear as separate keycaps before Task View in the compact mapping list.",
+    "04": "Back button. The open category list marks Common with a check, and choosing Edit shows six tiles with Copy and Paste in the first row.",
+    "05": "No matching actions. The unmatched query stays visible with a Record a keyboard shortcut button directly below the message.",
+    "06": "Switch between two pointer speeds. The editor shows separate 800 and 1600 DPI sliders above the full-width save button.",
+    "07": "Saved shortcut. Reopening shows K beside Assigned now and again in the preview, with Done at the lower left.",
+    "08": "SmartShift. Its selected card uses a tinted fill, and the Flick sensitivity slider shows a value of 10.",
+    "09": "Saved gesture actions. Turning gestures off removes the threshold slider while retaining the Tap and four swipe mappings."
+  },
+  "terra": {
+    "10": "Switch to the window you want to add; banner shows 4s and Cancel.",
+    "11": "Disconnected; card shows a crossed-out mouse icon.",
+    "12": "HID++ features; unnamed feature IDs appear as chips next to Copy IDs.",
+    "13": "Couldn't save assignment; Try again and Back to editing appear beneath the message.",
+    "14": "Start with Windows; checkmark appears in both active and paused tray menus.",
+    "01": "Buttons; profile menu shows Default checked and Preview app.",
+    "02": "Haptic Sense Panel; Master 4 diagram has marker 6 and an additional reported button row.",
+    "03": "Gesture button tap; Win and Tab keycaps precede Task View.",
+    "04": "Back button; thumb image has orange marker 2 and category menu lists Edit.",
+    "05": "No matching actions; empty search offers Record a keyboard shortcut.",
+    "06": "Switch between two pointer speeds; sliders show 800 and 1600 DPI.",
+    "07": "Saved shortcut; reopened editor displays K and a Done button.",
+    "08": "SmartShift; selected wheel mode has an amber outline and a sensitivity slider.",
+    "09": "Tap vs. swipe threshold; slider reads 60 counts and arrows label swipe rows."
+  },
+  "astra": {
+    "01": "Buttons and Profile. Default has an amber check in the open selector, and the mouse illustration has five numbered markers in both themes.",
+    "02": "Haptic Sense Panel and Other reported buttons. MX Master 4 adds marker 6 on the thumb panel, while Additional button 1 appears in its own full-width row with Edit action. Offline frames retain the five-marker illustration and show Disconnected.",
+    "03": "Gesture button tap. The compact mapping list shows Win and Tab keycaps beside Task View, and the offline list has a No device sidebar card.",
+    "04": "Thumb buttons and Tabs & windows. The selected Native action tile has an amber border and check. The compact picker shows a tile called New with Ctrl + N. The haptic editor pairs marker 6 with a close-up of the thumb panel.",
+    "05": "No matching actions. Copy produces an Edit result row with Ctrl and C keycaps plus an Assign button. The empty result offers Record a keyboard shortcut beneath the search field.",
+    "06": "Switch between two pointer speeds. Two amber sliders show Speed 1: 800 DPI and Speed 2: 1600 DPI, followed by a full-width Save pointer speed action button.",
+    "07": "Saved shortcut. Ordered frames show Actions, New shortcut, Press a key, M draft, a compact resize retaining M and Save shortcut, cancel returning Native action, K ready, K assigned, then reopened Saved shortcut K with Done. Both themes retain the full compact dialog footer.",
+    "08": "Ignore accidental nudges. SmartShift is selected with an amber radio border, the nudge value is 4, and the limited view omits both slider sections.",
+    "09": "Saved gesture actions. Swipe left has Ctrl, Win and left-arrow keycaps. The off frame retains editable gesture rows below an explanatory sentence and a gray toggle.",
+    "10": "Switch to the window you want to add. The capture banner shows 4s beside Cancel. Profile order frames put Move down on Preview app and Move up on Photo editor.",
+    "11": "Reapply settings and No device. The connected view has a green half-full battery bar and Current DPI 1000. Disconnected and empty views use a crossed mouse icon, while USB mouse shows a single connection card.",
+    "12": "HID++ features and Unnamed features. Named features align amber hexadecimal IDs on the left, while unknown IDs form two rows of chips beside Copy IDs.",
+    "13": "Couldn't save assignment. The editor retains the thumb-button close-up and provides Try again plus Back to editing. The conflict banner uses amber for Logi Options+ is running and red for Could not quit Logi Options+.",
+    "14": "Start with Windows. A check appears at the left of that native menu item, while Pause remapping changes to Resume remapping in the second frame."
+  }
+}

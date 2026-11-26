@@ -154,11 +154,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                 });
                             });
                             ui.text(&flick.to_string(), |t| {
-                                t.font(&fonts::MONO_BOLD).font_size(13).color(pal.accent)
+                                t.font(&fonts::MONO_BOLD).font_size(15).color(pal.accent)
                             });
                         });
                     ui.text(
-                        "Lower = a gentler flick frees the wheel. Only used in SmartShift mode.",
+                        "Lower for a gentler flick. Higher for a firmer flick.",
                         |t| {
                             t.font(&fonts::SANS)
                                 .font_size(widgets::px(12.5))
@@ -172,7 +172,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
                         .children(|ui| {
                             ui.text("1", |t| {
-                                t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
+                                t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted)
                             });
 
                             if let Some(v) = widgets::slider(
@@ -187,7 +187,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                 new_flick = Some(v);
                             }
                             ui.text(&flick_max.to_string(), |t| {
-                                t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
+                                t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted)
                             });
                         });
                 });
@@ -195,10 +195,33 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
             ui.element().width(grow!()).height(fixed!(18.0)).empty();
         }
     }
+    let deadzone = i64::from(app.draft.device.scroll_deadzone);
+    let threshold = if deadzone == 0 {
+        "off".to_owned()
+    } else if let Some(m) = caps.wheel_multiplier.filter(|m| *m > 0) {
+        format!("{:.0}% of a notch", deadzone as f32 * 100.0 / f32::from(m))
+    } else {
+        format!("{deadzone} steps")
+    };
+    if caps.hires_scroll {
+        let detail = if hires {
+            "Use finer scroll steps. Adjust the nudge threshold below.".to_owned()
+        } else {
+            format!("Turn on to adjust the nudge filter. Saved threshold: {threshold}.")
+        };
+        toggle_hires = switch_row(
+            ui,
+            app,
+            "sw_hires",
+            "High-resolution scrolling",
+            &detail,
+            hires,
+        );
+        ui.element().width(grow!()).height(fixed!(10.0)).empty();
+    }
     // Wheel deadzone. Only meaningful with hi-res on: that is the only mode
     // where the wheel reports to us rather than straight to Windows, so it is
     // the only mode we can filter.
-    let deadzone = app.draft.device.scroll_deadzone as i64;
     let multiplier = caps.wheel_multiplier.unwrap_or(1) as i64;
     let mut new_deadzone: Option<i64> = None;
     if caps.hires_scroll && hires {
@@ -215,23 +238,20 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                 t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
                             });
                         });
-                        ui.text(
-                            &if deadzone == 0 {
-                                "off".to_string()
-                            } else {
-                                deadzone.to_string()
-                            },
-                            |t| t.font(&fonts::MONO_BOLD).font_size(13).color(pal.accent),
-                        );
+                        ui.text(&threshold, |t| {
+                            t.font(&fonts::MONO_BOLD).font_size(15).color(pal.accent)
+                        });
                     });
-                ui.text(
-                    "Minimum wheel movement, in high-resolution increments.",
-                    |t| {
-                        t.font(&fonts::SANS)
-                            .font_size(widgets::px(12.5))
-                            .color(pal.muted)
-                    },
-                );
+                let hint = if deadzone == 0 {
+                    "Every movement scrolls."
+                } else {
+                    "After a pause or reversal, turn the wheel this far to start scrolling."
+                };
+                ui.text(hint, |t| {
+                    t.font(&fonts::SANS)
+                        .font_size(widgets::px(12.5))
+                        .color(pal.muted)
+                });
                 ui.element().width(grow!()).height(fixed!(12.0)).empty();
                 ui.element()
                     .width(grow!())
@@ -239,7 +259,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
                     .children(|ui| {
                         ui.text("off", |t| {
-                            t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
+                            t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted)
                         });
                         if let Some(v) = widgets::slider(
                             ui,
@@ -252,44 +272,29 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         ) {
                             new_deadzone = Some(v);
                         }
-                        ui.text(&multiplier.to_string(), |t| {
-                            t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
-                        });
+                        ui.text(
+                            if caps.wheel_multiplier.is_some_and(|m| m > 0) {
+                                "100%"
+                            } else {
+                                "1 step"
+                            },
+                            |t| t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted),
+                        );
                     });
             });
 
         ui.element().width(grow!()).height(fixed!(18.0)).empty();
     }
-    ui.element()
-        .width(grow!())
-        .height(fit!())
-        .layout(|l| l.direction(TopToBottom).gap(10))
-        .children(|ui| {
-            if caps.hires_scroll
-                && switch_row(
-                    ui,
-                    app,
-                    "sw_hires",
-                    "High-resolution scrolling",
-                    "Send smaller scroll increments to Windows.",
-                    hires,
-                )
-            {
-                toggle_hires = true;
-            }
-            if caps.invert_scroll
-                && switch_row(
-                    ui,
-                    app,
-                    "sw_invert",
-                    "Invert scroll direction",
-                    "Push the wheel up to scroll the page up.",
-                    invert,
-                )
-            {
-                toggle_invert = true;
-            }
-        });
+    if caps.invert_scroll {
+        toggle_invert = switch_row(
+            ui,
+            app,
+            "sw_invert",
+            "Invert scroll direction",
+            "Push the wheel up to scroll the page up.",
+            invert,
+        );
+    }
 
     if let Some(m) = new_mode {
         app.draft.device.smartshift = m;

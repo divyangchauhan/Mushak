@@ -38,7 +38,7 @@ impl Category {
     pub fn icon(self) -> &'static GraphicAsset {
         match self {
             Category::Edit => &icons::CAT_EDIT,
-            Category::Tabs => &icons::CAT_NAV,
+            Category::Tabs => &icons::NAV_PROFILES,
             Category::Navigation => &icons::CAT_NAV,
             Category::System => &icons::CAT_SYSTEM,
             Category::Media => &icons::CAT_MEDIA,
@@ -69,7 +69,7 @@ pub fn presets() -> Vec<Preset> {
         p!("Undo", Category::Edit, ["Ctrl", "Z"], Action::key(&[Ctrl], vk::letter(b'Z'))),
         p!("Redo", Category::Edit, ["Ctrl", "Y"], Action::key(&[Ctrl], vk::letter(b'Y'))),
         p!("Close tab", Category::Tabs, ["Ctrl", "W"], Action::key(&[Ctrl], vk::letter(b'W'))),
-        p!("New", Category::Tabs, ["Ctrl", "N"], Action::key(&[Ctrl], vk::letter(b'N'))),
+        p!("New window or document", Category::Tabs, ["Ctrl", "N"], Action::key(&[Ctrl], vk::letter(b'N'))),
         p!("New tab", Category::Tabs, ["Ctrl", "T"], Action::key(&[Ctrl], vk::letter(b'T'))),
         p!("Reopen tab", Category::Tabs, ["Ctrl", "Shift", "T"], Action::key(&[Ctrl, Shift], vk::letter(b'T'))),
         p!("Find", Category::Edit, ["Ctrl", "F"], Action::key(&[Ctrl], vk::letter(b'F'))),
@@ -127,6 +127,28 @@ pub fn key_name(code: u16) -> String {
         c @ 0x70..=0x7B => format!("F{}", c - 0x70 + 1),
         c => format!("{c:#04x}"),
     }
+}
+
+/// Describe the native event or firmware behavior when a mapped control passes through.
+pub fn assignment(app: &super::App, target: &super::PickerTarget) -> Display {
+    let mut binding = display(&app.action_for(target));
+    if let (Kind::PassThrough, super::PickerTarget::Button(slot)) = (&binding.kind, target) {
+        let label = match slot.as_str() {
+            "back" => "Send Back to the app",
+            "forward" => "Send Forward to the app",
+            "middle" => "Send a middle click",
+            "control_00c4" => "Mouse sets wheel mode",
+            _ => {
+                if let Some(task) = app.device_view.device.capabilities.buttons.iter()
+                    .find(|button| &button.slot == slot).and_then(|button| button.default_task()) {
+                    binding.label = format!("Factory action · {task}");
+                }
+                return binding;
+            }
+        };
+        binding.label = label.to_owned();
+    }
+    binding
 }
 
 /// Render an action the way the design does: presets show their name plus

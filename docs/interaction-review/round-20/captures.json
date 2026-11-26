@@ -1,0 +1,1997 @@
+[
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/alert.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected; remapping paused, conflicting driver"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/button-list.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated No device"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/category-edit.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/category-menu.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      360
+    ],
+    "file": "Dark/compact-chord.webp",
+    "theme": "Dark",
+    "width": 720,
+    "height": 360,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      540
+    ],
+    "file": "Dark/compact-picker.webp",
+    "theme": "Dark",
+    "width": 720,
+    "height": 540,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      540
+    ],
+    "file": "Dark/compact.webp",
+    "theme": "Dark",
+    "width": 720,
+    "height": 540,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/conflict-error.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated Standard USB mouse"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/default-only.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated Standard USB mouse"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/device.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/diagnostics-lower.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/diagnostics.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/diagram.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/dialog.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated No device"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/disconnected.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated Remembered MX Master 2S, disconnected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/dpi-editor.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/empty.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated No device"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/extra-button.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 4, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/extra-editor.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 4, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/gestures-lower.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/gestures-off.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/gestures.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/haptic.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 4, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/marker-hover.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/master-3.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 3S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/master-4.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 4, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/menu.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/name-control.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 4, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/named-button.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 4, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/no-results.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated No device"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/offline-diagram.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated Remembered MX Master 2S, disconnected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/popover.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/profile-order.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated Standard USB mouse"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/profiles.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/save-error.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/scroll-limited.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/scroll-lower.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/scroll.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/search-results.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/seq-01-actions.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/seq-02-shortcut.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/seq-03-record.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/seq-04-draft.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      360
+    ],
+    "file": "Dark/seq-05-resize.webp",
+    "theme": "Dark",
+    "width": 720,
+    "height": 360,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/seq-06-cancel.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/seq-07-ready.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/seq-08-save.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/seq-09-reopen.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/standard-mouse.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated Standard USB mouse"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/wheel-actions.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/wheel-presets.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Dark/window-pick.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/alert.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected; remapping paused, conflicting driver"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/button-list.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated No device"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/category-edit.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/category-menu.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      360
+    ],
+    "file": "Light/compact-chord.webp",
+    "theme": "Light",
+    "width": 720,
+    "height": 360,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      540
+    ],
+    "file": "Light/compact-picker.webp",
+    "theme": "Light",
+    "width": 720,
+    "height": 540,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      540
+    ],
+    "file": "Light/compact.webp",
+    "theme": "Light",
+    "width": 720,
+    "height": 540,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/conflict-error.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated Standard USB mouse"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/default-only.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated Standard USB mouse"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/device.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/diagnostics-lower.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/diagnostics.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/diagram.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/dialog.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated No device"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/disconnected.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated Remembered MX Master 2S, disconnected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/dpi-editor.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/empty.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated No device"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/extra-button.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 4, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/extra-editor.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 4, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/gestures-lower.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/gestures-off.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/gestures.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/haptic.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 4, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/marker-hover.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/master-3.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 3S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/master-4.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 4, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/menu.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/name-control.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 4, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/named-button.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 4, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/no-results.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated No device"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/offline-diagram.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated Remembered MX Master 2S, disconnected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/popover.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/profile-order.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated Standard USB mouse"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/profiles.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/save-error.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/scroll-limited.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/scroll-lower.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/scroll.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/search-results.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/seq-01-actions.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/seq-02-shortcut.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/seq-03-record.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/seq-04-draft.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      360
+    ],
+    "file": "Light/seq-05-resize.webp",
+    "theme": "Light",
+    "width": 720,
+    "height": 360,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/seq-06-cancel.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/seq-07-ready.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/seq-08-save.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/seq-09-reopen.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/standard-mouse.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated Standard USB mouse"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/wheel-actions.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/wheel-presets.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Production GPU layout with scripted pointer input",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Light/window-pick.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native/01-recorded-M.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      360
+    ],
+    "file": "native/01b-resized-M.webp",
+    "theme": "Dark",
+    "width": 720,
+    "height": 360,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native/02-ready-K.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native/03-restarted-K.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native/04-picked-window.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 compact navigation",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      540
+    ],
+    "file": "native-compact/Dark/buttons.webp",
+    "theme": "Dark",
+    "width": 720,
+    "height": 540,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 compact navigation",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      540
+    ],
+    "file": "native-compact/Dark/device.webp",
+    "theme": "Dark",
+    "width": 720,
+    "height": 540,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 compact navigation",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      540
+    ],
+    "file": "native-compact/Dark/gestures.webp",
+    "theme": "Dark",
+    "width": 720,
+    "height": 540,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 compact navigation",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      540
+    ],
+    "file": "native-compact/Dark/profiles.webp",
+    "theme": "Dark",
+    "width": 720,
+    "height": 540,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 compact navigation",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      540
+    ],
+    "file": "native-compact/Dark/wheel.webp",
+    "theme": "Dark",
+    "width": 720,
+    "height": 540,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 compact navigation",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      540
+    ],
+    "file": "native-compact/Light/buttons.webp",
+    "theme": "Light",
+    "width": 720,
+    "height": 540,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 compact navigation",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      540
+    ],
+    "file": "native-compact/Light/device.webp",
+    "theme": "Light",
+    "width": 720,
+    "height": 540,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 compact navigation",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      540
+    ],
+    "file": "native-compact/Light/gestures.webp",
+    "theme": "Light",
+    "width": 720,
+    "height": 540,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 compact navigation",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      540
+    ],
+    "file": "native-compact/Light/profiles.webp",
+    "theme": "Light",
+    "width": 720,
+    "height": 540,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 compact navigation",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      720,
+      540
+    ],
+    "file": "native-compact/Light/wheel.webp",
+    "theme": "Light",
+    "width": 720,
+    "height": 540,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 tab cycle",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native-cycles/Dark/1-preset_tab.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 tab cycle",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native-cycles/Dark/1-shortcut_tab.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 tab cycle",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native-cycles/Dark/2-preset_tab.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 tab cycle",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native-cycles/Dark/2-shortcut_tab.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 tab cycle",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native-cycles/Dark/3-preset_tab.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 tab cycle",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native-cycles/Dark/3-shortcut_tab.webp",
+    "theme": "Dark",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 tab cycle",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native-cycles/Light/1-preset_tab.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 tab cycle",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native-cycles/Light/1-shortcut_tab.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 tab cycle",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native-cycles/Light/2-preset_tab.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 tab cycle",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native-cycles/Light/2-shortcut_tab.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 tab cycle",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native-cycles/Light/3-preset_tab.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Release Settings process, Win32 tab cycle",
+    "accent": "Marigold",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "native-cycles/Light/3-shortcut_tab.webp",
+    "theme": "Light",
+    "width": 968,
+    "height": 668,
+    "units": "logical client pixels",
+    "displayScale": "200%",
+    "device": "Simulated MX Master 2S, connected"
+  },
+  {
+    "renderPath": "Native Windows menu",
+    "accent": "Windows system menu appearance",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Windows/tray-active.webp",
+    "theme": "Windows",
+    "width": 383,
+    "height": 202,
+    "units": "physical menu pixels",
+    "displayScale": "200%",
+    "device": "Isolated Windows menu, active, startup checked"
+  },
+  {
+    "renderPath": "Native Windows menu",
+    "accent": "Windows system menu appearance",
+    "hostClientLogical": [
+      968,
+      668
+    ],
+    "file": "Windows/tray-paused.webp",
+    "theme": "Windows",
+    "width": 383,
+    "height": 202,
+    "units": "physical menu pixels",
+    "displayScale": "200%",
+    "device": "Isolated Windows menu, paused, startup checked"
+  }
+]

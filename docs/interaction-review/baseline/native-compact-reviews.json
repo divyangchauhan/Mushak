@@ -1,0 +1,248 @@
+{
+  "gpt-6.2-sol": [
+    {
+      "id": 1,
+      "label": "Gesture button tap",
+      "detail": "The last visible card pairs Win and Tab keycaps with Task View and an amber chevron.",
+      "issue": "The last card puts its wrapped label beside a three-line explanation and the action pill. The save note then clips at the bottom of the window.",
+      "scores": [
+        8,
+        9,
+        8,
+        9,
+        8,
+        8,
+        8,
+        8
+      ]
+    },
+    {
+      "id": 2,
+      "label": "Always ratchet",
+      "detail": "An amber radio dot and a border across the full row show which wheel mode is selected.",
+      "issue": "Both off switches are gray on gray. The thumb position carries most of the state in the dark theme.",
+      "scores": [
+        9,
+        9,
+        9,
+        8,
+        9,
+        9,
+        9,
+        9
+      ]
+    },
+    {
+      "id": 3,
+      "label": "Tap vs. swipe threshold",
+      "detail": "The slider shows 60 counts in amber above a track labeled 10 and 400.",
+      "issue": "The profile tabs, trigger explanation, and flat Default gesture button strip touch vertically. The strip has no visible dropdown cue, so it reads like a static label.",
+      "scores": [
+        8,
+        7,
+        7,
+        8,
+        9,
+        7,
+        7,
+        7
+      ]
+    },
+    {
+      "id": 4,
+      "label": "Pick a window",
+      "detail": "The cursor icon sits in an outlined button beside the preview.exe chip, which has its own removal control.",
+      "issue": "Move and Delete are small adjacent controls in each card header, giving a destructive action similar visual weight to reordering.",
+      "scores": [
+        9,
+        9,
+        9,
+        9,
+        8,
+        9,
+        9,
+        9
+      ]
+    },
+    {
+      "id": 5,
+      "label": "Pointer speed (DPI)",
+      "detail": "The amber 1000 beside the slider matches the number in the Current DPI card above it.",
+      "issue": "The Device glyph resembles a hash and does little to suggest hardware. The purpose of the HID++ disclosure is also left to users who know the acronym.",
+      "scores": [
+        9,
+        9,
+        9,
+        9,
+        8,
+        9,
+        8,
+        9
+      ]
+    }
+  ],
+  "gpt-6.1-terra": [
+    {
+      "id": 1,
+      "label": "Buttons",
+      "detail": "The Gesture button tap row places Win and Tab keycaps beside Task View.",
+      "issue": "The gesture row splits its label and description into cramped columns, and the footer is clipped at the bottom.",
+      "scores": [
+        8,
+        8,
+        7,
+        8,
+        8,
+        8,
+        8,
+        8
+      ]
+    },
+    {
+      "id": 2,
+      "label": "Scroll",
+      "detail": "Always ratchet has an orange radio ring and outlined selected card.",
+      "issue": "The off switches are muted and the dark theme's switch thumb has limited contrast against its track.",
+      "scores": [
+        8,
+        9,
+        9,
+        8,
+        8,
+        9,
+        9,
+        8
+      ]
+    },
+    {
+      "id": 3,
+      "label": "Gestures",
+      "detail": "Tap vs. swipe threshold shows 60 counts above a slider ranging from 10 to 400.",
+      "issue": "The profile tabs and Default gesture button strip crowd the controls, and the Swipe down row is cut off at the bottom.",
+      "scores": [
+        8,
+        7,
+        7,
+        8,
+        8,
+        7,
+        7,
+        7
+      ]
+    },
+    {
+      "id": 4,
+      "label": "Profiles",
+      "detail": "Preview app contains a preview.exe chip next to Pick a window.",
+      "issue": "Move and delete actions are small and sit close together in each profile card.",
+      "scores": [
+        8,
+        9,
+        8,
+        8,
+        8,
+        9,
+        8,
+        8
+      ]
+    },
+    {
+      "id": 5,
+      "label": "Device",
+      "detail": "The battery card shows a green progress bar and 50%, while Current DPI shows 1000.",
+      "issue": "The slider endpoint labels and HID++ detected count are small and subdued.",
+      "scores": [
+        8,
+        9,
+        9,
+        8,
+        8,
+        9,
+        9,
+        8
+      ]
+    }
+  ],
+  "gpt-6-astra": [
+    {
+      "id": 1,
+      "label": "Buttons",
+      "detail": "Five rounded action rows show Middle click, Back button, Forward button, Wheel mode button, and Gesture button tap. Shortcut keycaps sit inside the action controls, and the Default profile selector is at the upper right.",
+      "issue": "The Gesture button tap row breaks the label and description into narrow separate columns. Its small three-line description is cramped, and the footer text is cut off at the viewport bottom.",
+      "scores": [
+        8,
+        8,
+        7,
+        9,
+        8,
+        8,
+        8,
+        8
+      ]
+    },
+    {
+      "id": 2,
+      "label": "Scroll",
+      "detail": "Always ratchet has a colored border and selected radio circle. Three wheel modes form a clear stack above two separate switch rows labeled High-resolution scrolling and Invert scroll direction.",
+      "issue": "The small secondary descriptions and subdued off-state switches are readable but receive little visual emphasis. The phrase when a turn counts in the subtitle is less precise than the individual control descriptions.",
+      "scores": [
+        8,
+        9,
+        9,
+        8,
+        8,
+        9,
+        8,
+        9
+      ]
+    },
+    {
+      "id": 3,
+      "label": "Gestures",
+      "detail": "Default, Preview app, and Photo editor appear as tabs above Button gestures. Tap vs. swipe threshold displays 60 counts in accent color, with a slider spanning 10 to 400.",
+      "issue": "The tabs, trigger explanation, and flat Default gesture button strip are crowded together. The strip lacks an obvious selection affordance, and the Swipe down row is cut off at the viewport bottom.",
+      "scores": [
+        7,
+        7,
+        6,
+        8,
+        8,
+        7,
+        7,
+        7
+      ]
+    },
+    {
+      "id": 4,
+      "label": "Profiles",
+      "detail": "An accent-colored Add profile button sits beside the title. Preview app and Photo editor each have a process-name chip, Pick a window control, ordering action, and delete action; Default carries an All other apps badge.",
+      "issue": "Move up, Move down, and Delete profile use small text and closely grouped compact icons. The identical P badges provide little help distinguishing the two named profiles.",
+      "scores": [
+        8,
+        9,
+        9,
+        9,
+        8,
+        9,
+        9,
+        9
+      ]
+    },
+    {
+      "id": 5,
+      "label": "Device",
+      "detail": "A two-column card grid shows Bluetooth, firmware MPM 12.01.B0006, a green 50% battery bar, and Current DPI 1000. Pointer speed has a 200 to 4000 slider, followed by a collapsed HID++ features row marked 29 detected.",
+      "issue": "Current DPI repeats the slider's 1000 value without explaining whether they can differ. HID++ features is technical wording without an explanatory subtitle, and small muted labels reduce readability.",
+      "scores": [
+        8,
+        9,
+        9,
+        9,
+        8,
+        9,
+        8,
+        9
+      ]
+    }
+  ]
+}

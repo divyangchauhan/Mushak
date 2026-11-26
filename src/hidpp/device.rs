@@ -364,6 +364,7 @@ impl Device {
             .iter()
             .filter(|c| c.supports_gestures() && !matches!(c.cid, 0x0050 | 0x0051))
             .map(|c| reprog::ButtonInfo {
+                default_task_id: (c.tid != 0).then_some(c.tid),
                 cid: c.cid,
                 slot: format!("control_{:04x}", c.cid),
                 name: reprog::control_name(c.cid),

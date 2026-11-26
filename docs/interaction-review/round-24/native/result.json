@@ -1,0 +1,16 @@
+{
+  "display_scale": 2.0,
+  "process_ids": [
+    42104,
+    14412
+  ],
+  "sample_profile": "Preview app",
+  "cancel_preserved_sample_config": true,
+  "save_changed_only": "profiles[0].buttons.back",
+  "reopened_binding": {
+    "kind": "Key",
+    "mods": [],
+    "vk": 75
+  },
+  "draft_m_survived_tab_switch": true
+}

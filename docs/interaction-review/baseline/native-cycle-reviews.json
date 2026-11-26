@@ -1,0 +1,50 @@
+{
+  "gpt-6.2-sol": {
+    "label": "Wren",
+    "detail": "In each theme, the frames alternate three times between Keyboard shortcut and Actions. Keyboard shortcut shows Assigned now: Native action, four modifiers, and Record key. Actions moves the active underline to the left and puts the caret in Search actions. Common shows six actions, with Native action checked above Copy, Paste, Back, and Forward. The editor edges, tabs, thumb photo and badge, and sidebar stay fixed. Each tab's three captures have identical file hashes within its theme.",
+    "issue": "The light theme's inactive modifier outlines are faint. The large recording box leaves a lot of empty space around Record key, even though the Actions tab fits six choices inside the same editor.",
+    "scores": [
+      9,
+      9,
+      8,
+      8,
+      9,
+      9,
+      9,
+      9
+    ],
+    "frames": 12
+  },
+  "gpt-6.1-terra": {
+    "label": "Wren",
+    "detail": "In both themes, each numbered pair alternates from Keyboard shortcut, with modifier buttons and Record key, to Actions, with a focused search field and six actions. The same two views recur in all three pairs. The Back button editor, mouse image, and panel edges appear stationary across the sequence; only the tab selection and its contents change. Type is legible and the orange selection cues are consistent across themes.",
+    "issue": "The shortcut view leaves a large empty recording area while the Actions view packs six choices into the same panel. Small secondary labels and faint borders, especially in light mode, reduce contrast and make the hierarchy less clear.",
+    "scores": [
+      8,
+      8,
+      7,
+      8,
+      8,
+      8,
+      8,
+      8
+    ],
+    "frames": 12
+  },
+  "gpt-6-astra": {
+    "label": "wren",
+    "detail": "Viewed all twelve original WebP frames. In each theme the supplied order visibly alternates Keyboard shortcut, Actions, Keyboard shortcut, Actions, Keyboard shortcut, Actions. Shortcut frames show Assigned now Native action, four modifiers, New shortcut, Record key, Cancel, and No key recorded. Actions frames show the focused Search actions field, Common category, 6 actions, selected Native action, Disabled, Copy, Paste, Back, and Forward. Repeated states look unchanged across all three cycles. The editor stays at the same position and size, with its Back button heading, close control, and tab row fixed. The Thumb buttons card, numbered mouse marker, profile control, navigation, and battery card also remain fixed. Only the selected tab and content below it change. No visible layout movement or cumulative drift. Stills establish alternating states but cannot independently establish capture timing.",
+    "issue": "The shortcut recording area uses considerable empty space while the Actions panel is denser. Light-theme control outlines and secondary labels are faint, especially modifier boundaries and the No key recorded status. Native action is explained only as Normal button action, which does little to clarify the resulting behavior. Typography, alignment, selection feedback, and repeated-state stability are otherwise strong in both themes.",
+    "scores": [
+      9,
+      9,
+      8,
+      8,
+      9,
+      9,
+      8,
+      8
+    ],
+    "frames": 12
+  }
+}
