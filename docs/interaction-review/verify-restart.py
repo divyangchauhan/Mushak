@@ -470,7 +470,8 @@ def check_resume_command():
         def wait_for_help(reference):
             deadline = time.monotonic() + 4
             while time.monotonic() < deadline:
-                if matches_capture(reference, help_region) and matches_capture(reference, (245, 10, 420, 36)):
+                # The pointer can still be over Retry. Compare the status label beside it.
+                if matches_capture(reference, help_region) and matches_capture(reference, (246, 11, 373, 35)):
                     return
                 time.sleep(0.1)
             client_pixels().save(Path("target") / f"help-observed-{theme}-{reference}.png")
