@@ -59,9 +59,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         &app.device_view.device,
         &PickerTarget::Gesture("tap".into()),
     );
-    let hint = if !app.selected_gestures().enabled {
-        "Gesture recognition is off.".to_owned()
-    } else if compact && fixed_trigger {
+    let hint = if compact && fixed_trigger {
         trigger_number.map_or_else(
             || "Tap the gesture button, or hold it and move to swipe.".to_owned(),
             |n| format!("Tap gesture button {n}, or hold it and move to swipe."),
@@ -163,8 +161,14 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         ui,
         app,
         "sw_gestures",
-        "Button gestures",
-        if compact {
+        if enabled {
+            "Button gestures on"
+        } else {
+            "Button gestures off"
+        },
+        if !enabled {
+            "Edit the saved actions below. Turn gestures on to use them."
+        } else if compact {
             "Use the tap and swipe actions below."
         } else {
             "Use tap and swipe actions in place of the trigger button's normal action."
@@ -174,36 +178,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         toggle_enabled = true;
     }
 
-    if !enabled {
-        ui.element().height(fixed!(10.0)).empty();
-        ui.text(
-            "You can edit these actions now. Turn gestures on to use them.",
-            |t| t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text),
-        );
-    }
-
     ui.element().width(grow!()).height(fixed!(10.0)).empty();
-
-    if !enabled {
-        ui.element()
-            .width(fit!())
-            .height(fixed!(24.0))
-            .corner_radius(6.0)
-            .background_color(pal.s2)
-            .layout(|l| {
-                l.direction(LeftToRight)
-                    .align(Left, CenterY)
-                    .gap(6)
-                    .padding((0, 8, 0, 8))
-            })
-            .children(|ui| {
-                widgets::icon(ui, &icons::NAV_GESTURES, 14.0, pal.muted);
-                ui.text("Gesture recognition off", |t| {
-                    t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
-                });
-            });
-        ui.element().height(fixed!(6.0)).empty();
-    }
     let g = app.selected_gestures();
     let row_inset = if compact { 2 } else { 6 };
     let rows: Vec<(String, String, actions::Display)> = ROWS

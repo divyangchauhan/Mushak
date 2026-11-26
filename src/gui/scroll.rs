@@ -51,6 +51,18 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     let mut toggle_hires = false;
     let mut toggle_invert = false;
 
+    if caps.invert_scroll {
+        toggle_invert = switch_row(
+            ui,
+            app,
+            "sw_invert",
+            "Invert scroll direction",
+            "Push the wheel up to scroll the page up.",
+            invert,
+        );
+        ui.element().width(grow!()).height(fixed!(14.0)).empty();
+    }
+
     if caps.smartshift {
         widgets::eyebrow(ui, &pal, "Wheel mode");
         ui.element().width(grow!()).height(fixed!(10.0)).empty();
@@ -137,7 +149,32 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
             });
 
         ui.element().width(grow!()).height(fixed!(22.0)).empty();
-
+    }
+    let deadzone = i64::from(app.draft.device.scroll_deadzone);
+    let threshold = if deadzone == 0 {
+        "off".to_owned()
+    } else if let Some(m) = caps.wheel_multiplier.filter(|m| *m > 0) {
+        format!("{:.0}% of a notch", deadzone as f32 * 100.0 / f32::from(m))
+    } else {
+        format!("{deadzone} steps")
+    };
+    if caps.hires_scroll {
+        let detail = if hires {
+            "Use finer scroll steps. Adjust the nudge threshold below.".to_owned()
+        } else {
+            format!("Turn on to adjust the nudge filter. Saved threshold: {threshold}.")
+        };
+        toggle_hires = switch_row(
+            ui,
+            app,
+            "sw_hires",
+            "High-resolution scrolling",
+            &detail,
+            hires,
+        );
+        ui.element().width(grow!()).height(fixed!(10.0)).empty();
+    }
+    if caps.smartshift {
         // Flick sensitivity applies only in SmartShift mode.
         if flick_on {
             widgets::card(ui, &pal)
@@ -153,9 +190,10 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                     t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
                                 });
                             });
-                            ui.text(&flick.to_string(), |t| {
-                                t.font(&fonts::MONO_BOLD).font_size(15).color(pal.accent)
-                            });
+                            ui.text(
+                                &format!("Level {} of {flick_max}", flick.min(flick_max)),
+                                |t| t.font(&fonts::MONO_BOLD).font_size(15).color(pal.accent),
+                            );
                         });
                     ui.text(
                         "Lower for a gentler flick. Higher for a firmer flick.",
@@ -194,30 +232,6 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
 
             ui.element().width(grow!()).height(fixed!(18.0)).empty();
         }
-    }
-    let deadzone = i64::from(app.draft.device.scroll_deadzone);
-    let threshold = if deadzone == 0 {
-        "off".to_owned()
-    } else if let Some(m) = caps.wheel_multiplier.filter(|m| *m > 0) {
-        format!("{:.0}% of a notch", deadzone as f32 * 100.0 / f32::from(m))
-    } else {
-        format!("{deadzone} steps")
-    };
-    if caps.hires_scroll {
-        let detail = if hires {
-            "Use finer scroll steps. Adjust the nudge threshold below.".to_owned()
-        } else {
-            format!("Turn on to adjust the nudge filter. Saved threshold: {threshold}.")
-        };
-        toggle_hires = switch_row(
-            ui,
-            app,
-            "sw_hires",
-            "High-resolution scrolling",
-            &detail,
-            hires,
-        );
-        ui.element().width(grow!()).height(fixed!(10.0)).empty();
     }
     // Wheel deadzone. Only meaningful with hi-res on: that is the only mode
     // where the wheel reports to us rather than straight to Windows, so it is
@@ -285,17 +299,6 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
 
         ui.element().width(grow!()).height(fixed!(18.0)).empty();
     }
-    if caps.invert_scroll {
-        toggle_invert = switch_row(
-            ui,
-            app,
-            "sw_invert",
-            "Invert scroll direction",
-            "Push the wheel up to scroll the page up.",
-            invert,
-        );
-    }
-
     if let Some(m) = new_mode {
         app.draft.device.smartshift = m;
         app.commit_config();

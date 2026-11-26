@@ -837,7 +837,7 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         let caption = ply.bounding_box("profile_caption").unwrap();
         let menu = ply.bounding_box("profile_menu").unwrap();
         assert!(
-            menu.y >= caption.y + caption.height,
+            menu.x >= caption.x + caption.width || menu.y >= caption.y + caption.height,
             "Profile menu covers its caption"
         );
         snapshot(&dir, "menu");
@@ -861,7 +861,8 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         click(ply, app, "browse_wheel_actions").await;
         assert!(app.wheel_presets);
         snapshot(&dir, "wheel-presets");
-        click(ply, app, "browse_wheel_actions").await;
+        let preset_back = ply.bounding_box("mouse_actions_back").unwrap();
+        click(ply, app, "mouse_actions_back").await;
         assert!(!app.wheel_presets);
         click(ply, app, "picker_speed_setup").await;
         snapshot(&dir, "dpi-editor");
@@ -872,7 +873,23 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         ply.set_text_value(("dpi_value", 0), "1000");
         settle(ply, app).await;
         assert_eq!(app.picker_dpi[0], 1000);
-        click(ply, app, "picker_speed_back").await;
+        let speed_back = ply.bounding_box("mouse_actions_back").unwrap();
+        assert_eq!(
+            (
+                preset_back.x,
+                preset_back.y,
+                preset_back.width,
+                preset_back.height
+            ),
+            (
+                speed_back.x,
+                speed_back.y,
+                speed_back.width,
+                speed_back.height
+            ),
+            "Back moved between wheel subpages"
+        );
+        click(ply, app, "mouse_actions_back").await;
         click(ply, app, "picker_close").await;
         click(ply, app, "mouse_back").await;
         click(ply, app, ("action_category", 4)).await;
@@ -925,7 +942,14 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
                     .is_none());
             }
             if section == Section::Scroll {
+                let before = ply.bounding_box("sw_invert").unwrap();
                 click(ply, app, ("mode", 0)).await;
+                let after = ply.bounding_box("sw_invert").unwrap();
+                assert_eq!(
+                    (before.x, before.y),
+                    (after.x, after.y),
+                    "Wheel mode moved the direction switch"
+                );
                 assert_eq!(
                     Config::load_strict().unwrap().device.smartshift,
                     crate::config::SmartShiftMode::AlwaysRatchet
@@ -985,6 +1009,7 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         app.conflict_dismissed = false;
         app.conflict_names = vec!["Logi Options+".into()];
         settle(ply, app).await;
+        let warned = ply.bounding_box(("mouse_label", 0)).unwrap();
         snapshot(&dir, "alert");
         app.kill_outcome = Some(crate::conflicts::KillOutcome {
             killed: 0,
@@ -994,6 +1019,12 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         snapshot(&dir, "paused-quit-error");
         click(ply, app, "banner_ignore").await;
         assert!(app.conflict_dismissed && app.device_view.paused);
+        let dismissed = ply.bounding_box(("mouse_label", 0)).unwrap();
+        assert_eq!(
+            (warned.x, warned.y),
+            (dismissed.x, dismissed.y),
+            "Dismissing a driver warning moved the first mapping"
+        );
         snapshot(&dir, "paused-dismissed");
         let resume = ply.bounding_box("resume_remapping").unwrap();
         std::fs::write(
@@ -1026,6 +1057,15 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         settle(ply, app).await;
         click(ply, app, "resume_remapping").await;
         assert!(matches!(app.resume, ResumeState::Failed));
+        let help = ply.bounding_box("resume_help").unwrap();
+        std::fs::write(
+            dir.join("resume-help.csv"),
+            format!(
+                "x,y,w,h\n{},{},{},{}\n",
+                help.x, help.y, help.width, help.height
+            ),
+        )
+        .unwrap();
         snapshot(&dir, "resume-error");
         let retry_event = crate::single_instance::ResumeEvent::create().unwrap();
         click(ply, app, "resume_remapping").await;
@@ -1396,9 +1436,18 @@ async fn extra_states(
     settle(ply, app).await;
     snapshot(dir, "offline-diagram");
     app.device_view.device = connected.clone();
-    app.draft.gestures.enabled = false;
+    app.draft.gestures.enabled = true;
     app.section = Section::Gestures;
     settle(ply, app).await;
+    let tap = ply.bounding_box(("g_chip", 0)).unwrap();
+    click(ply, app, "sw_gestures").await;
+    assert!(!app.selected_gestures().enabled);
+    let disabled_tap = ply.bounding_box(("g_chip", 0)).unwrap();
+    assert_eq!(
+        (tap.x, tap.y),
+        (disabled_tap.x, disabled_tap.y),
+        "Turning off gestures moved the tap assignment"
+    );
     snapshot(dir, "gestures-off");
     app.draft.gestures.enabled = true;
     app.draft.device.hires_scroll = false;

@@ -79,7 +79,7 @@ pub(super) fn compact_resume_help(ui: &mut Ui2, app: &mut App) {
         .height(fit!())
         .layout(|l| l.direction(TopToBottom).gap(2))
         .children(|ui| {
-            ui.text("Right-click Mushak by the Windows clock", |t| {
+            ui.text("Remapping paused. Right-click Mushak by the clock", |t| {
                 t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
             });
             ui.text(
@@ -126,7 +126,7 @@ pub fn resume_help(ui: &mut Ui2, pal: &Palette, failed: bool) -> bool {
         .width(grow!())
         .height(fit!(46.0))
         .background_color(Palette::mix(pal.warn, 9.0, pal.win))
-        .border(|b| b.bottom(1).color(pal.line_strong))
+        .border(|b| b.top(1).color(pal.line_strong))
         .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(10).padding((5, 14, 5, 14)))
         .children(|ui| {
             icon(ui, &icons::MODAK_PAUSED, 24.0, pal.text);
@@ -229,7 +229,7 @@ pub fn conflict_banner(ui: &mut Ui2, app: &mut App) {
         .width(grow!())
         .height(fit!())
         .background_color(bg)
-        .border(|b| b.bottom(1).color(border))
+        .border(|b| b.top(1).color(border))
         .layout(|l| {
             l.direction(LeftToRight)
                 .align(Left, CenterY)

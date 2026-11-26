@@ -746,22 +746,32 @@ fn window(ui: &mut Ui2, app: &mut App) {
         .layout(|l| l.direction(TopToBottom))
         .children(|ui| {
             titlebar(ui, app);
-            if screen_height() >= 430.0
-                && app.resume_steps_visible()
-                && widgets::resume_help(ui, &pal, matches!(app.resume, ResumeState::Failed))
-            {
-                app.show_resume_steps = Some(false);
-            }
-            if app.show_conflict() {
-                widgets::conflict_banner(ui, app);
-            }
             ui.element()
                 .width(grow!())
                 .height(grow!())
                 .layout(|l| l.direction(LeftToRight))
                 .children(|ui| {
                     rail(ui, app);
-                    content(ui, app);
+                    ui.element()
+                        .width(grow!())
+                        .height(grow!())
+                        .layout(|l| l.direction(TopToBottom))
+                        .children(|ui| {
+                            content(ui, app);
+                            if screen_height() >= 430.0
+                                && app.resume_steps_visible()
+                                && widgets::resume_help(
+                                    ui,
+                                    &pal,
+                                    matches!(app.resume, ResumeState::Failed),
+                                )
+                            {
+                                app.show_resume_steps = Some(false);
+                            }
+                            if app.show_conflict() {
+                                widgets::conflict_banner(ui, app);
+                            }
+                        });
                 });
             // Last, so it floats over everything.
             picker::overlay(ui, app);

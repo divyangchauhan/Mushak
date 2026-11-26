@@ -80,15 +80,6 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
         height.min(212.0)
     } else if app.failed_assignment.is_some() {
         height.min(244.0)
-    } else if !app.shortcut_editor && !app.picker_query.is_empty() && !has_mouse_actions {
-        let groups = action_groups(&app.picker_query.to_lowercase());
-        let rows: usize = groups.iter().map(|(_, rows)| rows.len()).sum();
-        // Only the lower edge follows the results. There is no footer on this tab.
-        height.min(if rows == 0 {
-            302.0
-        } else {
-            182.0 + groups.len() as f32 * 26.0 + rows as f32 * 57.0
-        })
     } else if app.picker_row_label.is_some() {
         height.min(478.0)
     } else if has_mouse_actions && app.wheel_presets {
@@ -157,7 +148,7 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                         device_actions(ui, app, &query, &mut chosen);
                     }
                     if !app.picker_speed_editor {
-                        if browse {
+                        if browse && !app.wheel_presets {
                             ui.element()
                                 .width(grow!())
                                 .height(fixed!(39.0))
@@ -169,13 +160,7 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                                         .height(grow!())
                                         .corner_radius(7.0)
                                         .background_color(pal.s2)
-                                        .accessibility(|a| {
-                                            a.button(if app.wheel_presets {
-                                                "Show mouse actions"
-                                            } else {
-                                                "Browse all actions"
-                                            })
-                                        })
+                                        .accessibility(|a| a.button("Browse all actions"))
                                         .layout(|l| {
                                             l.direction(LeftToRight)
                                                 .gap(8)
@@ -183,42 +168,24 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                                                 .padding((0, 12, 0, 12))
                                         })
                                         .children(|ui| {
-                                            widgets::icon(
-                                                ui,
-                                                if app.wheel_presets {
-                                                    &icons::BTN_BACK
-                                                } else {
-                                                    &icons::NAV_BUTTONS
-                                                },
-                                                16.0,
-                                                pal.muted,
-                                            );
+                                            widgets::icon(ui, &icons::NAV_BUTTONS, 16.0, pal.muted);
                                             ui.element().width(grow!()).height(fit!()).children(
                                                 |ui| {
-                                                    ui.text(
-                                                        if app.wheel_presets {
-                                                            "Back to mouse actions"
-                                                        } else {
-                                                            "Browse all actions"
-                                                        },
-                                                        |t| {
-                                                            t.font(&fonts::SANS_SEMIBOLD)
-                                                                .font_size(14)
-                                                                .color(pal.text)
-                                                        },
-                                                    );
+                                                    ui.text("Browse all actions", |t| {
+                                                        t.font(&fonts::SANS_SEMIBOLD)
+                                                            .font_size(14)
+                                                            .color(pal.text)
+                                                    });
                                                 },
                                             );
-                                            if !app.wheel_presets {
-                                                widgets::icon(
-                                                    ui,
-                                                    &icons::CHEVRON_RIGHT,
-                                                    14.0,
-                                                    pal.muted,
-                                                );
-                                            }
+                                            widgets::icon(
+                                                ui,
+                                                &icons::CHEVRON_RIGHT,
+                                                14.0,
+                                                pal.muted,
+                                            );
                                             if ui.just_pressed() {
-                                                app.wheel_presets = !app.wheel_presets;
+                                                app.wheel_presets = true;
                                             }
                                         });
                                 });
@@ -702,6 +669,31 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                             });
                     }
                 });
+            if !app.shortcut_editor && (app.picker_speed_editor || app.wheel_presets) {
+                ui.element()
+                    .id("mouse_actions_back")
+                    .width(grow!())
+                    .height(fixed!(32.0))
+                    .corner_radius(6.0)
+                    .background_color(pal.s2)
+                    .layout(|l| {
+                        l.direction(LeftToRight)
+                            .align(Left, CenterY)
+                            .gap(7)
+                            .padding((0, 10, 0, 10))
+                    })
+                    .accessibility(|a| a.button("Back to mouse actions"))
+                    .children(|ui| {
+                        widgets::icon(ui, &icons::BTN_BACK, 16.0, pal.accent);
+                        ui.text("Back to mouse actions", |t| {
+                            t.font(&fonts::SANS).font_size(13).color(pal.accent)
+                        });
+                        if ui.just_pressed() {
+                            app.picker_speed_editor = false;
+                            app.wheel_presets = false;
+                        }
+                    });
+            }
             if app.shortcut_editor || app.picker_speed_editor || app.failed_assignment.is_some() {
                 return;
             }
@@ -836,28 +828,6 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
         .layout(|l| l.direction(TopToBottom).gap(6).padding((8, 16, 8, 16)))
         .children(|ui| {
             if editing {
-                ui.element()
-                    .id("picker_speed_back")
-                    .width(grow!())
-                    .height(fixed!(32.0))
-                    .corner_radius(6.0)
-                    .background_color(pal.s2)
-                    .layout(|l| {
-                        l.direction(LeftToRight)
-                            .align(Left, CenterY)
-                            .gap(7)
-                            .padding((0, 10, 0, 10))
-                    })
-                    .accessibility(|a| a.button("Back to mouse actions"))
-                    .children(|ui| {
-                        widgets::icon(ui, &icons::BTN_BACK, 16.0, pal.accent);
-                        ui.text("Back to mouse actions", |t| {
-                            t.font(&fonts::SANS).font_size(13).color(pal.accent)
-                        });
-                        if ui.just_pressed() {
-                            app.picker_speed_editor = false;
-                        }
-                    });
                 ui.text("Switch between two pointer speeds", |t| {
                     t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
                 });
@@ -1374,6 +1344,14 @@ fn browse_categories(
         });
 }
 
+fn preset_label(label: &str) -> &str {
+    match label {
+        "Back" => "Back shortcut",
+        "Forward" => "Forward shortcut",
+        _ => label,
+    }
+}
+
 fn action_groups(query: &str) -> Vec<ActionGroup> {
     let presets = actions::presets();
 
@@ -1423,7 +1401,7 @@ fn action_groups(query: &str) -> Vec<ActionGroup> {
             })
             .map(|p| {
                 (
-                    p.label.to_string(),
+                    preset_label(p.label).to_string(),
                     None,
                     p.keys.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
                     (p.action)(),
@@ -1457,7 +1435,7 @@ fn results(
         for preset in actions::presets() {
             if matches!(preset.label, "Copy" | "Paste" | "Back" | "Forward") {
                 quick.1.push((
-                    preset.label.into(),
+                    preset_label(preset.label).into(),
                     None,
                     preset.keys.iter().map(|s| s.to_string()).collect(),
                     (preset.action)(),
