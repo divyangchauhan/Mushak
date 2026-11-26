@@ -18,19 +18,21 @@ pub fn px(size: f32) -> u16 {
 }
 
 /// "Remapping paused" pill in the title bar.
-pub fn paused_pill(ui: &mut Ui2, pal: &Palette) {
+pub fn paused_status(ui: &mut Ui2, app: &mut App) {
+    let pal = &app.pal;
+    let pid = app.device_view.resume_pid;
+    let failed = matches!(app.resume, super::ResumeState::Failed);
+    let can_show_steps = (failed || pid.is_none()) && !app.resume_steps_visible();
     let bg = Palette::mix(pal.danger, 15.0, pal.win);
-    let border = Palette::mix(pal.danger, 35.0, pal.win);
     ui.element()
-        .height(fixed!(22.0))
-        .corner_radius(99.0)
+        .height(fixed!(28.0))
+        .corner_radius(8.0)
         .background_color(bg)
-        .border(|b| b.all(1).color(border))
         .layout(|l| {
             l.direction(LeftToRight)
                 .align(Left, CenterY)
-                .gap(6)
-                .padding((3, 9, 3, 9))
+                .gap(8)
+                .padding((2, 3, 2, 9))
         })
         .children(|ui| {
             ui.element()
@@ -40,11 +42,74 @@ pub fn paused_pill(ui: &mut Ui2, pal: &Palette) {
                 .background_color(pal.danger)
                 .empty();
             ui.text("Remapping paused", |t| {
-                t.font(&fonts::SANS_SEMIBOLD)
-                    .font_size(px(11.5))
-                    .color(pal.danger)
+                t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
             });
+            if let Some(pid) = pid {
+                let label = if failed { "Retry" } else { "Resume" };
+                if pause_command(ui, pal, "resume_remapping", label) {
+                    if crate::single_instance::ResumeEvent::request(pid).is_ok() {
+                        app.resume = super::ResumeState::Requested {
+                            pid,
+                            at: std::time::Instant::now(),
+                        };
+                    } else {
+                        app.resume = super::ResumeState::Failed;
+                        app.show_resume_steps = Some(true);
+                    }
+                }
+            }
+            if can_show_steps && pause_command(ui, pal, "show_resume_steps", "Tray steps") {
+                app.show_resume_steps = Some(true);
+            }
         });
+}
+
+fn pause_command(ui: &mut Ui2, pal: &Palette, id: &'static str, label: &str) -> bool {
+    let hovered = ui.pointer_over(id);
+    let mut clicked = false;
+    ui.element()
+        .id(id)
+        .height(fixed!(26.0))
+        .corner_radius(6.0)
+        .background_color(if hovered { pal.s2 } else { pal.surface })
+        .border(|b| b.all(1).color(pal.line_strong))
+        .accessibility(|a| a.button(label))
+        .layout(|l| l.align(CenterX, CenterY).padding((0, 9, 0, 9)))
+        .children(|ui| {
+            ui.text(label, |t| {
+                t.font(&fonts::SANS_BOLD).font_size(13).color(pal.text)
+            });
+            clicked = ui.just_pressed();
+        });
+    clicked
+}
+
+/// Keep the tray steps visible while Settings cannot send the resume command.
+pub fn resume_help(ui: &mut Ui2, pal: &Palette, failed: bool) -> bool {
+    let mut hide = false;
+    let title = if failed {
+        "Resume unconfirmed"
+    } else {
+        "Resume from the tray"
+    };
+    ui.element()
+        .id("resume_help")
+        .width(grow!())
+        .height(fit!(46.0))
+        .background_color(Palette::mix(pal.warn, 9.0, pal.win))
+        .border(|b| b.bottom(1).color(pal.line_strong))
+        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(10).padding((5, 14, 5, 14)))
+        .children(|ui| {
+            icon(ui, &icons::MODAK_PAUSED, 24.0, pal.text);
+            ui.element().width(grow!()).height(fit!())
+                .layout(|l| l.direction(TopToBottom).gap(3)).children(|ui| {
+                    ui.text(title, |t| t.font(&fonts::SANS_BOLD).font_size(15).color(pal.text));
+                    ui.text("By the Windows clock, right-click Mushak and choose Resume remapping. Use Show hidden icons if needed.",
+                        |t| t.font(&fonts::SANS).font_size(14).color(pal.text));
+                });
+            hide = pause_command(ui, pal, "hide_resume_steps", "Hide steps");
+        });
+    hide
 }
 
 /// A tinted icon. Ply multiplies the texture by the element's background
@@ -119,10 +184,15 @@ pub fn titlebar_buttons(ui: &mut Ui2, app: &mut App) {
 /// Warning strip shown while Logitech Options+ / G HUB is running.
 pub fn conflict_banner(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
-    let bg = Palette::mix(pal.warn, 14.0, pal.win);
-    let border = Palette::mix(pal.warn, 40.0, pal.win);
     let names = app.conflict_names.join(", ");
     let failure = app.kill_outcome.as_ref().and_then(|o| o.failed.first());
+    let tone = if failure.is_some() {
+        pal.danger
+    } else {
+        pal.warn
+    };
+    let bg = Palette::mix(tone, 14.0, pal.win);
+    let border = Palette::mix(tone, 40.0, pal.win);
     let mut quit = false;
     let mut ignore = false;
 
@@ -138,28 +208,33 @@ pub fn conflict_banner(ui: &mut Ui2, app: &mut App) {
                 .padding((12, 16, 12, 16))
         })
         .children(|ui| {
-            icon(ui, &icons::WARN, 20.0, pal.warn);
+            icon(ui, &icons::WARN, 20.0, tone);
             ui.element()
                 .width(grow!())
                 .height(fit!())
-                .layout(|l| l.direction(TopToBottom).gap(2))
+                .layout(|l| l.direction(TopToBottom).gap(5))
                 .children(|ui| {
                     let (title, sub) = match failure {
                         Some((name, why)) => (
                             format!("Could not quit {name}"),
-                            format!("{why}. Close the app manually or try again."),
+                            format!("{why}. {name} can still intercept button presses. Quit it from its tray menu."),
                         ),
                         None => (
                             format!("{names} is running"),
-                            "Close the other mouse software to let Mushak apply your mappings."
-                                .into(),
+                            "The other mouse app can intercept button presses. Quit it to use your mappings.".into(),
                         ),
                     };
-                    ui.text(&title, |t| {
-                        t.font(&fonts::SANS_BOLD).font_size(15).color(pal.text)
-                    });
+                    ui.element()
+                        .width(grow!())
+                        .height(fit!())
+                        .layout(|l| l.direction(LeftToRight).gap(12).align(Left, CenterY).wrap())
+                        .children(|ui| {
+                            ui.text(&title, |t| {
+                                t.font(&fonts::SANS_BOLD).font_size(15).color(pal.text)
+                            });
+                        });
                     ui.text(&sub, |t| {
-                        t.font(&fonts::SANS).font_size(px(12.5)).color(pal.muted)
+                        t.font(&fonts::SANS).font_size(14).color(pal.muted)
                     });
                 });
 
@@ -168,7 +243,9 @@ pub fn conflict_banner(ui: &mut Ui2, app: &mut App) {
                 .id("banner_quit")
                 .height(fixed!(30.0))
                 .corner_radius(8.0)
-                .background_color(if hovered {
+                .background_color(if failure.is_some() {
+                    pal.surface
+                } else if hovered {
                     Palette::mix(WHITE, 8.0, pal.warn)
                 } else {
                     pal.warn
@@ -179,28 +256,30 @@ pub fn conflict_banner(ui: &mut Ui2, app: &mut App) {
                         quit = true;
                     }
                     let command = if failure.is_some() {
-                        "Try again".to_owned()
+                        "Retry quit".to_owned()
                     } else {
                         format!("Quit {names}")
                     };
                     ui.text(&command, |t| {
                         t.font(&fonts::SANS_SEMIBOLD)
-                            .font_size(px(12.5))
-                            .color(pal.warn_ink)
+                            .font_size(14)
+                            .color(if failure.is_some() { pal.text } else { pal.warn_ink })
                     });
                 });
 
             let ig_hover = ui.pointer_over("banner_ignore");
             ui.element()
                 .id("banner_ignore")
+                .corner_radius(8.0)
+                .border(|b| b.all(1).color(pal.line_strong))
                 .height(fixed!(30.0))
-                .layout(|l| l.align(CenterX, CenterY).padding((7, 6, 7, 6)))
+                .layout(|l| l.align(CenterX, CenterY).padding((7, 12, 7, 12)))
                 .children(|ui| {
                     if ui.just_pressed() {
                         ignore = true;
                     }
                     ui.text("Dismiss", |t| {
-                        t.font(&fonts::SANS).font_size(px(12.5)).color(if ig_hover {
+                        t.font(&fonts::SANS).font_size(14).color(if ig_hover {
                             pal.text
                         } else {
                             pal.muted
@@ -218,7 +297,8 @@ pub fn conflict_banner(ui: &mut Ui2, app: &mut App) {
 }
 
 /// One entry in the left rail. Returns true when clicked.
-pub fn nav_item(ui: &mut Ui2, pal: &Palette, section: Section, active: bool) -> bool {
+pub fn nav_item(ui: &mut Ui2, pal: &Palette, section: Section, active: bool, short: bool) -> bool {
+    let padding_y = if short { 5 } else { 12 };
     let mut clicked = false;
     let hovered = ui.pointer_over(section.id());
     let bg = if active {
@@ -237,7 +317,7 @@ pub fn nav_item(ui: &mut Ui2, pal: &Palette, section: Section, active: bool) -> 
     ui.element()
         .id(section.id())
         .width(grow!())
-        .height(fixed!(38.0))
+        .height(fixed!(if short { 30.0 } else { 38.0 }))
         .corner_radius(10.0)
         .background_color(bg)
         .border(|b| {
@@ -248,7 +328,7 @@ pub fn nav_item(ui: &mut Ui2, pal: &Palette, section: Section, active: bool) -> 
             l.direction(LeftToRight)
                 .align(Left, CenterY)
                 .gap(11)
-                .padding(12)
+                .padding((padding_y, 12, padding_y, 12))
         })
         .children(|ui| {
             if ui.just_pressed() {
@@ -266,15 +346,12 @@ pub fn nav_item(ui: &mut Ui2, pal: &Palette, section: Section, active: bool) -> 
 }
 
 /// Connection + battery card pinned to the bottom of the rail.
-pub fn status_card(ui: &mut Ui2, app: &mut App) {
+pub fn status_card(ui: &mut Ui2, app: &mut App, short: bool) {
     let pal = app.pal;
     let d = &app.device_view.device;
-    let paused = app.device_view.paused;
     let awake = d.connected;
 
-    let (dot, label) = if paused {
-        (pal.danger, "Paused")
-    } else if !awake {
+    let (dot, label) = if !awake {
         (pal.faint, d.availability_label())
     } else {
         (pal.good, "Connected")
@@ -294,12 +371,17 @@ pub fn status_card(ui: &mut Ui2, app: &mut App) {
     let charging = d.charging;
 
     ui.element()
+        .id("rail_device_status")
         .width(grow!())
         .height(fit!())
         .corner_radius(12.0)
         .background_color(pal.surface)
         .border(|b| b.all(1).color(pal.line))
-        .layout(|l| l.direction(TopToBottom).gap(7).padding(13))
+        .layout(|l| {
+            l.direction(TopToBottom)
+                .gap(if short { 3 } else { 7 })
+                .padding(if short { 8 } else { 13 })
+        })
         .children(|ui| {
             if d.name.is_some() {
                 let model = d
@@ -551,7 +633,7 @@ pub fn action_chip(ui: &mut Ui2, pal: &Palette, id: Id, disp: &super::actions::D
                 };
                 ui.text(&disp.label, |t| t.font(font).font_size(13).color(color));
             }
-            icon(ui, &icons::CHEVRON_RIGHT, 15.0, pal.accent);
+            icon(ui, &icons::CAT_EDIT, 16.0, pal.accent);
         });
     clicked
 }
@@ -585,7 +667,7 @@ pub fn asleep_card(ui: &mut Ui2, pal: &Palette, device: &crate::hidpp::device::D
                     let instruction = if device.name.is_some() {
                         "Wake or reconnect your mouse. Saved button mappings are still editable."
                     } else {
-                        "Connect a mouse to see its settings."
+                        "Edit standard button mappings offline, or connect a mouse to see its controls."
                     };
                     ui.text(instruction, |t| {
                         t.font(&fonts::SANS).font_size(14).color(pal.muted)

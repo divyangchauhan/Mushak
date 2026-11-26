@@ -51,6 +51,50 @@ fn main() {
     println!("cargo:rerun-if-changed=assets/icons");
 
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR"));
+    for (model, left, top) in [
+        ("mx-master-2s", 84, 106),
+        ("mx-master-3s", 230, 192),
+        ("mx-master-4", 250, 163),
+    ] {
+        let source = format!("assets/devices/{model}.png");
+        println!("cargo:rerun-if-changed={source}");
+        let mut image = resvg::tiny_skia::Pixmap::load_png(source).expect("read mouse artwork");
+        // Product photos contain illuminated green LEDs. Battery and connection status
+        // come from the device report, so keep these lamps unlit in the diagram.
+        if model != "mx-master-3s" {
+            for pixel in image.data_mut().chunks_exact_mut(4) {
+                if pixel[1].saturating_sub(pixel[0].max(pixel[2])) > 6 {
+                    let shade = pixel[0].min(pixel[2]) / 9 + pixel[3] / 6;
+                    pixel[..3].fill(shade);
+                }
+            }
+            image
+                .save_png(out_dir.join(format!("{model}-diagram.png")))
+                .expect("write diagram");
+        }
+        if model == "mx-master-2s" {
+            let mut dark_art = image.clone();
+            // Lift the shell midtones while keeping the deepest shadows and highlights.
+            for pixel in dark_art.data_mut().chunks_exact_mut(4) {
+                let alpha = u32::from(pixel[3]);
+                if alpha > 0 {
+                    for channel in &mut pixel[..3] {
+                        let value = u32::from(*channel);
+                        *channel = (value + value * (alpha - value) * 2 / (5 * alpha)) as u8;
+                    }
+                }
+            }
+            dark_art
+                .save_png(out_dir.join("mx-master-2s-dark.png"))
+                .expect("write dark 2S diagram");
+        }
+        let crop = resvg::tiny_skia::IntRect::from_xywh(left, top, 348, 285).unwrap();
+        image
+            .clone_rect(crop)
+            .expect("crop wheel detail")
+            .save_png(out_dir.join(format!("{model}-wheel.png")))
+            .expect("write wheel detail");
+    }
     let icon_out = out_dir.join("icons");
     std::fs::create_dir_all(&icon_out).expect("create icon out dir");
 

@@ -1,12 +1,20 @@
 //! MX Master family artwork with capability-gated button callouts.
 
-use super::{actions, fonts, icons, theme, widgets::Ui2, App, PickerTarget, Section};
+use super::{
+    actions, fonts, icons, theme,
+    widgets::{self, Ui2},
+    App, PickerTarget, Section,
+};
 use crate::hidpp::device::DeviceStatus;
 use ply_engine::prelude::*;
 
 static CLASSIC: GraphicAsset = GraphicAsset::Bytes {
     file_name: "mx-master-2s.png",
-    data: include_bytes!("../../assets/devices/mx-master-2s.png"),
+    data: include_bytes!(concat!(env!("OUT_DIR"), "/mx-master-2s-diagram.png")),
+};
+static CLASSIC_DARK: GraphicAsset = GraphicAsset::Bytes {
+    file_name: "mx-master-2s-dark.png",
+    data: include_bytes!(concat!(env!("OUT_DIR"), "/mx-master-2s-dark.png")),
 };
 // A detail crop of CLASSIC. Source coordinates cover (317, 105) through (665, 390).
 static CLASSIC_THUMB: GraphicAsset = GraphicAsset::Bytes {
@@ -19,12 +27,25 @@ static MASTER_3: GraphicAsset = GraphicAsset::Bytes {
 };
 static MASTER_4: GraphicAsset = GraphicAsset::Bytes {
     file_name: "mx-master-4.png",
-    data: include_bytes!("../../assets/devices/mx-master-4.png"),
+    data: include_bytes!(concat!(env!("OUT_DIR"), "/mx-master-4-diagram.png")),
 };
 
 static MASTER_4_THUMB: GraphicAsset = GraphicAsset::Bytes {
     file_name: "mx-master-4-thumb.png",
     data: include_bytes!("../../assets/devices/mx-master-4-thumb.png"),
+};
+
+static CLASSIC_WHEEL: GraphicAsset = GraphicAsset::Bytes {
+    file_name: "mx-master-2s-wheel.png",
+    data: include_bytes!(concat!(env!("OUT_DIR"), "/mx-master-2s-wheel.png")),
+};
+static MASTER_3_WHEEL: GraphicAsset = GraphicAsset::Bytes {
+    file_name: "mx-master-3s-wheel.png",
+    data: include_bytes!(concat!(env!("OUT_DIR"), "/mx-master-3s-wheel.png")),
+};
+static MASTER_4_WHEEL: GraphicAsset = GraphicAsset::Bytes {
+    file_name: "mx-master-4-wheel.png",
+    data: include_bytes!(concat!(env!("OUT_DIR"), "/mx-master-4-wheel.png")),
 };
 
 const STAGE_WIDTH: f32 = 600.0;
@@ -60,14 +81,15 @@ impl Model {
         }
     }
 
-    pub(super) fn has_thumb_detail(self, anchor: Option<&str>) -> bool {
-        matches!(
-            (self, anchor),
-            (
-                Self::Original | Self::Master2S,
-                Some("mouse_back" | "mouse_forward")
-            ) | (Self::Master4, Some("mouse_haptic"))
-        )
+    pub(super) fn has_detail(self, anchor: Option<&str>) -> bool {
+        anchor == Some("mouse_mode")
+            || matches!(
+                (self, anchor),
+                (
+                    Self::Original | Self::Master2S,
+                    Some("mouse_back" | "mouse_forward")
+                ) | (Self::Master4, Some("mouse_haptic"))
+            )
     }
 
     fn artwork(self) -> &'static GraphicAsset {
@@ -266,11 +288,18 @@ fn extra_buttons(
 
 /// Back and Forward share a narrow strip behind the horizontal wheel on the classic body.
 /// The pointer ends at the button, leaving its face visible.
-fn thumb_detail(ui: &mut Ui2, app: &App, part: &Part, scale: f32) {
+fn button_detail(ui: &mut Ui2, app: &App, model: Model, part: &Part, scale: f32) {
     let pal = app.pal;
     let width = 211.0 * scale;
     let image_height = width * 285.0 / 348.0;
-    let (image, left, top, title, caption) = if part.id == "mouse_haptic" {
+    let (image, left, top, title, caption) = if part.id == "mouse_mode" {
+        let (image, left, top) = match model {
+            Model::Original | Model::Master2S => (&CLASSIC_WHEEL, 84.0, 106.0),
+            Model::Master3 | Model::Master3S => (&MASTER_3_WHEEL, 230.0, 192.0),
+            Model::Master4 => (&MASTER_4_WHEEL, 250.0, 163.0),
+        };
+        (image, left, top, "Wheel controls", "Behind the main wheel")
+    } else if part.id == "mouse_haptic" {
         (
             &MASTER_4_THUMB,
             486.0,
@@ -385,20 +414,22 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         0.70
     } else if editing {
         0.78
-    } else if !extras.is_empty() {
-        0.92
     } else {
         1.0
     };
     let art_scale = scale * factor;
-    let art_y = (1.0 - factor) * 120.0 * scale;
+    let art_y = ((1.0 - factor) * 120.0 - if editing { 0.0 } else { 14.0 }) * scale;
     // Leave room for the separate row when firmware reports an unmapped location.
-    let stage_height = if extras.is_empty() {
-        STAGE_HEIGHT
-    } else {
-        284.0
-    };
-    let row_pitch = if extras.is_empty() { 49.0 } else { 44.0 };
+    let count = model
+        .parts()
+        .iter()
+        .filter(|p| p.target(&app.device_view.device).is_some())
+        .count();
+    let row_pitch = if extras.is_empty() { 55.0 } else { 47.0 };
+    let extra_heading = if extras.is_empty() { 0.0 } else { 21.0 };
+    let list_height = (count + extras.len()) as f32 * row_pitch + extra_heading;
+    let stage_height = STAGE_HEIGHT.max(list_height + 10.0);
+    let list_top = (stage_height - list_height) / 2.0;
     let mut selected = None;
 
     ui.element()
@@ -406,13 +437,13 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         .width(grow!())
         .height(fixed!(stage_height * scale))
         .children(|ui| {
-            if editing && model.has_thumb_detail(app.picker_anchor) {
+            if editing && model.has_detail(app.picker_anchor) {
                 if let Some(part) = model
                     .parts()
                     .iter()
                     .find(|p| Some(p.id) == app.picker_anchor)
                 {
-                    thumb_detail(ui, app, part, scale);
+                    button_detail(ui, app, model, part, scale);
                     return;
                 }
             }
@@ -426,7 +457,15 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         .passthrough()
                 })
                 .background_color(theme::WHITE)
-                .image(model.artwork())
+                .image(
+                    if matches!(model, Model::Original | Model::Master2S)
+                        && app.prefs.theme == super::Theme::Dark
+                    {
+                        &CLASSIC_DARK
+                    } else {
+                        model.artwork()
+                    },
+                )
                 .accessibility(|a| {
                     a.image(&format!(
                         "{}, front and thumb side button layout",
@@ -435,17 +474,12 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 })
                 .empty();
 
-            let count = model
-                .parts()
-                .iter()
-                .filter(|p| p.target(&app.device_view.device).is_some())
-                .count();
             let mut row = 0;
             for (index, part) in model.parts().iter().enumerate() {
                 let Some(target) = part.target(&app.device_view.device) else {
                     continue;
                 };
-                let action = actions::display(&app.action_for(&target));
+                let action = actions::assignment(app, &target);
                 let action_label = if action.label.is_empty() {
                     action.keys.join(" + ")
                 } else {
@@ -461,8 +495,120 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 let hovered = ui.pointer_over(part.id) || ui.pointer_over(label_id.clone());
                 let number = (index + 1).to_string();
                 let (x, y) = part.point_on_stage(model);
+                // Label the two adjacent thumb buttons on opposite sides of their contact points.
+                let leader = if matches!(
+                    model,
+                    Model::Original | Model::Master2S | Model::Master3 | Model::Master3S
+                ) {
+                    match part.id {
+                        "mouse_back" => -19.0,
+                        "mouse_forward" => 19.0,
+                        _ => 0.0,
+                    }
+                } else if model == Model::Master4 {
+                    match part.id {
+                        "mouse_forward" => 32.0,
+                        "mouse_gesture" => 22.0,
+                        _ => 0.0,
+                    }
+                } else {
+                    0.0_f32
+                };
+                // A vertical line from Back crosses the 4's polished thumb wheel.
+                let horizontal = if model == Model::Master4 && part.id == "mouse_back" {
+                    65.0
+                } else {
+                    0.0
+                };
+                let has_leader = leader != 0.0 || horizontal != 0.0;
+                if has_leader && ui.pointer_over(part.id) && !editing {
+                    ui.element()
+                        .width(fit!())
+                        .height(fixed!(27.0))
+                        .floating(|f| {
+                            f.attach_id("mouse_stage")
+                                .offset((
+                                    (x - 44.0) * art_scale + horizontal * scale,
+                                    (y + leader) * art_scale
+                                        + art_y
+                                        + if leader < 0.0 { -43.0 } else { 15.0 },
+                                ))
+                                .z_index(4)
+                                .passthrough()
+                        })
+                        .background_color(pal.pop)
+                        .border(|b| b.all(1).color(pal.line_strong))
+                        .corner_radius(6.0)
+                        .layout(|l| l.align(CenterX, CenterY).padding((0, 9, 0, 9)))
+                        .children(|ui| {
+                            ui.text(part.label, |t| {
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
+                            });
+                        });
+                }
+                if has_leader {
+                    ui.element()
+                        .width(fixed!(20.0 * scale))
+                        .height(fixed!(20.0 * scale))
+                        .floating(|f| {
+                            f.attach_id("mouse_stage")
+                                .clip_by_parent()
+                                .offset((
+                                    x * art_scale - 10.0 * scale,
+                                    y * art_scale + art_y - 10.0 * scale,
+                                ))
+                                .z_index(2)
+                        })
+                        .children(|ui| {
+                            if ui.just_pressed() {
+                                selected = Some((target.clone(), part.id));
+                            }
+                        });
+                    ui.element()
+                        .width(fixed!(if horizontal > 0.0 {
+                            horizontal * scale
+                        } else {
+                            3.0
+                        }))
+                        .height(fixed!(if horizontal > 0.0 {
+                            3.0
+                        } else {
+                            leader.abs() * scale
+                        }))
+                        .floating(|f| {
+                            f.attach_id("mouse_stage")
+                                .clip_by_parent()
+                                .offset((
+                                    x * art_scale - 1.0,
+                                    y * art_scale + art_y + leader.min(0.0) * scale
+                                        - if horizontal > 0.0 { 1.0 } else { 0.0 },
+                                ))
+                                .z_index(1)
+                        })
+                        .background_color(theme::WHITE)
+                        .border(|b| b.all(1).color(Color::rgb(39.0, 43.0, 47.0)))
+                        .children(|ui| {
+                            if ui.just_pressed() {
+                                selected = Some((target.clone(), part.id));
+                            }
+                        });
+                    ui.element()
+                        .width(fixed!(6.0))
+                        .height(fixed!(6.0))
+                        .corner_radius(3.0)
+                        .floating(|f| {
+                            f.attach_id("mouse_stage")
+                                .clip_by_parent()
+                                .offset((x * art_scale - 3.0, y * art_scale + art_y - 3.0))
+                                .z_index(2)
+                                .passthrough()
+                        })
+                        .background_color(theme::WHITE)
+                        .border(|b| b.all(1).color(Color::rgb(39.0, 43.0, 47.0)))
+                        .empty();
+                }
                 let lx = 379.0;
-                let ly = (stage_height - count as f32 * row_pitch) / 2.0 + row as f32 * row_pitch;
+                let ly = list_top + row as f32 * row_pitch;
                 row += 1;
                 ui.element()
                     .id(part.id)
@@ -472,8 +618,8 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         f.attach_id("mouse_stage")
                             .clip_by_parent()
                             .offset((
-                                x * art_scale - 10.0 * scale,
-                                y * art_scale + art_y - 10.0 * scale,
+                                x * art_scale + (horizontal - 10.0) * scale,
+                                y * art_scale + art_y + (leader - 10.0) * scale,
                             ))
                             .z_index(2)
                     })
@@ -565,29 +711,142 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         }
                     })
                     .layout(|l| {
-                        l.direction(TopToBottom)
+                        l.direction(LeftToRight)
                             .align(Left, CenterY)
-                            .gap(3)
+                            .gap(6)
                             .padding((5, 12, 5, 12))
                     })
                     .children(|ui| {
                         if ui.just_pressed() {
                             selected = Some((target.clone(), part.id));
                         }
-                        ui.text(&format!("{number}   {}", part.label), |t| {
-                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                        });
-                        let label = if matches!(target, PickerTarget::Gesture(_))
-                            && !app.selected_gestures().enabled
-                        {
-                            "Gestures off"
-                        } else {
-                            &action_label
-                        };
-                        ui.text(label, |t| {
-                            t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.accent)
+                        ui.element()
+                            .width(fixed!(22.0))
+                            .height(fixed!(22.0))
+                            .corner_radius(11.0)
+                            .background_color(pal.win)
+                            .border(|b| b.all(1).color(pal.line_strong))
+                            .layout(|l| l.align(CenterX, CenterY))
+                            .children(|ui| {
+                                ui.text(&number, |t| {
+                                    t.font(&fonts::MONO_BOLD).font_size(12).color(pal.text)
+                                });
+                            });
+                        ui.element()
+                            .width(grow!())
+                            .height(fit!())
+                            .layout(|l| l.direction(TopToBottom).gap(3))
+                            .children(|ui| {
+                                ui.text(part.label, |t| {
+                                    t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
+                                });
+                                let label = if matches!(target, PickerTarget::Gesture(_))
+                                    && !app.selected_gestures().enabled
+                                {
+                                    "Gestures off"
+                                } else {
+                                    &action_label
+                                };
+                                ui.text(label, |t| {
+                                    t.font(&fonts::SANS_MEDIUM).font_size(14).color(pal.accent)
+                                });
+                            });
+                        widgets::icon(
+                            ui,
+                            &icons::CAT_EDIT,
+                            18.0,
+                            if hovered { pal.accent } else { pal.muted },
+                        );
+                    });
+            }
+            if !editing && !extras.is_empty() {
+                let x = 379.0 * scale;
+                let y = list_top + count as f32 * row_pitch;
+                ui.element()
+                    .width(fixed!(217.0 * scale))
+                    .height(fixed!(extra_heading * scale))
+                    .floating(|f| {
+                        f.attach_id("mouse_stage")
+                            .offset((x, y * scale))
+                            .passthrough()
+                    })
+                    .layout(|l| l.align(Left, CenterY))
+                    .children(|ui| {
+                        ui.text("Outside the diagram", |t| {
+                            t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
                         });
                     });
+                for (i, (slot, name, cid)) in extras.iter().enumerate() {
+                    let target = PickerTarget::Button(slot.clone());
+                    let action = actions::assignment(app, &target);
+                    let assignment = if action.label.is_empty() {
+                        action.keys.join(" + ")
+                    } else {
+                        action.label
+                    };
+                    let label = if name == "Additional button" || name.starts_with("Control 0x") {
+                        format!("Button 0x{cid:04X}")
+                    } else {
+                        name.clone()
+                    };
+                    let alias_key = format!("{}/{}", app.device_view.device.display_name(), slot);
+                    let displayed = app
+                        .prefs
+                        .button_names
+                        .get(&alias_key)
+                        .unwrap_or(&label)
+                        .clone();
+                    let id: Id = ("mouse_extra", super::buttons::slot_index(slot)).into();
+                    let hover = ui.pointer_over(id.clone());
+                    ui.element()
+                        .id(id)
+                        .width(fixed!(217.0 * scale))
+                        .height(fixed!((row_pitch - 4.0) * scale))
+                        .floating(|f| {
+                            f.attach_id("mouse_stage")
+                                .offset((x, (y + extra_heading + i as f32 * row_pitch) * scale))
+                                .z_index(2)
+                        })
+                        .background_color(if hover { pal.s2 } else { pal.surface })
+                        .corner_radius(10.0)
+                        .border(|b| b.all(1).color(if hover { pal.accent } else { pal.line }))
+                        .accessibility(|a| {
+                            a.button(&format!(
+                                "Edit {displayed}, control {cid:#06X}, {assignment}"
+                            ))
+                        })
+                        .layout(|l| {
+                            l.direction(LeftToRight)
+                                .align(Left, CenterY)
+                                .padding((4, 12, 4, 12))
+                                .gap(6)
+                        })
+                        .children(|ui| {
+                            widgets::icon(ui, &icons::NAV_BUTTONS, 22.0, pal.muted);
+                            ui.element()
+                                .width(grow!())
+                                .height(fit!())
+                                .layout(|l| l.direction(TopToBottom).gap(3))
+                                .children(|ui| {
+                                    ui.text(&displayed, |t| {
+                                        t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                                    });
+                                    ui.text(&assignment, |t| {
+                                        t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.accent)
+                                    });
+                                });
+                            widgets::icon(
+                                ui,
+                                &icons::CAT_EDIT,
+                                15.0,
+                                if hover { pal.accent } else { pal.muted },
+                            );
+                            if ui.just_pressed() {
+                                app.open_picker(target);
+                                app.picker_row_label = Some(label);
+                            }
+                        });
+                }
             }
         });
 
@@ -595,109 +854,60 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         return;
     }
     if Section::Gestures.available(&app.device_view.device) {
-        let mut gestures = false;
-        ui.element()
-            .width(grow!())
-            .height(fit!())
-            .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(10))
-            .children(|ui| {
-                ui.element().width(grow!()).children(|ui| {
-                    ui.text("Gesture actions follow the selected profile.", |t| {
-                        t.font(&fonts::SANS).font_size(13).color(pal.muted)
-                    });
-                });
-                ui.element()
-                    .id("mouse_gestures")
-                    .width(fit!())
-                    .height(fixed!(34.0))
-                    .corner_radius(8.0)
-                    .background_color(pal.surface)
-                    .border(|b| b.all(1).color(pal.line_strong))
-                    .accessibility(|a| {
-                        if app.picker.is_none() {
-                            a.button("Configure gestures")
-                        } else {
-                            a.static_text("Configure gestures")
-                        }
-                    })
-                    .layout(|l| l.direction(LeftToRight).gap(8).padding((8, 12, 8, 12)))
-                    .children(|ui| {
-                        gestures = ui.just_pressed();
-                        super::widgets::icon(ui, &icons::NAV_GESTURES, 16.0, pal.muted);
-                        ui.text("Configure gestures", |t| {
-                            t.font(&fonts::SANS_MEDIUM).font_size(14).color(pal.text)
-                        });
-                    });
-            });
-        if gestures {
-            app.section = Section::Gestures;
-            app.close_picker();
+        if !extras.is_empty() {
+            ui.element().height(fixed!(12.0)).empty();
         }
+        gesture_footer(
+            ui,
+            app,
+            "Gesture actions follow the selected profile.",
+            "Configure gestures",
+        );
     }
-    // Keep newly discovered controls editable even without an artwork marker.
-    if !extras.is_empty() {
-        ui.element().height(fixed!(10.0)).empty();
-        super::widgets::eyebrow(ui, &pal, "Buttons outside the diagram");
-    }
-    for (slot, name, cid) in extras {
-        ui.element().height(fixed!(10.0)).empty();
-        let target = PickerTarget::Button(slot.clone());
-        let display = actions::display(&app.action_for(&target));
-        let index = super::buttons::slot_index(&slot);
-        let id: Id = ("mouse_extra", index).into();
-        let hovered = ui.pointer_over(id.clone());
-        let assignment = if display.label.is_empty() {
-            display.keys.join(" + ")
-        } else {
-            display.label
-        };
-        ui.element()
-            .id(id)
-            .width(grow!())
-            .height(fixed!(53.0))
-            .corner_radius(10.0)
-            .background_color(if hovered { pal.s2 } else { pal.surface })
-            .border(|b| b.all(1).color(if hovered { pal.accent } else { pal.line }))
-            .accessibility(|a| a.button(&format!("Configure {name}, {assignment}")))
-            .layout(|l| {
-                l.direction(LeftToRight)
-                    .align(Left, CenterY)
-                    .gap(12)
-                    .padding((0, 14, 0, 14))
-            })
-            .children(|ui| {
-                if ui.just_pressed() {
-                    app.open_picker(target);
-                }
-                super::widgets::icon(ui, &icons::NAV_BUTTONS, 19.0, pal.muted);
-                ui.element()
-                    .width(grow!())
-                    .height(fit!())
-                    .layout(|l| l.direction(TopToBottom).gap(3))
-                    .children(|ui| {
-                        ui.text(&format!("{name}   {cid:#06X}"), |t| {
-                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                        });
-                        ui.text(&assignment, |t| {
-                            t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.accent)
-                        });
-                    });
-                ui.element()
-                    .width(fixed!(91.0))
-                    .height(fixed!(30.0))
-                    .background_color(pal.s2)
-                    .corner_radius(7.0)
-                    .layout(|l| l.align(CenterX, CenterY))
-                    .children(|ui| {
-                        ui.text("Edit action", |t| {
-                            t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
-                        });
-                    });
-            });
-    }
-
     if let Some((target, anchor)) = selected {
         app.open_button_popover(target, anchor);
+    }
+}
+
+pub(super) fn gesture_footer(ui: &mut Ui2, app: &mut App, hint: &str, label: &str) {
+    let pal = app.pal;
+    let mut gestures = false;
+    ui.element()
+        .width(grow!())
+        .height(fit!())
+        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(10))
+        .children(|ui| {
+            ui.element().width(grow!()).children(|ui| {
+                ui.text(hint, |t| {
+                    t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                });
+            });
+            ui.element()
+                .id("mouse_gestures")
+                .width(fit!())
+                .height(fixed!(34.0))
+                .corner_radius(8.0)
+                .background_color(pal.surface)
+                .border(|b| b.all(1).color(pal.line_strong))
+                .accessibility(|a| {
+                    if app.picker.is_none() {
+                        a.button(label)
+                    } else {
+                        a.static_text(label)
+                    }
+                })
+                .layout(|l| l.direction(LeftToRight).gap(8).padding((8, 12, 8, 12)))
+                .children(|ui| {
+                    gestures = ui.just_pressed();
+                    widgets::icon(ui, &icons::NAV_GESTURES, 16.0, pal.muted);
+                    ui.text(label, |t| {
+                        t.font(&fonts::SANS_MEDIUM).font_size(14).color(pal.text)
+                    });
+                });
+        });
+    if gestures {
+        app.section = Section::Gestures;
+        app.close_picker();
     }
 }
 
@@ -747,6 +957,7 @@ mod tests {
 
     fn add_button(device: &mut DeviceStatus, cid: u16, slot: &str) {
         device.capabilities.buttons.push(ButtonInfo {
+            default_task_id: None,
             cid,
             slot: slot.into(),
             name: slot.into(),

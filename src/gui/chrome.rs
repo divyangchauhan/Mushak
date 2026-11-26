@@ -25,6 +25,22 @@ fn hwnd() -> Option<HWND> {
     Some(HWND(raw))
 }
 
+/// The resident publishes status even when no input arrives in Settings.
+pub fn start_status_timer() {
+    use windows::Win32::UI::WindowsAndMessaging::{IsIconic, SetTimer};
+
+    unsafe extern "system" fn refresh(window: HWND, _message: u32, _id: usize, _time: u32) {
+        if !unsafe { IsIconic(window) }.as_bool() {
+            miniquad::window::schedule_update();
+        }
+    }
+    // A window timer is removed when Windows destroys its owning HWND.
+    let Some(window) = hwnd() else { return };
+    if unsafe { SetTimer(window, 0x4d53, 1000, Some(refresh)) } == 0 {
+        tracing::warn!("could not schedule device status refreshes in Settings");
+    }
+}
+
 /// Strip the OS title bar and size the window to the design's dimensions,
 /// keeping the resize border and the taskbar's minimise/restore animations
 /// (which need `WS_MINIMIZEBOX`/`WS_MAXIMIZEBOX`).

@@ -24,6 +24,43 @@ const MUTEX_NAME: PCWSTR = w!("Local\\Mushak.Tests.SingleInstance");
 #[cfg(test)]
 const EVENT_NAME: PCWSTR = w!("Local\\Mushak.Tests.ShowSettings");
 
+/// The resident advertises the owning PID with its device status. Standalone
+/// settings and fixtures therefore address only the resident they are observing.
+pub struct ResumeEvent(HANDLE);
+
+impl ResumeEvent {
+    pub fn create() -> windows::core::Result<Self> {
+        let name = Self::name(std::process::id());
+        unsafe { CreateEventW(None, false, false, &name).map(Self) }
+    }
+
+    fn name(pid: u32) -> windows::core::HSTRING {
+        windows::core::HSTRING::from(format!("Local\\Mushak.ResumeRemapping.{pid}"))
+    }
+
+    pub fn request(pid: u32) -> windows::core::Result<()> {
+        let name = Self::name(pid);
+        unsafe {
+            let event = OpenEventW(EVENT_MODIFY_STATE, false, &name)?;
+            let result = SetEvent(event);
+            let _ = CloseHandle(event);
+            result
+        }
+    }
+
+    pub fn take(&self) -> bool {
+        unsafe { WaitForSingleObject(self.0, 0) == WAIT_OBJECT_0 }
+    }
+}
+
+impl Drop for ResumeEvent {
+    fn drop(&mut self) {
+        unsafe {
+            let _ = CloseHandle(self.0);
+        }
+    }
+}
+
 /// Held for the lifetime of the resident. Dropping (or exiting) releases the
 /// mutex so the next launch can take over.
 pub struct InstanceGuard {
@@ -104,6 +141,18 @@ impl Drop for InstanceGuard {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn resume_request_reaches_only_a_live_endpoint_and_is_consumed_once() {
+        let pid = std::process::id();
+        let event = ResumeEvent::create().unwrap();
+        assert!(!event.take());
+        ResumeEvent::request(pid).unwrap();
+        assert!(event.take());
+        assert!(!event.take());
+        drop(event);
+        assert!(ResumeEvent::request(pid).is_err());
+    }
 
     #[test]
     fn second_acquire_is_refused_and_signals_owner() {

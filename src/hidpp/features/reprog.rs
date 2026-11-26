@@ -39,6 +39,35 @@ pub struct ButtonInfo {
     pub cid: u16,
     pub slot: String,
     pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_task_id: Option<u16>,
+}
+
+impl ButtonInfo {
+    /// Factory task IDs are separate from physical control IDs.
+    /// Names are from Solaar's logitech_receiver.special_keys.Task.
+    pub fn default_task(&self) -> Option<String> {
+        let tid = self.default_task_id?;
+        let name = match tid {
+            0x0001 => "Volume up",
+            0x0002 => "Volume down",
+            0x0003 | 0x004c => "Mute",
+            0x0004 => "Play or pause",
+            0x0038 => "Left click",
+            0x0039 => "Right click",
+            0x003a => "Middle click",
+            0x003b | 0x003c => "Back",
+            0x003d | 0x003e => "Forward",
+            0x003f => "Scroll left",
+            0x0040 => "Scroll right",
+            0x0042 => "Battery status",
+            0x0043 => "Show desktop",
+            0x009c => "Gesture",
+            0x009d => "SmartShift",
+            _ => return Some(format!("Task 0x{tid:04X}")),
+        };
+        Some(name.to_owned())
+    }
 }
 
 /// Physical control names from Logitech's HID++ control IDs.
@@ -84,6 +113,7 @@ pub(crate) fn button_choices(controls: &[ControlInfo], gesture: Option<u16>) -> 
                 _ => return None,
             };
             Some(ButtonInfo {
+                default_task_id: (c.tid != 0).then_some(c.tid),
                 cid: c.cid,
                 slot,
                 name,
@@ -291,6 +321,22 @@ mod tests {
         assert_eq!(choices.len(), 4);
         assert_eq!(choices[3].slot, "control_00ed");
         assert_eq!(choices[3].name, "DPI change button");
+    }
+    #[test]
+    fn unknown_physical_control_keeps_its_reported_factory_task() {
+        let mut extra = control(0x01ff, false);
+        extra.tid = 0x0003;
+        let button = button_choices(&[extra], None).pop().unwrap();
+        assert_eq!(button.name, "Button 0x01ff");
+        assert_eq!(button.default_task().as_deref(), Some("Mute"));
+        extra.tid = 0xf213;
+        assert_eq!(
+            button_choices(&[extra], None)[0].default_task().as_deref(),
+            Some("Task 0xF213")
+        );
+        let legacy: ButtonInfo =
+            serde_json::from_str(r#"{"cid":511,"slot":"control_01ff","name":"Extra"}"#).unwrap();
+        assert!(legacy.default_task().is_none());
     }
     #[test]
     fn raw_xy_capabilities_choose_gestures_and_leave_extra_buttons_remappable() {
