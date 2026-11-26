@@ -923,6 +923,13 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         app.saved_notice = None;
         click(ply, app, "mouse_mode").await;
         snapshot(&dir, "wheel-actions");
+        let wheel_before = Config::load_strict().unwrap();
+        click(ply, app, "picker_wheel_action").await;
+        assert_eq!(app.pending_action, Some(Action::ShiftWheelMode));
+        snapshot(&dir, "wheel-draft");
+        click(ply, app, "cancel_action").await;
+        assert_eq!(Config::load_strict().unwrap(), wheel_before);
+        click(ply, app, "mouse_mode").await;
         let original_search = ply.bounding_box("picker_search").unwrap();
         let original_footer = ply.bounding_box("save_action").unwrap();
         click(ply, app, "browse_wheel_actions").await;
@@ -933,6 +940,12 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         assert!(!app.wheel_presets);
         click(ply, app, "picker_speed_setup").await;
         snapshot(&dir, "dpi-editor");
+        chrome::make_frameless(720.0, 360.0);
+        settle(ply, app).await;
+        assert_panel_fits(ply, app);
+        snapshot(&dir, "dpi-compact");
+        chrome::make_frameless(DESIGN_W, DESIGN_H);
+        settle(ply, app).await;
         let speed_search = ply.bounding_box("picker_search").unwrap();
         let speed_footer = ply.bounding_box("save_action").unwrap();
         assert_eq!(
@@ -1592,6 +1605,14 @@ async fn extra_states(
         "Turning off gestures moved the tap assignment"
     );
     snapshot(dir, "gestures-off");
+    let saved_before = Config::load_strict().unwrap();
+    ply.set_scroll_position("settings_content", (0.0, 10000.0));
+    settle(ply, app).await;
+    click(ply, app, "threshold").await;
+    assert_eq!(Config::load_strict().unwrap(), saved_before);
+    snapshot(dir, "gesture-saved-distance");
+    ply.set_scroll_position("settings_content", (0.0, 0.0));
+    settle(ply, app).await;
     app.draft.gestures.enabled = true;
     app.draft.device.hires_scroll = false;
     app.draft.device.smartshift = crate::config::SmartShiftMode::AlwaysRatchet;

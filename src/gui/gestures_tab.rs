@@ -39,9 +39,9 @@ fn swipe_distance_hint(device: &crate::hidpp::device::DeviceStatus, threshold: i
         .filter(|dpi| device.connected && device.capabilities.dpi && *dpi > 0)
     {
         let millimetres = threshold as f64 * 25.4 / f64::from(dpi);
-        format!("About {millimetres:.1} mm along either axis at {dpi} DPI. Shorter moves count as taps.")
+        format!("About {millimetres:.1} mm at the reported {dpi} DPI. A shorter move is a tap.")
     } else {
-        "Each count is a unit of mouse movement. Shorter moves count as taps.".to_owned()
+        "A shorter move is a tap. The mouse has not reported its current DPI.".to_owned()
     }
 }
 
@@ -232,7 +232,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     ui.element()
         .height(fixed!(if compact { 7.0 } else { 12.0 }))
         .empty();
-    if enabled {
+    {
         let inset = if compact { 8 } else { 16 };
         widgets::card(ui, &pal)
             .layout(|l| {
@@ -247,9 +247,14 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
                     .children(|ui| {
                         ui.element().width(grow!()).height(fit!()).children(|ui| {
-                            ui.text("Minimum swipe distance", |t| {
-                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                            });
+                            ui.text(
+                                if enabled {
+                                    "Minimum swipe distance"
+                                } else {
+                                    "Saved swipe distance"
+                                },
+                                |t| t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text),
+                            );
                         });
                         ui.text(&format!("{threshold} counts"), |t| {
                             t.font(&fonts::MONO_BOLD).font_size(13).color(pal.accent)
@@ -273,15 +278,21 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
                     .children(|ui| {
                         ui.text("Shorter", |t| {
-                            t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
+                            t.font(&fonts::MONO_MEDIUM).font_size(13).color(pal.muted)
                         });
-                        if let Some(v) =
-                            widgets::slider(ui, &pal, "threshold", threshold, 10, 400, 5)
-                        {
+                        if let Some(v) = widgets::slider_enabled(
+                            ui,
+                            &pal,
+                            "threshold",
+                            threshold,
+                            10..=400,
+                            5,
+                            enabled,
+                        ) {
                             new_threshold = Some(v);
                         }
                         ui.text("Longer", |t| {
-                            t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
+                            t.font(&fonts::MONO_MEDIUM).font_size(13).color(pal.muted)
                         });
                     });
             });

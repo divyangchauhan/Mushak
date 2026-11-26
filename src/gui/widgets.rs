@@ -255,7 +255,7 @@ pub fn conflict_banner(ui: &mut Ui2, app: &mut App) {
                         ),
                         None => (
                             format!("{names} is running"),
-                            "The other mouse app can intercept button presses. Quit it to use your mappings.".into(),
+                            "The other app can intercept button presses. Quit it, then use Resume if Mushak is paused.".into(),
                         ),
                     };
                     ui.element()
@@ -574,7 +574,7 @@ pub fn slider_enabled(
     enabled: bool,
 ) -> Option<i64> {
     let (min, max) = range.into_inner();
-    let ink = if enabled { pal.accent } else { pal.faint };
+    let ink = if enabled { pal.accent } else { pal.line_strong };
     let mut out = None;
     let frac = ((value - min) as f32 / (max - min).max(1) as f32).clamp(0.0, 1.0);
     let active = enabled && ui.is_pressed(id);
@@ -618,9 +618,9 @@ pub fn slider_enabled(
                         .children(|ui| {
                             // Knob rides the end of the fill.
                             ui.element()
-                                .width(fixed!(14.0))
-                                .height(fixed!(14.0))
-                                .corner_radius(99.0)
+                                .width(fixed!(if enabled { 14.0 } else { 3.0 }))
+                                .height(fixed!(if enabled { 14.0 } else { 8.0 }))
+                                .corner_radius(if enabled { 7.0 } else { 1.0 })
                                 .background_color(ink)
                                 .empty();
                         });

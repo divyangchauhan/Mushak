@@ -817,35 +817,41 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
         })
         .border(|b| b.bottom(1).color(pal.line))
         .children(|ui| {
-            // Dragging the title bar drags the window.
-            if ui.just_pressed() {
-                chrome::begin_drag();
-            }
-            // Brand mark. Full-colour, so it is tinted white (a no-op multiply)
-            // rather than taking a palette colour like the UI glyphs do.
-            widgets::icon(
-                ui,
-                if paused {
-                    &icons::MODAK_PAUSED
-                } else {
-                    &icons::MODAK_ACTIVE
-                },
-                24.0,
-                theme::WHITE,
-            );
-            ui.text("Mushak", |t| {
-                t.font(&fonts::DISPLAY_BOLD).font_size(17).color(pal.text)
-            });
-            if screen_width() >= 840.0 {
-                ui.element()
-                    .width(fixed!(1.0))
-                    .height(fixed!(15.0))
-                    .background_color(pal.line_strong)
-                    .empty();
-                ui.text("Mouse settings", |t| {
-                    t.font(&fonts::SANS).font_size(13).color(pal.muted)
+            // Only the brand and empty space start a native drag. A click on a
+            // child command otherwise posts HTCAPTION and steals the button-up.
+            ui.element()
+                .id("titlebar_brand")
+                .height(grow!())
+                .width(fit!())
+                .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(11))
+                .children(|ui| {
+                    if ui.just_pressed() {
+                        chrome::begin_drag();
+                    }
+                    widgets::icon(
+                        ui,
+                        if paused {
+                            &icons::MODAK_PAUSED
+                        } else {
+                            &icons::MODAK_ACTIVE
+                        },
+                        24.0,
+                        theme::WHITE,
+                    );
+                    ui.text("Mushak", |t| {
+                        t.font(&fonts::DISPLAY_BOLD).font_size(17).color(pal.text)
+                    });
+                    if screen_width() >= 840.0 {
+                        ui.element()
+                            .width(fixed!(1.0))
+                            .height(fixed!(15.0))
+                            .background_color(pal.line_strong)
+                            .empty();
+                        ui.text("Mouse settings", |t| {
+                            t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                        });
+                    }
                 });
-            }
             if paused {
                 widgets::paused_status(ui, app);
             } else if matches!(app.resume, ResumeState::Confirmed(_)) {
@@ -866,7 +872,15 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
                         });
                     });
             }
-            ui.element().width(grow!()).height(fixed!(1.0)).empty();
+            ui.element()
+                .id("titlebar_drag_space")
+                .width(grow!())
+                .height(grow!())
+                .children(|ui| {
+                    if ui.just_pressed() {
+                        chrome::begin_drag();
+                    }
+                });
             widgets::titlebar_buttons(ui, app);
         });
 }
