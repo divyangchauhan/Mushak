@@ -1,0 +1,218 @@
+{
+  "sol": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "The checkmark stays against Default when the menu opens directly below the profile chip. The menu fits above the first mapping and the sidebar battery card stays still."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "Numbered markers follow the 2S, 3S and 4 artwork. Hover outlines the matching Back button row and adds a tooltip partly over the mouse. The extra row extends the list and pushes Configure gestures down. A scrim covers the diagram and the naming form replaces the taller picker at the same top edge. Spare button returns to the extra row, while the factory example shows Mute in that row and the picker."
+    },
+    {
+      "id": 3,
+      "label": "Configure gestures",
+      "detail": "At compact width, numbered rows replace the artwork. The Back button shows Ctrl and W as separate keycaps and the rows retain explicit Edit buttons. The wide offline list uses symbols instead of numbers and fits four rows. Both native compact captures fit all five rows and the Configure gestures button without covering them."
+    },
+    {
+      "id": 4,
+      "label": "Copy saved for Back button",
+      "detail": "The wide picker puts a numbered closeup beside the editor. Switching categories replaces just the action list. Copy moves the checkmark and lights Save action while the assigned line stays put. Saving restores the whole mouse and mapping, with confirmation below them. The offline and compact pickers dim and cover the underlying list. Haptic Sense Panel pairs the thumb-panel crop with marker 6."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "Copy leaves one Edit result with two small keycaps. The empty modal puts a search icon over Clear search and Record a keyboard shortcut. The dim background is covered by the centered picker, and the footer remains at its lower edge."
+    },
+    {
+      "id": 6,
+      "label": "Save pointer speed action",
+      "detail": "The wheel closeup and marker 5 stay put. Set speeds replaces the options with two numerical slider rows, Current and Next press values, and one full-width save button. Browse all actions keeps the back row and extends the panel to fit the category list."
+    },
+    {
+      "id": 7,
+      "label": "Saving an action replaces draft M",
+      "detail": "The wide editor stays beside the thumb closeup through tab changes, recording and draft recovery. Press a key changes the tint without moving the key controls. At 720 by 360 a scrim and nearly full-window picker hide the artwork, but M and the footer survive. Cancel brings back the old mapping. Save returns to the diagram with K and a toast. Reopening shows K under Assigned now and a green Saved label. The long chord fits in the short picker. In three native tab cycles the outer panel, closeup and footer keep their bounds, while Actions restores search focus and the recorder returns to its idle layout. The restart capture still shows the saved K."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "Selecting Always ratchet and turning off high-resolution scrolling leaves both saved sliders in place with gray values and replacement instructions. The lower captures show the same layout. Radio rings and toggles make the two kinds of choice distinct. The native compact view shortens the wheel mode descriptions and fits all three options and both gray sliders without overlap."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "The four orange arrow icons line up with Tap and the assignment chips align on the right. On the gestures-off view the icon tint changes and the distance card disappears below rows that stay in place. The two lower captures contain the same controls at the same positions. The native compact view folds the trigger into one line and compresses row heights while keeping all five actions and the threshold visible."
+    },
+    {
+      "id": 10,
+      "label": "Add 6 seconds",
+      "detail": "The window-pick timer appears inline above the executable chip and pushes the Default card down slightly. Rename replaces the second card header with a focused Design tools field, Cancel and Save name, while the lower card positions stay put. Priority numerals appear when two named profiles are present. The native pick adds a python.exe chip in the original row with a confirmation at the lower right. The native rename result shows Trial tools in a third card and pushes the Default card near the bottom. In the native compact view, Up, Down and Delete fit beside a two-line Photo editing and color correction label. The third card extends below the viewport with no overlap."
+    },
+    {
+      "id": 11,
+      "label": "Edit button mappings",
+      "detail": "The full device view pairs Bluetooth and firmware cards above a green half-full battery bar and a distinct amber DPI slider. Disconnected and No device replace that stack with a slashed mouse card and an edit button. The standard USB state reduces the sidebar and shows only the USB connection below its compatibility note. Native compact keeps Bluetooth and firmware side by side and fits both meter rows and the features entry."
+    },
+    {
+      "id": 12,
+      "label": "Copy unnamed IDs",
+      "detail": "The wide page pairs feature names with right-aligned hexadecimal values in two columns, with unnamed IDs below. Lower wide captures show the same position. At compact width the table becomes one column, the subtitle wraps, and the unnamed section drops below the visible area with scrolling available."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused",
+      "detail": "The amber bottom conflict bar turns red on quit failure. Dismiss removes the bar while the red title chip stays, and successful resume replaces that chip with a green check. Both wide tray guidance variants float over the Buttons heading. Compact guidance also covers part of Edit profile. Opening the short picker obscures the mapping page but repeats paused status and Applies after resume. Saving M restores the list and replaces the page subtitle with a check and confirmation. The next picker also says paused. The wide save error keeps the button closeup and replaces the editing controls with Try again and Back to editing. Native Profiles captures repeat the title-bar progression from paused to resumed, then failure and retry confirmation. The failure and tray fallback both cover the Profiles heading. The native dark and light Buttons sequences keep the artwork and mappings anchored through failure and retry confirmation. Retry closes the guidance and restores the full title. The light sequence also shows the Forward button outline and marker 3 together during the failure, retry and fallback frames."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "The paused tray menu changes the second line from Pause remapping to Resume remapping. The check next to Start with Windows, menu separators and other rows keep their positions in both captures."
+    }
+  ],
+  "terra": [
+    {
+      "id": 1,
+      "label": "Shell and profile switcher",
+      "detail": "The Buttons page pairs numbered mouse markers with assignment cards. The Default menu opens below the selector without covering the cards."
+    },
+    {
+      "id": 2,
+      "label": "Button artwork and reported controls",
+      "detail": "MX Master 2S, 3S and 4 artwork changes with numbered markers. Hovering Back button highlights marker 2 and its card. Button 0x01FF appears under Outside the diagram, and renaming changes it to Spare button."
+    },
+    {
+      "id": 3,
+      "label": "Button mapping list",
+      "detail": "The compact Buttons view replaces the picture with five numbered rows and explicit Edit buttons. The offline list uses icons and says changes apply when the mouse connects."
+    },
+    {
+      "id": 4,
+      "label": "Action editor and categories",
+      "detail": "Back button opens beside a Thumb buttons crop. Selecting Copy moves the check and activates Save action, then the diagram returns with Copy and a confirmation. System and Edit categories change the action list."
+    },
+    {
+      "id": 5,
+      "label": "Action search",
+      "detail": "Searching Copy shows an Edit result with Ctrl and C keycaps. A no-match query replaces the list with No matching actions and buttons to clear or record a shortcut."
+    },
+    {
+      "id": 6,
+      "label": "Wheel button actions",
+      "detail": "Wheel mode button presents Toggle ratchet and free-spin, Switch pointer speed, and Browse all actions. Set speeds opens two DPI inputs and sliders with current and next values."
+    },
+    {
+      "id": 7,
+      "label": "Shortcut interaction",
+      "detail": "Keyboard shortcut changes from Record key to Press a key, then a draft M. Switching tabs preserves the draft and warns that saving an action replaces it. Cancel returns to the diagram; saving K produces confirmation and reopening shows Saved. Repeated tab changes keep the editor in place."
+    },
+    {
+      "id": 8,
+      "label": "Wheel settings",
+      "detail": "Scroll displays three Wheel mode cards, a SmartShift slider and high-resolution toggle. Selecting Always ratchet grays the dependent sliders and explains how to enable them."
+    },
+    {
+      "id": 9,
+      "label": "Gestures",
+      "detail": "Tap and four directional swipe rows pair orange arrows with assigned actions. Turning Button gestures off removes the distance slider and changes the arrows to gray while retaining editable rows."
+    },
+    {
+      "id": 10,
+      "label": "Profiles and window capture",
+      "detail": "Preview app and Photo editor cards show executable chips and ordering controls. Pick a window displays a 6s countdown; the next frame adds python.exe and confirms the addition. A compact long profile name wraps beside Up, Down and Delete."
+    },
+    {
+      "id": 11,
+      "label": "Device status",
+      "detail": "The connected Device page shows Bluetooth, firmware, a 50% battery bar and DPI slider. Disconnected and No device states provide Edit button mappings, while a standard USB mouse explains its limitations."
+    },
+    {
+      "id": 12,
+      "label": "Device diagnostics",
+      "detail": "HID++ features displays named features and hexadecimal IDs in two columns, with Copy device report and Copy unnamed IDs. The compact layout becomes one column and scrolls."
+    },
+    {
+      "id": 13,
+      "label": "Conflict and feedback",
+      "detail": "Remapping paused remains in the title bar after the bottom conflict alert is dismissed. Resume feedback changes to green on success. A failed resume offers tray instructions, and save failure states that Copy is unsaved and the previous assignment remains active."
+    },
+    {
+      "id": 14,
+      "label": "Tray menu",
+      "detail": "The native menu shows Open mouse settings, Pause remapping, checked Start with Windows, and Quit Mushak. The paused frame changes Pause remapping to Resume remapping."
+    }
+  ],
+  "astra": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "The profile selector sits beside the large Buttons heading. Its two-row menu opens below it without shifting the mouse diagram or covering assignments. Amber navigation selection and the lower-left connection card stay consistent in both themes."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "Numbered markers connect the mouse artwork to numbered assignment cards. Hovering Back button lights both marker 2 and its card. The extra control remains outside the drawing, then changes from Button 0x01FF to Spare button after naming. The rename panel keeps the editor's upper edge while shortening its height."
+    },
+    {
+      "id": 3,
+      "label": "Send Back to the app",
+      "detail": "Compact rows retain numbered circles, keycaps and explicit Edit buttons. Wider offline rows replace numbers with small control icons. All five compact assignments and Configure gestures fit without clipping."
+    },
+    {
+      "id": 4,
+      "label": "Select an action",
+      "detail": "The enlarged Thumb buttons crop preserves the selected marker while the right editor switches categories in place. Copy receives a checkmark and Save action turns amber; saving restores the diagram and shows Copy saved for Back button. Compact editors retain separate category and action columns with a fixed footer."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "Copy search reduces the category browser to one labelled result with Ctrl and C keycaps. The empty search state offers Clear search and Record a keyboard shortcut while keeping the search field and bottom footer visible."
+    },
+    {
+      "id": 6,
+      "label": "Switch between two pointer speeds",
+      "detail": "Two numbered speed rows combine editable DPI values and sliders. Current: 1000 DPI and Next press: 800 DPI sit directly above the full-width save control. Moving to Browse all actions grows the panel downward while its title and artwork stay anchored."
+    },
+    {
+      "id": 7,
+      "label": "New shortcut",
+      "detail": "Recording changes the same inset card from Record key to Stop recording, then shows M and enables Save shortcut. Draft M survives the Actions round trip. The short window reflows into a wide modal with every modifier and footer visible. K appears after saving and again under Assigned now when reopened. Repeated native tab cycles keep the panel and footer in the same positions."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "Wheel mode uses three equally sized radio cards. The selected SmartShift card and slider values share the accent color. Switching to Always ratchet and disabling high-resolution scrolling leaves saved values in place and replaces the helper text with instructions to enable their controls. The native compact view keeps all three mode cards and both sliders visible without clipped labels."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "Tap and directional rows pair simple amber icons with right-aligned action chips and keycaps. The slider shows 60 counts and explains the corresponding movement in millimetres. Turning gestures off removes the distance card but preserves editable mappings and explains that they are saved. The compact frame fits every mapping and the distance control."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "Profile cards separate names and ordering controls from executable chips. Capture replaces the app caption with a 6s badge and Switch to the app window you want to add. The completion frame adds python.exe and a confirmation toast. Renaming uses an inline field and save button without obscuring other cards. In the native compact frame, Photo editing and color correction wraps to two lines without colliding with Up, Down or Delete; the scrollbar makes lower profiles discoverable."
+    },
+    {
+      "id": 11,
+      "label": "Edit button mappings",
+      "detail": "The connected Device view separates connection, firmware, battery and DPI into clear cards. Disconnected and No device states replace those controls with a short explanation and an Edit button mappings button. The USB mouse view plainly states that only standard Windows buttons are reported. The native compact frame preserves the same card order and keeps the DPI value visible."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "Named features and hexadecimal IDs form two aligned columns at full width. The narrow frame turns them into one list with a visible scrollbar. Copy device report stays beside the heading, while 18 unnamed features and Copy unnamed IDs form a separate section below."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused",
+      "detail": "Pause stays visible in the title bar while the bottom warning changes from Logi Options+ is running to Could not quit Logi Options+. Retry and resume states preserve the content positions. The compact editor repeats Remapping paused and Applies after resume, and its saved feedback appears below the page heading. Save failures identify the unsaved action and offer Try again and Back to editing."
+    },
+    {
+      "id": 14,
+      "label": "Start with Windows",
+      "detail": "The native tray menu uses four readable text rows, two separators and a checkmark for Start with Windows. Pause remapping becomes Resume remapping in the same row without changing the other commands."
+    }
+  ]
+}
