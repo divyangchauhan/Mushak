@@ -1,0 +1,1879 @@
+{
+  "Shell and profile switcher": {
+    "common": 4,
+    "pixel_identical": 0,
+    "changed": [
+      {
+        "file": "Dark/diagram.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          540
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/menu.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          540
+        ],
+        "largest_channel_difference": 232
+      },
+      {
+        "file": "Light/diagram.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          540
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/menu.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          540
+        ],
+        "largest_channel_difference": 248
+      }
+    ],
+    "added": []
+  },
+  "Button artwork and reported controls": {
+    "common": 22,
+    "pixel_identical": 0,
+    "changed": [
+      {
+        "file": "Dark/diagram.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          540
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/extra-button.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          602
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/extra-editor.webp",
+        "bounds": [
+          140,
+          16,
+          942,
+          600
+        ],
+        "largest_channel_difference": 50
+      },
+      {
+        "file": "Dark/factory-button.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          602
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/factory-editor.webp",
+        "bounds": [
+          140,
+          16,
+          942,
+          600
+        ],
+        "largest_channel_difference": 226
+      },
+      {
+        "file": "Dark/marker-hover.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          540
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/master-3.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          542
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Dark/master-4.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          112
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/name-control.webp",
+        "bounds": [
+          140,
+          16,
+          942,
+          600
+        ],
+        "largest_channel_difference": 50
+      },
+      {
+        "file": "Dark/named-button.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          602
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/offline-diagram.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          542
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Light/diagram.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          540
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/extra-button.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          602
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/extra-editor.webp",
+        "bounds": [
+          141,
+          16,
+          942,
+          599
+        ],
+        "largest_channel_difference": 50
+      },
+      {
+        "file": "Light/factory-button.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          602
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/factory-editor.webp",
+        "bounds": [
+          141,
+          16,
+          942,
+          599
+        ],
+        "largest_channel_difference": 243
+      },
+      {
+        "file": "Light/marker-hover.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          540
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/master-3.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          542
+        ],
+        "largest_channel_difference": 255
+      },
+      {
+        "file": "Light/master-4.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          112
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/name-control.webp",
+        "bounds": [
+          141,
+          16,
+          942,
+          599
+        ],
+        "largest_channel_difference": 50
+      },
+      {
+        "file": "Light/named-button.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          602
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/offline-diagram.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          542
+        ],
+        "largest_channel_difference": 248
+      }
+    ],
+    "added": []
+  },
+  "Button mapping list": {
+    "common": 6,
+    "pixel_identical": 0,
+    "changed": [
+      {
+        "file": "Dark/button-list.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          426
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/compact.webp",
+        "bounds": [
+          139,
+          14,
+          405,
+          491
+        ],
+        "largest_channel_difference": 220
+      },
+      {
+        "file": "Light/button-list.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          425
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/compact.webp",
+        "bounds": [
+          140,
+          15,
+          406,
+          490
+        ],
+        "largest_channel_difference": 255
+      },
+      {
+        "file": "native-compact/Dark/buttons.webp",
+        "bounds": [
+          140,
+          15,
+          405,
+          491
+        ],
+        "largest_channel_difference": 221
+      },
+      {
+        "file": "native-compact/Light/buttons.webp",
+        "bounds": [
+          140,
+          15,
+          419,
+          492
+        ],
+        "largest_channel_difference": 251
+      }
+    ],
+    "added": []
+  },
+  "Action editor and categories": {
+    "common": 12,
+    "pixel_identical": 0,
+    "changed": [
+      {
+        "file": "Dark/category-edit.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          563
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/category-menu.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          489
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/compact-picker.webp",
+        "bounds": [
+          140,
+          16,
+          572,
+          446
+        ],
+        "largest_channel_difference": 18
+      },
+      {
+        "file": "Dark/dialog.webp",
+        "bounds": [
+          140,
+          16,
+          942,
+          516
+        ],
+        "largest_channel_difference": 50
+      },
+      {
+        "file": "Dark/haptic.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          563
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/popover.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          563
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Light/category-edit.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          563
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/category-menu.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          489
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/compact-picker.webp",
+        "bounds": [
+          141,
+          16,
+          572,
+          446
+        ],
+        "largest_channel_difference": 21
+      },
+      {
+        "file": "Light/dialog.webp",
+        "bounds": [
+          141,
+          16,
+          942,
+          516
+        ],
+        "largest_channel_difference": 50
+      },
+      {
+        "file": "Light/haptic.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          563
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/popover.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          563
+        ],
+        "largest_channel_difference": 248
+      }
+    ],
+    "added": []
+  },
+  "Action search": {
+    "common": 4,
+    "pixel_identical": 0,
+    "changed": [
+      {
+        "file": "Dark/no-results.webp",
+        "bounds": [
+          140,
+          16,
+          942,
+          426
+        ],
+        "largest_channel_difference": 50
+      },
+      {
+        "file": "Dark/search-results.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          112
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Light/no-results.webp",
+        "bounds": [
+          141,
+          16,
+          942,
+          425
+        ],
+        "largest_channel_difference": 50
+      },
+      {
+        "file": "Light/search-results.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          112
+        ],
+        "largest_channel_difference": 248
+      }
+    ],
+    "added": []
+  },
+  "Wheel button actions": {
+    "common": 6,
+    "pixel_identical": 0,
+    "changed": [
+      {
+        "file": "Dark/dpi-editor.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          441
+        ],
+        "largest_channel_difference": 242
+      },
+      {
+        "file": "Dark/wheel-actions.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          421
+        ],
+        "largest_channel_difference": 250
+      },
+      {
+        "file": "Dark/wheel-presets.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          602
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Light/dpi-editor.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          441
+        ],
+        "largest_channel_difference": 255
+      },
+      {
+        "file": "Light/wheel-actions.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          421
+        ],
+        "largest_channel_difference": 255
+      },
+      {
+        "file": "Light/wheel-presets.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          602
+        ],
+        "largest_channel_difference": 248
+      }
+    ],
+    "added": []
+  },
+  "Shortcut interaction": {
+    "common": 37,
+    "pixel_identical": 0,
+    "changed": [
+      {
+        "file": "Dark/compact-chord.webp",
+        "bounds": [
+          140,
+          16,
+          206,
+          20
+        ],
+        "largest_channel_difference": 1
+      },
+      {
+        "file": "Dark/draft-actions.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          563
+        ],
+        "largest_channel_difference": 232
+      },
+      {
+        "file": "Dark/draft-return.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          112
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/seq-01-actions.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          563
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/seq-02-shortcut.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          112
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/seq-03-record.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          436
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/seq-04-draft.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          112
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/seq-05-resize.webp",
+        "bounds": [
+          140,
+          16,
+          206,
+          20
+        ],
+        "largest_channel_difference": 1
+      },
+      {
+        "file": "Dark/seq-06-cancel.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          540
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/seq-07-ready.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          112
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/seq-08-save.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          540
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/seq-09-reopen.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          112
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Light/compact-chord.webp",
+        "bounds": [
+          141,
+          16,
+          206,
+          19
+        ],
+        "largest_channel_difference": 1
+      },
+      {
+        "file": "Light/draft-actions.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          563
+        ],
+        "largest_channel_difference": 253
+      },
+      {
+        "file": "Light/draft-return.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          112
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/seq-01-actions.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          563
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/seq-02-shortcut.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          424
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/seq-03-record.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          435
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/seq-04-draft.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          112
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/seq-05-resize.webp",
+        "bounds": [
+          141,
+          16,
+          206,
+          19
+        ],
+        "largest_channel_difference": 1
+      },
+      {
+        "file": "Light/seq-06-cancel.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          540
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/seq-07-ready.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          112
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/seq-08-save.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          540
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/seq-09-reopen.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          112
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "native-cycles/Dark/1-preset_tab.webp",
+        "bounds": [
+          204,
+          16,
+          942,
+          562
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "native-cycles/Dark/1-shortcut_tab.webp",
+        "bounds": [
+          204,
+          16,
+          942,
+          110
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "native-cycles/Dark/2-preset_tab.webp",
+        "bounds": [
+          204,
+          16,
+          942,
+          562
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "native-cycles/Dark/2-shortcut_tab.webp",
+        "bounds": [
+          204,
+          16,
+          942,
+          110
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "native-cycles/Dark/3-preset_tab.webp",
+        "bounds": [
+          204,
+          16,
+          942,
+          562
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "native-cycles/Dark/3-shortcut_tab.webp",
+        "bounds": [
+          204,
+          16,
+          942,
+          110
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "native-cycles/Light/1-preset_tab.webp",
+        "bounds": [
+          158,
+          16,
+          942,
+          562
+        ],
+        "largest_channel_difference": 239
+      },
+      {
+        "file": "native-cycles/Light/1-shortcut_tab.webp",
+        "bounds": [
+          158,
+          16,
+          942,
+          110
+        ],
+        "largest_channel_difference": 239
+      },
+      {
+        "file": "native-cycles/Light/2-preset_tab.webp",
+        "bounds": [
+          158,
+          16,
+          942,
+          562
+        ],
+        "largest_channel_difference": 239
+      },
+      {
+        "file": "native-cycles/Light/2-shortcut_tab.webp",
+        "bounds": [
+          158,
+          16,
+          942,
+          110
+        ],
+        "largest_channel_difference": 239
+      },
+      {
+        "file": "native-cycles/Light/3-preset_tab.webp",
+        "bounds": [
+          158,
+          16,
+          942,
+          562
+        ],
+        "largest_channel_difference": 239
+      },
+      {
+        "file": "native-cycles/Light/3-shortcut_tab.webp",
+        "bounds": [
+          158,
+          16,
+          942,
+          110
+        ],
+        "largest_channel_difference": 239
+      },
+      {
+        "file": "native/03-restarted-K.webp",
+        "bounds": [
+          196,
+          16,
+          942,
+          110
+        ],
+        "largest_channel_difference": 229
+      }
+    ],
+    "added": []
+  },
+  "Wheel settings": {
+    "common": 8,
+    "pixel_identical": 0,
+    "changed": [
+      {
+        "file": "Dark/scroll-limited.webp",
+        "bounds": [
+          139,
+          14,
+          811,
+          371
+        ],
+        "largest_channel_difference": 21
+      },
+      {
+        "file": "Dark/scroll-lower.webp",
+        "bounds": [
+          139,
+          14,
+          811,
+          605
+        ],
+        "largest_channel_difference": 4
+      },
+      {
+        "file": "Dark/scroll.webp",
+        "bounds": [
+          139,
+          14,
+          811,
+          605
+        ],
+        "largest_channel_difference": 4
+      },
+      {
+        "file": "Light/scroll-limited.webp",
+        "bounds": [
+          140,
+          15,
+          811,
+          371
+        ],
+        "largest_channel_difference": 9
+      },
+      {
+        "file": "Light/scroll-lower.webp",
+        "bounds": [
+          140,
+          15,
+          811,
+          605
+        ],
+        "largest_channel_difference": 21
+      },
+      {
+        "file": "Light/scroll.webp",
+        "bounds": [
+          140,
+          15,
+          811,
+          605
+        ],
+        "largest_channel_difference": 21
+      },
+      {
+        "file": "native-compact/Dark/wheel.webp",
+        "bounds": [
+          140,
+          15,
+          573,
+          451
+        ],
+        "largest_channel_difference": 20
+      },
+      {
+        "file": "native-compact/Light/wheel.webp",
+        "bounds": [
+          140,
+          15,
+          423,
+          451
+        ],
+        "largest_channel_difference": 9
+      }
+    ],
+    "added": []
+  },
+  "Gestures": {
+    "common": 8,
+    "pixel_identical": 0,
+    "changed": [
+      {
+        "file": "Dark/gestures-lower.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          195
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/gestures-off.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          525
+        ],
+        "largest_channel_difference": 251
+      },
+      {
+        "file": "Dark/gestures.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          195
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Light/gestures-lower.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          459
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/gestures-off.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          525
+        ],
+        "largest_channel_difference": 255
+      },
+      {
+        "file": "Light/gestures.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          459
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "native-compact/Dark/gestures.webp",
+        "bounds": [
+          140,
+          15,
+          355,
+          167
+        ],
+        "largest_channel_difference": 20
+      },
+      {
+        "file": "native-compact/Light/gestures.webp",
+        "bounds": [
+          140,
+          15,
+          355,
+          167
+        ],
+        "largest_channel_difference": 7
+      }
+    ],
+    "added": []
+  },
+  "Profiles and window capture": {
+    "common": 16,
+    "pixel_identical": 0,
+    "changed": [
+      {
+        "file": "Dark/default-only.webp",
+        "bounds": [
+          139,
+          14,
+          206,
+          23
+        ],
+        "largest_channel_difference": 21
+      },
+      {
+        "file": "Dark/profile-order.webp",
+        "bounds": [
+          139,
+          14,
+          206,
+          23
+        ],
+        "largest_channel_difference": 21
+      },
+      {
+        "file": "Dark/profile-rename.webp",
+        "bounds": [
+          139,
+          14,
+          206,
+          23
+        ],
+        "largest_channel_difference": 21
+      },
+      {
+        "file": "Dark/profiles.webp",
+        "bounds": [
+          139,
+          14,
+          465,
+          245
+        ],
+        "largest_channel_difference": 20
+      },
+      {
+        "file": "Dark/window-pick.webp",
+        "bounds": [
+          139,
+          14,
+          631,
+          245
+        ],
+        "largest_channel_difference": 4
+      },
+      {
+        "file": "Light/default-only.webp",
+        "bounds": [
+          140,
+          15,
+          206,
+          23
+        ],
+        "largest_channel_difference": 8
+      },
+      {
+        "file": "Light/profile-order.webp",
+        "bounds": [
+          140,
+          15,
+          206,
+          23
+        ],
+        "largest_channel_difference": 8
+      },
+      {
+        "file": "Light/profile-rename.webp",
+        "bounds": [
+          140,
+          15,
+          206,
+          23
+        ],
+        "largest_channel_difference": 8
+      },
+      {
+        "file": "Light/profiles.webp",
+        "bounds": [
+          140,
+          15,
+          468,
+          245
+        ],
+        "largest_channel_difference": 10
+      },
+      {
+        "file": "Light/window-pick.webp",
+        "bounds": [
+          140,
+          15,
+          522,
+          244
+        ],
+        "largest_channel_difference": 2
+      },
+      {
+        "file": "native-compact/Dark/long-profile.webp",
+        "bounds": [
+          184,
+          152,
+          720,
+          540
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "native-compact/Dark/profiles.webp",
+        "bounds": [
+          140,
+          15,
+          206,
+          22
+        ],
+        "largest_channel_difference": 20
+      },
+      {
+        "file": "native-compact/Light/long-profile.webp",
+        "bounds": [
+          184,
+          16,
+          720,
+          540
+        ],
+        "largest_channel_difference": 250
+      },
+      {
+        "file": "native-compact/Light/profiles.webp",
+        "bounds": [
+          140,
+          15,
+          220,
+          21
+        ],
+        "largest_channel_difference": 7
+      },
+      {
+        "file": "native/04-picked-window.webp",
+        "bounds": [
+          196,
+          16,
+          203,
+          19
+        ],
+        "largest_channel_difference": 3
+      },
+      {
+        "file": "native/05-renamed-profile.webp",
+        "bounds": [
+          196,
+          16,
+          203,
+          19
+        ],
+        "largest_channel_difference": 3
+      }
+    ],
+    "added": []
+  },
+  "Device status": {
+    "common": 10,
+    "pixel_identical": 0,
+    "changed": [
+      {
+        "file": "Dark/device.webp",
+        "bounds": [
+          139,
+          14,
+          892,
+          111
+        ],
+        "largest_channel_difference": 224
+      },
+      {
+        "file": "Dark/disconnected.webp",
+        "bounds": [
+          139,
+          14,
+          206,
+          19
+        ],
+        "largest_channel_difference": 4
+      },
+      {
+        "file": "Dark/empty.webp",
+        "bounds": [
+          139,
+          14,
+          206,
+          19
+        ],
+        "largest_channel_difference": 4
+      },
+      {
+        "file": "Dark/standard-mouse.webp",
+        "bounds": [
+          139,
+          14,
+          942,
+          240
+        ],
+        "largest_channel_difference": 242
+      },
+      {
+        "file": "Light/device.webp",
+        "bounds": [
+          140,
+          15,
+          891,
+          111
+        ],
+        "largest_channel_difference": 243
+      },
+      {
+        "file": "Light/disconnected.webp",
+        "bounds": [
+          140,
+          15,
+          206,
+          19
+        ],
+        "largest_channel_difference": 2
+      },
+      {
+        "file": "Light/empty.webp",
+        "bounds": [
+          140,
+          15,
+          206,
+          19
+        ],
+        "largest_channel_difference": 2
+      },
+      {
+        "file": "Light/standard-mouse.webp",
+        "bounds": [
+          140,
+          15,
+          942,
+          240
+        ],
+        "largest_channel_difference": 255
+      },
+      {
+        "file": "native-compact/Dark/device.webp",
+        "bounds": [
+          140,
+          15,
+          631,
+          110
+        ],
+        "largest_channel_difference": 216
+      },
+      {
+        "file": "native-compact/Light/device.webp",
+        "bounds": [
+          140,
+          15,
+          631,
+          110
+        ],
+        "largest_channel_difference": 233
+      }
+    ],
+    "added": []
+  },
+  "Device diagnostics": {
+    "common": 4,
+    "pixel_identical": 0,
+    "changed": [
+      {
+        "file": "Dark/diagnostics-lower.webp",
+        "bounds": [
+          139,
+          14,
+          924,
+          415
+        ],
+        "largest_channel_difference": 4
+      },
+      {
+        "file": "Dark/diagnostics.webp",
+        "bounds": [
+          139,
+          14,
+          924,
+          415
+        ],
+        "largest_channel_difference": 4
+      },
+      {
+        "file": "Light/diagnostics-lower.webp",
+        "bounds": [
+          140,
+          15,
+          900,
+          415
+        ],
+        "largest_channel_difference": 2
+      },
+      {
+        "file": "Light/diagnostics.webp",
+        "bounds": [
+          140,
+          15,
+          900,
+          415
+        ],
+        "largest_channel_difference": 2
+      }
+    ],
+    "added": []
+  },
+  "Conflict and feedback": {
+    "common": 41,
+    "pixel_identical": 0,
+    "changed": [
+      {
+        "file": "Dark/alert.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          596
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/conflict-error.webp",
+        "bounds": [
+          139,
+          14,
+          942,
+          296
+        ],
+        "largest_channel_difference": 242
+      },
+      {
+        "file": "Dark/next-mapping.webp",
+        "bounds": [
+          140,
+          16,
+          573,
+          334
+        ],
+        "largest_channel_difference": 231
+      },
+      {
+        "file": "Dark/paused-dismissed.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          540
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/paused-quit-error.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          596
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/paused-saved.webp",
+        "bounds": [
+          139,
+          14,
+          340,
+          323
+        ],
+        "largest_channel_difference": 220
+      },
+      {
+        "file": "Dark/resume-compact-editor.webp",
+        "bounds": [
+          140,
+          16,
+          206,
+          20
+        ],
+        "largest_channel_difference": 1
+      },
+      {
+        "file": "Dark/resume-compact-steps.webp",
+        "bounds": [
+          71,
+          14,
+          340,
+          323
+        ],
+        "largest_channel_difference": 217
+      },
+      {
+        "file": "Dark/resume-error.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          592
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/resume-legacy-compact.webp",
+        "bounds": [
+          139,
+          14,
+          340,
+          323
+        ],
+        "largest_channel_difference": 220
+      },
+      {
+        "file": "Dark/resume-legacy.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          592
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/resumed.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          540
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Dark/save-error.webp",
+        "bounds": [
+          139,
+          14,
+          943,
+          112
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "Light/alert.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          596
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/conflict-error.webp",
+        "bounds": [
+          140,
+          15,
+          942,
+          296
+        ],
+        "largest_channel_difference": 255
+      },
+      {
+        "file": "Light/next-mapping.webp",
+        "bounds": [
+          141,
+          16,
+          572,
+          333
+        ],
+        "largest_channel_difference": 255
+      },
+      {
+        "file": "Light/paused-dismissed.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          540
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/paused-quit-error.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          596
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/paused-saved.webp",
+        "bounds": [
+          140,
+          15,
+          361,
+          323
+        ],
+        "largest_channel_difference": 255
+      },
+      {
+        "file": "Light/resume-compact-editor.webp",
+        "bounds": [
+          141,
+          16,
+          273,
+          20
+        ],
+        "largest_channel_difference": 1
+      },
+      {
+        "file": "Light/resume-compact-steps.webp",
+        "bounds": [
+          89,
+          15,
+          361,
+          323
+        ],
+        "largest_channel_difference": 242
+      },
+      {
+        "file": "Light/resume-error.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          592
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/resume-legacy-compact.webp",
+        "bounds": [
+          140,
+          15,
+          361,
+          323
+        ],
+        "largest_channel_difference": 255
+      },
+      {
+        "file": "Light/resume-legacy.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          592
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/resumed.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          540
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "Light/save-error.webp",
+        "bounds": [
+          140,
+          15,
+          943,
+          112
+        ],
+        "largest_channel_difference": 248
+      },
+      {
+        "file": "native-resume/Dark/06-paused-settings.webp",
+        "bounds": [
+          140,
+          15,
+          942,
+          539
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "native-resume/Dark/07-resumed-settings.webp",
+        "bounds": [
+          140,
+          15,
+          942,
+          539
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "native-resume/Dark/08-resume-failed.webp",
+        "bounds": [
+          140,
+          15,
+          942,
+          591
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "native-resume/Dark/08b-retry-confirmed.webp",
+        "bounds": [
+          140,
+          15,
+          942,
+          539
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "native-resume/Dark/09-tray-fallback.webp",
+        "bounds": [
+          140,
+          15,
+          942,
+          591
+        ],
+        "largest_channel_difference": 229
+      },
+      {
+        "file": "native-resume/Light/06-paused-settings.webp",
+        "bounds": [
+          140,
+          15,
+          942,
+          541
+        ],
+        "largest_channel_difference": 241
+      },
+      {
+        "file": "native-resume/Light/07-resumed-settings.webp",
+        "bounds": [
+          140,
+          15,
+          942,
+          541
+        ],
+        "largest_channel_difference": 241
+      },
+      {
+        "file": "native-resume/Light/08-resume-failed.webp",
+        "bounds": [
+          140,
+          15,
+          942,
+          593
+        ],
+        "largest_channel_difference": 241
+      },
+      {
+        "file": "native-resume/Light/08b-retry-confirmed.webp",
+        "bounds": [
+          140,
+          15,
+          942,
+          541
+        ],
+        "largest_channel_difference": 241
+      },
+      {
+        "file": "native-resume/Light/09-tray-fallback.webp",
+        "bounds": [
+          140,
+          15,
+          942,
+          593
+        ],
+        "largest_channel_difference": 241
+      },
+      {
+        "file": "native/06-paused-settings.webp",
+        "bounds": [
+          196,
+          16,
+          203,
+          19
+        ],
+        "largest_channel_difference": 3
+      },
+      {
+        "file": "native/07-resumed-settings.webp",
+        "bounds": [
+          196,
+          16,
+          203,
+          19
+        ],
+        "largest_channel_difference": 3
+      },
+      {
+        "file": "native/08-resume-failed.webp",
+        "bounds": [
+          196,
+          16,
+          203,
+          19
+        ],
+        "largest_channel_difference": 3
+      },
+      {
+        "file": "native/08b-retry-confirmed.webp",
+        "bounds": [
+          196,
+          16,
+          203,
+          19
+        ],
+        "largest_channel_difference": 3
+      },
+      {
+        "file": "native/09-tray-fallback.webp",
+        "bounds": [
+          196,
+          16,
+          203,
+          19
+        ],
+        "largest_channel_difference": 3
+      }
+    ],
+    "added": []
+  },
+  "Tray menu": {
+    "common": 2,
+    "pixel_identical": 2,
+    "changed": [],
+    "added": []
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "theme": "Dark",
+  "width": 968,
+  "height": 668,
+  "units": "logical client pixels",
+  "displayScale": "200%",
+  "device": "Simulated connected MX Master 2S",
+  "executable": "release Settings process, prior to idle status timer",
+  "action": "Test process set paused=true in isolated status.json and waited 4 seconds without sending mouse or keyboard messages. Settings still showed the active icon and no pause badge.",
+  "repetitions": 2
+}

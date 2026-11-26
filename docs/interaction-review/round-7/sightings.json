@@ -1,0 +1,50 @@
+{
+  "sol": {
+    "10": "Profiles. Move down and Move up appear on Preview app and Photo editor respectively. The window picker banner shows 4s and Cancel.",
+    "11": "Device. The Bluetooth view shows 50% battery and Current DPI 1000. Separate frames show Disconnected, No device, and USB.",
+    "12": "HID++ features. The count is 29, named entries pair hex codes with labels, and Copy IDs sits above the unnamed chips.",
+    "13": "Buttons and Device. The Logi Options+ banner offers Quit Logi Options+ or Dismiss, the access-denied banner offers Try again, and the Back button editor says Copy is still unsaved.",
+    "14": "Open mouse settings. Both Windows tray captures check Start with Windows, and the middle command changes from Pause remapping to Resume remapping.",
+    "01": "Buttons. The Profile menu checks Default and lists Preview app below it.",
+    "02": "Buttons. MX Master 4 adds hotspot 6 for Haptic Sense Panel. The extra-button state puts Control ID 0x01FF under Other reported buttons. The offline 2S state shows Disconnected and omits Scroll.",
+    "03": "Buttons. The compact Back button row shows Ctrl and W as keycaps beside Close tab. The no-device list shows Preview app and four mappings.",
+    "04": "Back button and Haptic Sense Panel. The editor pairs the orange hotspot with the close-up photo. Edit shows Copy, Paste, Cut, Undo, Redo, and Find. The compact Back button dialog shows Close tab checked.",
+    "05": "Back button. Copy returns one Assign row. The no-match dialog offers Record a keyboard shortcut.",
+    "06": "Wheel mode button. Switch wheel mode has Assign and Switch pointer speed has Set up. The speed editor shows 800 and 1600 DPI.",
+    "07": "Back button. The ordered frames show Actions, Keyboard shortcut with Record key, Press a key with Stop recording, an M draft, the same draft in the resized dialog, Native action after cancel, a K draft, K on the mapping card after save, and Saved shortcut K on reopen.",
+    "08": "Scroll. SmartShift shows Flick sensitivity 10 and Ignore accidental nudges 4. The limited capture has Always ratchet selected and two off toggles.",
+    "09": "Gestures. The on capture shows 60 counts at Tap vs. swipe threshold. The off capture shows Saved gesture actions and retains the Tap and swipe assignments."
+  },
+  "terra": {
+    "10": "Profiles: Preview app and Default cards appear with a window-pick countdown.",
+    "11": "Device: Bluetooth, firmware, 50% battery and current DPI 1000 appear.",
+    "12": "HID++ features: named hexadecimal IDs and unnamed feature chips are visible.",
+    "13": "Buttons: Logi Options+ conflict banner offers Quit Logi Options+; save error says Copy is still unsaved.",
+    "14": "Tray menu: Start with Windows is checked and Pause remapping changes to Resume remapping.",
+    "01": "Buttons: profile menu shows Default checked above Preview app.",
+    "02": "Buttons: MX Master 4 diagram marks six controls and an Additional button 1 row appears below.",
+    "03": "Buttons: compact list displays Ctrl W Close tab and Ctrl T New tab.",
+    "04": "Back button: category menu includes Common, Edit, Tabs & windows, Navigation, System and Media.",
+    "05": "Back button: search Copy shows an Assign button; zzzz shows No matching actions.",
+    "06": "Wheel mode button: pointer speed editor shows 800 DPI and 1600 DPI sliders.",
+    "07": "Back button: ordered frames show recording, M draft, cancel, K save and saved K on reopen.",
+    "08": "Scroll: SmartShift is selected and flick sensitivity reads 10.",
+    "09": "Gestures: swipe directions have action chips and threshold reads 60 counts."
+  },
+  "astra": {
+    "10": "Mushak, Profiles. Preview app and Photo editor cards show move controls; window-pick banner shows 4s and Cancel.",
+    "11": "Mushak, Device. Connected panel shows Bluetooth, firmware MPM 12.01.B0006, battery 50%, and DPI 1000. Separate cards read Disconnected and No device.",
+    "12": "Mushak, HID++ features. Named hexadecimal features occupy a card; Unnamed features has ID chips and Copy IDs.",
+    "13": "Mushak, Buttons and Device. Logi Options+ banner has Quit Logi Options+; error banner says Access denied. Inline save error says Copy is still unsaved with Try again and Back to editing.",
+    "14": "Quit Mushak identifies the tray app. Active menu reads Pause remapping; paused menu reads Resume remapping. Start with Windows has a checkmark.",
+    "01": "Mushak, Buttons. Numbered MX Master 2S artwork sits beside five assignment cards; the Profile menu shows Default checked and Preview app.",
+    "02": "Mushak, Buttons. MX Master 4 adds number 6 Haptic Sense Panel; Other reported buttons shows Additional button 1 with Control ID 0x01FF. Offline view says Disconnected.",
+    "03": "Mushak, Buttons. Compact list shows Ctrl and W keycaps beside Close tab; offline Preview app list ends with Gesture button tap.",
+    "04": "Mushak, Buttons, Back button. Thumb buttons crop marks number 2; category menu includes wrapped Tabs & windows and action counts. Haptic Sense Panel has a Thumb panel crop.",
+    "05": "Mushak, Buttons, Back button. Copy search shows an Assign button and Ctrl C keycaps; zzzz shows No matching actions and Record a keyboard shortcut.",
+    "06": "Mushak, Buttons, Wheel mode button. Mouse actions lists Switch wheel mode and Switch pointer speed; DPI editor shows Speed 1 800 DPI and Speed 2 1600 DPI.",
+    "07": "Mushak, Buttons, Back button. All nine ordered frames inspected in both themes: Actions, empty shortcut, Press a key, M draft, compact M draft, cancelled Native action overview, K draft, K overview, reopened Saved shortcut K.",
+    "08": "Mushak, Scroll. SmartShift is selected above Flick sensitivity 10 and Ignore accidental nudges 4; limited view selects Always ratchet and shows two toggles.",
+    "09": "Mushak, Gestures. Tap vs. swipe threshold reads 60 counts; off view labels the same five mappings Saved gesture actions."
+  }
+}

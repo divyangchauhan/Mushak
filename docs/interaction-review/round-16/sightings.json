@@ -1,0 +1,218 @@
+{
+  "sol": [
+    {
+      "id": 1,
+      "label": "Default",
+      "detail": "The pop-up shows a check beside Default and Preview app below it. Five numbered cards sit beside the mouse, with battery status pinned to the sidebar bottom."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "On MX Master 4, marker 6 sits on the Haptic Sense Panel. Hovering Back button fills marker 2 and outlines its matching card. Spare button replaces Additional button 1 below Outside the diagram."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "The compact list uses keycaps for Win and Tab beside Task View. The wider no-device list retains the same aligned action column with one fewer row."
+    },
+    {
+      "id": 4,
+      "label": "Assign an action",
+      "detail": "Edit shows Copy through Find with shortcuts right aligned. System starts with Task View, and the haptic editor pairs marker 6 with the cropped thumb panel. The compact picker checks Close tab."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "Copy appears as one result under Edit with separate Ctrl and C keycaps. The empty modal puts Record a keyboard shortcut below a centered magnifying glass."
+    },
+    {
+      "id": 6,
+      "label": "Switch pointer speed",
+      "detail": "The wheel close-up pins marker 5 behind the main wheel. In setup, 800 and 1600 line up with separate sliders, and Mouse now and Next press appear above the save button."
+    },
+    {
+      "id": 7,
+      "label": "Assigned now",
+      "detail": "Press a key highlights the recording box. M remains visible in the compact modal and Cancel leaves Native action on the diagram. K enables Save shortcut and later appears under Assigned now after reopen and restart. All three paired native tab cycles keep the editor bounds stable. The compact chord shows Ctrl + Win + Alt + Shift + Space in full."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "SmartShift has both a filled radio and an outlined card. The nudge slider reads 4 of 8 steps and disappears in the Always ratchet view alongside Flick sensitivity."
+    },
+    {
+      "id": 9,
+      "label": "Saved gesture actions",
+      "detail": "The off view removes the distance slider, mutes the direction arrows and retains the action chips. In the on view, Swipe left pairs a left arrow with Desktop left and its keycaps."
+    },
+    {
+      "id": 10,
+      "label": "Picking in 6s",
+      "detail": "The countdown chip and Cancel sit next to preview.exe. The completed capture adds a python.exe chip and a green-check confirmation. Numbered cards establish which profile matches first."
+    },
+    {
+      "id": 11,
+      "label": "Disconnected",
+      "detail": "The disconnected card uses a crossed-out mouse and says saved mappings are editable. No device uses the same icon with different copy, while the connected view shows a half-filled green battery line and a separate DPI slider."
+    },
+    {
+      "id": 12,
+      "label": "18 unnamed features",
+      "detail": "Amber monospace IDs align beside feature names, including 0x2121 for Hi-res wheel. The unnamed IDs wrap into two chip rows with Copy unnamed IDs above them."
+    },
+    {
+      "id": 13,
+      "label": "Couldn't save assignment",
+      "detail": "The save error keeps the Back button and thumb photo in view and puts Try again beside Back to editing. The access-denied banner spans the top bar under a green Remapping on chip."
+    },
+    {
+      "id": 14,
+      "label": "Open mouse settings",
+      "detail": "The tray menu puts the Mushak mouse glyph beside the settings command and a check beside Start with Windows. Pause remapping changes to Resume remapping in the paused capture."
+    }
+  ],
+  "terra": [
+    {
+      "id": 1,
+      "label": "Shell and profile switcher",
+      "detail": "The Buttons heading sits beside Default; the open profile menu lists Preview app and checks Default."
+    },
+    {
+      "id": 2,
+      "label": "Button artwork and reported controls",
+      "detail": "MX Master 4 has six numbered markers. Additional button 1 appears outside the diagram and becomes Spare button after naming."
+    },
+    {
+      "id": 3,
+      "label": "Button mapping list",
+      "detail": "The compact Back button row pairs Ctrl and W keycaps with Close tab; Gesture button tap points to Gestures."
+    },
+    {
+      "id": 4,
+      "label": "Action editor and categories",
+      "detail": "The Back button editor pairs a thumb-wheel crop with Common, Edit and System categories; Native action has a check."
+    },
+    {
+      "id": 5,
+      "label": "Action search",
+      "detail": "Copy produces an Edit result with Ctrl and C keycaps; zzzz produces No matching actions and a shortcut button."
+    },
+    {
+      "id": 6,
+      "label": "Wheel button actions",
+      "detail": "Wheel mode button offers Switch wheel mode and Switch pointer speed. The latter shows 800 and 1600 DPI and the next press value."
+    },
+    {
+      "id": 7,
+      "label": "Shortcut interaction",
+      "detail": "Record key changes to Press a key, then M survives resize. Cancel returns to Native action; K saves and reappears after reopening and restart. Repeated tab switches retain the native assignment."
+    },
+    {
+      "id": 8,
+      "label": "Wheel settings",
+      "detail": "SmartShift is selected beside Always ratchet and Always freespin. Flick sensitivity is 10 and Ignore accidental nudges is 4 of 8 steps."
+    },
+    {
+      "id": 9,
+      "label": "Gestures",
+      "detail": "Swipe left maps to Desktop left. The off state says saved actions take effect when gestures are turned on."
+    },
+    {
+      "id": 10,
+      "label": "Profiles and window capture",
+      "detail": "Preview app and Photo editor show numbered priority and reorder buttons. Picking in 6s leads to a python.exe chip and confirmation."
+    },
+    {
+      "id": 11,
+      "label": "Device status",
+      "detail": "Device shows Bluetooth, firmware MPM 12.01.B0006, 50% battery and 1000 DPI. Disconnected and No device have distinct messages."
+    },
+    {
+      "id": 12,
+      "label": "Device diagnostics",
+      "detail": "HID++ features lists 0x2201 Adjustable DPI and 18 unnamed features, with Copy unnamed IDs."
+    },
+    {
+      "id": 13,
+      "label": "Conflict and feedback",
+      "detail": "The Logi Options+ warning offers Quit Logi Options+. A failed assignment says Copy is still unsaved and offers Try again or Back to editing."
+    },
+    {
+      "id": 14,
+      "label": "Tray menu",
+      "detail": "The Windows menu changes Pause remapping to Resume remapping and checks Start with Windows."
+    }
+  ],
+  "astra": [
+    {
+      "id": 1,
+      "label": "Shell and profile switcher",
+      "detail": "The Buttons heading sits beside Profile Default. The open menu marks Default with an amber check and shows Preview app below it. The MX Master 2S connection card stays anchored at bottom left in both themes."
+    },
+    {
+      "id": 2,
+      "label": "Button artwork and reported controls",
+      "detail": "Numbered markers match the right-hand cards on the MX Master 2S, 3S and 4 artwork. Hovering Back button colors marker 2 and outlines its card together. Additional button 1 sits under Outside the diagram, and the naming sequence replaces it with Spare button."
+    },
+    {
+      "id": 3,
+      "label": "Button mapping list",
+      "detail": "The compact view displays Ctrl and W keycaps before Close tab, while Gesture button tap has the smaller instruction Set swipes in Gestures. All five rows fit at 720 pixels wide. The offline Preview app list explicitly says changes apply when a mouse connects."
+    },
+    {
+      "id": 4,
+      "label": "Action editor and categories",
+      "detail": "Thumb buttons shows a magnified mouse crop and Behind the thumb wheel beside the Back button editor. Selecting System exposes Task View, Desktop left, Desktop right and Show desktop. The compact modal keeps category names and shortcuts fully readable."
+    },
+    {
+      "id": 5,
+      "label": "Action search",
+      "detail": "Searching Copy replaces the category columns with one result under Edit and Ctrl and C keycaps. The empty result says No matching actions and provides Record a keyboard shortcut below a search icon."
+    },
+    {
+      "id": 6,
+      "label": "Wheel button actions",
+      "detail": "Switch wheel mode has an Assign button while Switch pointer speed has Set up. The speed editor shows 800 and 1600 DPI, Mouse now: 1000 DPI and Next press: 800 DPI above a full-width Save pointer speed action button."
+    },
+    {
+      "id": 7,
+      "label": "Shortcut interaction",
+      "detail": "The ordered frames change from Record key to Press a key, then show an M draft that survives the compact resize. Cancel returns to Native action. Saving K produces K saved for Back button, and reopening and restarting show Assigned now K with a green Saved label. Three native tab cycles keep the editor bounds stable. The compact Ctrl + Win + Alt + Shift + Space chord fits without clipping."
+    },
+    {
+      "id": 8,
+      "label": "Wheel settings",
+      "detail": "SmartShift has an outlined selected card beside Always ratchet and Always freespin. Flick sensitivity shows 10, while Ignore accidental nudges shows 4 of 8 steps. The limited state removes both sliders and retains the two switches."
+    },
+    {
+      "id": 9,
+      "label": "Gestures",
+      "detail": "Swipe left and Swipe right use amber arrow icons with Desktop left and Desktop right assignments. The off state removes Minimum swipe distance, changes the heading to Saved gesture actions and says assignments take effect when gestures are turned on."
+    },
+    {
+      "id": 10,
+      "label": "Profiles and window capture",
+      "detail": "Preview app and Photo editor receive numbered priority badges and Move down or Move up controls. Picking in 6s appears beside Cancel. The final frame adds a python.exe chip and the confirmation Added python.exe to Preview app."
+    },
+    {
+      "id": 11,
+      "label": "Device status",
+      "detail": "Device shows Bluetooth, firmware MPM 12.01.B0006, a green 50% battery bar and Pointer speed in DPI at 1000. Disconnected tells the user saved mappings remain editable. USB mouse explicitly reports standard Windows buttons only and omits unsupported settings."
+    },
+    {
+      "id": 12,
+      "label": "Device diagnostics",
+      "detail": "HID++ features lists amber hexadecimal IDs beside names such as Adjustable DPI and Hi-res wheel. Below it, 18 unnamed features appear as two rows of chips with a Copy unnamed IDs button and a sentence explaining their use in compatibility reports."
+    },
+    {
+      "id": 13,
+      "label": "Conflict and feedback",
+      "detail": "Logi Options+ is running appears in an amber banner with Quit Logi Options+ and Dismiss. The save error says Copy is still unsaved and Your previous assignment is still active, with Try again and Back to editing controls."
+    },
+    {
+      "id": 14,
+      "label": "Tray menu",
+      "detail": "The native menu lists Open mouse settings, Pause remapping, checked Start with Windows and Quit Mushak. The paused version changes the second item to Resume remapping while keeping the other entries and separators in place."
+    }
+  ]
+}

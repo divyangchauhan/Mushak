@@ -1,0 +1,32 @@
+{
+  "observed_at": "2026-11-26T11:18:37.599834+00:00",
+  "method": "Release executable, read-only HID++ discovery",
+  "device": "Wireless Mouse MX Master 2S",
+  "connected": true,
+  "buttons": [
+    {
+      "cid": 82,
+      "slot": "middle",
+      "name": "Middle click",
+      "default_task_id": 58
+    },
+    {
+      "cid": 83,
+      "slot": "back",
+      "name": "Back button",
+      "default_task_id": 60
+    },
+    {
+      "cid": 86,
+      "slot": "forward",
+      "name": "Forward button",
+      "default_task_id": 62
+    },
+    {
+      "cid": 196,
+      "slot": "control_00c4",
+      "name": "Wheel mode button",
+      "default_task_id": 157
+    }
+  ]
+}

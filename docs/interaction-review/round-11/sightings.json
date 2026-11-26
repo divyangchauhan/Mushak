@@ -1,0 +1,218 @@
+{
+  "sol": [
+    {
+      "id": 1,
+      "label": "Profile",
+      "detail": "Default gains a checkmark above Preview app while the numbered mouse map and action cards stay in place."
+    },
+    {
+      "id": 2,
+      "label": "Additional button 1",
+      "detail": "Marker 6 sits on the Haptic Sense Panel. The separate row under Outside the diagram opens a dialog that identifies Control 0x01FF."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "The connected compact list shows Ctrl and W keycaps before Close tab. The offline list places Back and Forward above Middle click."
+    },
+    {
+      "id": 4,
+      "label": "Assign an action",
+      "detail": "The System category shows Task View above Desktop left, Desktop right and Show desktop. The selected category changes without moving the thumb illustration."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "A Copy result puts Ctrl and C keycaps beside the amber Assign button. The empty search state offers Record a keyboard shortcut."
+    },
+    {
+      "id": 6,
+      "label": "Save pointer speed action",
+      "detail": "Speed 1 reads 800 and Speed 2 reads 1600 beside separate sliders, with the second thumb farther right. The wheel image and marker 5 stay in place through setup and browsing."
+    },
+    {
+      "id": 7,
+      "label": "Save shortcut",
+      "detail": "The M draft survives the switch to a centered dialog. Cancel restores Native action, then saving K puts K on the Back button row with a checkmarked toast. Reopen shows Saved, and the compact chord shows four checked modifiers and Space."
+    },
+    {
+      "id": 8,
+      "label": "SmartShift",
+      "detail": "The selected mode card has a filled radio. Flick sensitivity reads 10 and Ignore accidental nudges reads 4. The limited view removes both sliders."
+    },
+    {
+      "id": 9,
+      "label": "Saved gesture actions",
+      "detail": "Directional arrows align with the swipe labels. Turning gestures off replaces the 60 counts slider with guidance and leaves all five action rows visible."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "Preview app is above Photo editor in the ordering view. While picking a window, an amber banner appears above the cards with a 4s countdown and Cancel."
+    },
+    {
+      "id": 11,
+      "label": "Disconnected",
+      "detail": "The connected panel shows a half-filled green battery meter and 1000 DPI. The disconnected card pairs a crossed-out mouse icon with instructions to wake or reconnect it."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "The list aligns each amber hexadecimal ID with a name. The unnamed IDs wrap into two chip rows under Copy IDs."
+    },
+    {
+      "id": 13,
+      "label": "Couldn't save assignment",
+      "detail": "The error panel says Copy is still unsaved and places Try again next to Back to editing. The conflict alert shifts the Buttons content down and marks the device Paused."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "Pause remapping changes to Resume remapping in the same row. Start with Windows stays checked and Quit Mushak stays below the second separator."
+    }
+  ],
+  "terra": [
+    {
+      "id": 1,
+      "label": "Profile",
+      "detail": "The Default menu opens above Preview app with a check beside Default."
+    },
+    {
+      "id": 2,
+      "label": "Additional button 1",
+      "detail": "The MX Master 4 has six numbered markers, with an extra row under Outside the diagram. Hovering marker 2 highlights its matching row."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "The compact list shows Win and Tab keycaps beside Task View, with a right chevron."
+    },
+    {
+      "id": 4,
+      "label": "Back button",
+      "detail": "The System category selects Task View, Desktop left, Desktop right and Show desktop; the compact view opens as a modal."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "A search for zzzz replaces the action list with a shortcut recording option, while Copy displays an Assign button."
+    },
+    {
+      "id": 6,
+      "label": "Switch pointer speed",
+      "detail": "The wheel editor changes from two mouse actions to Speed 1 at 800 and Speed 2 at 1600 with sliders and a save button."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut",
+      "detail": "Recording changes the panel to Press a key, then shows a draft key and Save shortcut. After saving, the row and toast show K."
+    },
+    {
+      "id": 8,
+      "label": "SmartShift",
+      "detail": "The selected wheel mode has an amber outline. Flick sensitivity is 10 and accidental nudges is 4, with sliders below."
+    },
+    {
+      "id": 9,
+      "label": "Tap vs. swipe threshold",
+      "detail": "The gesture screen shows 60 counts and five directional rows. Turning gestures off replaces the slider with an explanation and saved actions."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "The profile cards show preview.exe and photo.exe. Window capture adds a banner with a 4s countdown and Cancel."
+    },
+    {
+      "id": 11,
+      "label": "Disconnected",
+      "detail": "The connected device shows Bluetooth, firmware, 50% battery and 1000 DPI. The disconnected state replaces these with a reconnect message."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "The diagnostics page lists hexadecimal IDs beside named features and displays unnamed IDs as chips with Copy IDs."
+    },
+    {
+      "id": 13,
+      "label": "Couldn't save assignment",
+      "detail": "A red warning states Copy is still unsaved and offers Try again and Back to editing. The conflict banner offers Retry quit after access is denied."
+    },
+    {
+      "id": 14,
+      "label": "Pause remapping",
+      "detail": "The tray menu changes Pause remapping to Resume remapping and keeps a check beside Start with Windows."
+    }
+  ],
+  "astra": [
+    {
+      "id": 1,
+      "label": "Buttons / Profile",
+      "detail": "Default is checked in the upper-right profile menu, with Preview app beneath it. The amber Buttons selection and bottom-left 50% battery card stay in place."
+    },
+    {
+      "id": 2,
+      "label": "Haptic Sense Panel / Additional button 1",
+      "detail": "The MX Master 4 image has six numbered circles, and Additional button 1 appears below an Outside the diagram label. Its editor says Control 0x01FF and shows Common selected."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "The compact list shows Ctrl and W keycaps before Close tab, while Gesture button tap has a second line reading Set swipes in Gestures."
+    },
+    {
+      "id": 4,
+      "label": "Back button / Actions",
+      "detail": "The System category shows Task View, Desktop left, Desktop right, and Show desktop beside a close-up titled Thumb buttons. The compact dialog gives Tabs & windows a two-line label and category icon."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "Searching Copy produces one Edit result with Ctrl and C keycaps plus an amber Assign button. Searching zzzz produces No matching actions and Record a keyboard shortcut."
+    },
+    {
+      "id": 6,
+      "label": "Switch between two pointer speeds",
+      "detail": "Speed 1 is 800 and Speed 2 is 1600, each with a numeric box and slider. A full-width Save pointer speed action button sits directly below them."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut / Save shortcut",
+      "detail": "The sequence changes from Press a key to an M draft, survives a compact modal layout, cancels back to Native action, then saves K with a lower-right confirmation. The reopened editor shows K and Saved. The chord dialog shows all four modifiers checked above Space."
+    },
+    {
+      "id": 8,
+      "label": "Scroll / SmartShift",
+      "detail": "Three wheel-mode cards appear in a row. SmartShift is selected above Flick sensitivity 10 and Ignore accidental nudges 4. High-resolution scrolling is on and Invert scroll direction is off."
+    },
+    {
+      "id": 9,
+      "label": "Gestures / Tap vs. swipe threshold",
+      "detail": "The threshold reads 60 counts. Five rows pair Tap with Task View, vertical swipes with volume, and horizontal swipes with desktop movement. The off state retains saved actions beneath an explanatory sentence."
+    },
+    {
+      "id": 10,
+      "label": "Profiles / Pick a window",
+      "detail": "Preview app and Photo editor have Move down and Move up controls. Window capture adds an amber banner reading Switch to the window you want to add, with 4s and Cancel."
+    },
+    {
+      "id": 11,
+      "label": "Device / Reapply settings",
+      "detail": "Bluetooth, firmware MPM 12.01.B0006, a half-filled green battery bar, Current DPI 1000, and a 200 to 4000 slider appear above HID++ features with 29 detected. Empty states replace these with No device or Disconnected."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features / Copy IDs",
+      "detail": "The feature list pairs amber hexadecimal IDs with names such as Root and SmartShift. Unnamed features appear as two rows of monospace chips below a Copy IDs button."
+    },
+    {
+      "id": 13,
+      "label": "Couldn't save assignment",
+      "detail": "The error panel says Copy is still unsaved and offers Try again beside Back to editing. The conflict banner separately shows Could not quit Logi Options+ with Retry quit and Dismiss."
+    },
+    {
+      "id": 14,
+      "label": "Open mouse settings / Pause remapping",
+      "detail": "The native white tray menu changes Pause remapping to Resume remapping. Start with Windows has a checkmark, and a separator sits above Quit Mushak."
+    }
+  ]
+}

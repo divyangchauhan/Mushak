@@ -1,0 +1,218 @@
+{
+  "sol": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "Frame 04 shows a brown check at the right of Default and Preview app directly below it. The menu overlaps the top of the mouse art while leaving the numbered controls readable."
+    },
+    {
+      "id": 2,
+      "label": "Back button",
+      "detail": "In frames 11 and 12, marker 2 fills with the theme accent and the matching Close tab card gains an outline. Frames 17 and 18 show Spare button on its own row beneath Outside the diagram."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "Frame 05 puts Win and Tab in separate gray keycaps before Task View. The Edit buttons share a right edge even on the compact layout."
+    },
+    {
+      "id": 4,
+      "label": "Choose an action to assign now",
+      "detail": "In frame 04 the System category has a beige fill and a thin brown edge. Task View and its Win + Tab shortcut anchor opposite sides of the first result row."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "Frame 03 centers a magnifying glass over the message and places an amber outline around Record a keyboard shortcut. Frame 02 aligns Ctrl and C chips at the far right of Copy."
+    },
+    {
+      "id": 6,
+      "label": "Switch between two pointer speeds",
+      "detail": "Frame 04 places both editable DPI values beside the slider tracks and displays First press after saving: 800 DPI immediately above the brown save button."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut",
+      "detail": "Frames 25 to 36 cycle the amber underline between tabs in both themes. M remains in frames 11 to 14, the Back button returns to Send Back to the app after Cancel in 15 and 16, and K appears in a keycap beside Assigned now in the restart frame 37."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "Frame 01 places the amber slider thumb midway and shows 50% of a notch in amber monospace. Frame 08 stacks the three mode choices and keeps the saved threshold in the off-state explanation."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "Frame 08 keeps the four direction arrows, shortcut chips, and the 60 counts readout visible at 720 by 540. In frame 06 the switch knob goes left and the direction arrows lose the accent."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "Frame 08 shows Capturing in 6s in brown next to + 6 seconds and Cancel. Frame 11 adds a python.exe chip and a bottom-right confirmation. Frame 16 keeps Photo editing and color correction whole by moving the action buttons onto a second row."
+    },
+    {
+      "id": 11,
+      "label": "Pointer speed in DPI",
+      "detail": "In frame 10 the green battery track fills halfway, while the brown DPI thumb sits near the low end with 1000 at the right. Frame 08 shows USB as the sole connection detail for the standard mouse."
+    },
+    {
+      "id": 12,
+      "label": "18 unnamed features",
+      "detail": "Frame 01 sets hardware IDs like 0x1b04 in amber monospace and lays the unnamed IDs out as two rows of gray chips. The two copy buttons sit at different heights alongside their respective content."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused",
+      "detail": "Frame 28 shows Retry beside the red-dot status and the dark fallback strip below. Both disappear in frame 29, and the light equivalents in frames 33 and 34 follow the same pattern. Frame 20 names Copy as the unsaved action and keeps Try again next to Back to editing."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "Frame 02 puts Currently paused on the same line as Resume remapping. A left-gutter check marks Start with Windows, with thin dividers above remapping and below startup."
+    }
+  ],
+  "terra": [
+    {
+      "id": 1,
+      "label": "Shell and profile switcher",
+      "detail": "Buttons title sits beside Edit profile; selected navigation has an amber left edge."
+    },
+    {
+      "id": 2,
+      "label": "Button artwork and reported controls",
+      "detail": "Haptic Sense Panel is number 6; Button 0x01FF appears under Outside the diagram."
+    },
+    {
+      "id": 3,
+      "label": "Button mapping list",
+      "detail": "Back button shows Ctrl and W keycaps beside Close tab in compact view."
+    },
+    {
+      "id": 4,
+      "label": "Action editor and categories",
+      "detail": "Common has an amber selected category and Native action has a check at right."
+    },
+    {
+      "id": 5,
+      "label": "Action search",
+      "detail": "Copy returns one row with Ctrl and C keycaps; zzzz shows No matching actions."
+    },
+    {
+      "id": 6,
+      "label": "Wheel button actions",
+      "detail": "Switch pointer speed opens two DPI sliders and a Save pointer speed action button."
+    },
+    {
+      "id": 7,
+      "label": "Shortcut interaction",
+      "detail": "New shortcut M remains after switching tabs and resizing; K appears in saved and restarted frames."
+    },
+    {
+      "id": 8,
+      "label": "Wheel settings",
+      "detail": "SmartShift has an amber outline and Flick sensitivity shows 10 above a slider."
+    },
+    {
+      "id": 9,
+      "label": "Gestures",
+      "detail": "Swipe left has an orange arrow and Ctrl Win left keycaps next to Desktop left."
+    },
+    {
+      "id": 10,
+      "label": "Profiles and window capture",
+      "detail": "Preview app has a preview.exe chip and Pick a window; capture shows Capturing in 6s."
+    },
+    {
+      "id": 11,
+      "label": "Device status",
+      "detail": "Battery shows a half green bar and 50%; disconnected state offers Edit button mappings."
+    },
+    {
+      "id": 12,
+      "label": "Device diagnostics",
+      "detail": "HID++ features lists 0x2201 Adjustable DPI and 18 unnamed features as small chips."
+    },
+    {
+      "id": 13,
+      "label": "Conflict and feedback",
+      "detail": "Remapping paused appears in the title bar; an error banner says Settings could not reach the tray app."
+    },
+    {
+      "id": 14,
+      "label": "Tray menu",
+      "detail": "Pause remapping says Currently on; the paused menu changes to Resume remapping and Currently paused."
+    }
+  ],
+  "astra": [
+    {
+      "id": 1,
+      "label": "Buttons / Edit profile",
+      "detail": "03-Dark-menu and 04-Light-menu show Default with a right-aligned amber check and Preview app below it. The selected Buttons row has a narrow amber left edge, while the device card stays anchored at the lower left."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram / Name this button",
+      "detail": "11-Dark-marker-hover and 12-Light-marker-hover fill marker 2 with amber and outline the matching Back button card. The Master 4 image uses white leader lines for crowded side buttons. Frames 15-18 turn Button 0x01FF into Spare button."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap / Configure swipes",
+      "detail": "05-native-compact-Dark-buttons and 06-native-compact-Light-buttons fit five rounded assignment rows into 720 by 540 pixels. Ctrl and W occupy separate small keycaps before Close tab; every Edit button shares the same right edge."
+    },
+    {
+      "id": 4,
+      "label": "Choose an action to assign now",
+      "detail": "03-Dark-category-menu highlights System with a left amber stroke and shows four actions with right-aligned shortcuts. The compact picker in frames 09-10 keeps both tabs and all six category labels visible. Haptic Sense Panel has a separate close-up with marker 6."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "01-Dark-search-results and 02-Light-search-results show one Copy row with Ctrl and C keycaps at its right. Frames 03-04 center a magnifier above No matching actions, with Clear search and an outlined Record a keyboard shortcut button beneath."
+    },
+    {
+      "id": 6,
+      "label": "Switch between two pointer speeds",
+      "detail": "03-Dark-dpi-editor and 04-Light-dpi-editor align editable 800 and 1600 fields with two sliders. Mouse: 1000 DPI and First press after saving: 800 DPI sit directly above a full-width Save pointer speed action button."
+    },
+    {
+      "id": 7,
+      "label": "New shortcut / Saved",
+      "detail": "Frames 07-14 preserve the M draft through Actions, return and a 720 by 360 resize. Frame 15 restores Send Back to the app after cancel; 19 shows K saved for Back button. Frame 37 shows Assigned now K and a green Saved check after restart. All twelve native cycle frames keep the tabs, footer and content aligned."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "01-Dark-scroll and 02-Light-scroll show three equal wheel-mode cards, with SmartShift selected by both a filled radio center and amber outline. The nudge slider displays 50% of a notch above its right end. Compact frames stack wheel modes vertically and keep both switches visible."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "07-native-compact-Dark-gestures and 08-native-compact-Light-gestures fit the five gesture rows and distance slider on one screen. Amber arrows point in each swipe direction, while right-aligned keycap groups identify actions. Off-state frames replace amber icons with neutral ones and introduce Saved gesture actions."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window / Photo editing and color correction",
+      "detail": "07-Dark-window-pick shows Capturing in 6s beside + 6 seconds and Cancel. Frame 11 adds a python.exe chip and a green confirmation toast. Frames 15-16 preserve the long profile title on one line and move ordering and delete controls onto their own row, with a visible right scrollbar."
+    },
+    {
+      "id": 11,
+      "label": "Pointer speed in DPI / Disconnected",
+      "detail": "09-native-compact-Dark-device and 10-native-compact-Light-device align Connection and Firmware cards above a green half-length battery bar. Pointer speed shows 1000 over a slider bounded by 200 and 4000. Disconnected frames offer an Edit button mappings button directly below the status explanation."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features / Copy unnamed IDs",
+      "detail": "01-Dark-diagnostics and 02-Light-diagnostics arrange named features in two columns with amber hexadecimal IDs. Eighteen unnamed IDs wrap into two rows of compact monospace chips beneath a separate heading; Copy device report and Copy unnamed IDs sit at the right."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused / Settings couldn't reach the Mushak tray app",
+      "detail": "Frames 28 and 33 retain the red-dot paused badge and replace Resume with Retry above a full-width recovery instruction. Frames 29 and 34 remove both badge and banner after retry. Frames 19-20 say Copy is still unsaved and offer Try again plus Back to editing. Compact frames 15-16 keep the editor footer fully visible over the dimmed warning."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping / Currently paused",
+      "detail": "02-Windows-tray-paused shows Resume remapping followed by Currently paused on the same row. A check sits in the left gutter beside Start with Windows, and thin horizontal rules separate opening settings, state controls and Quit Mushak."
+    }
+  ]
+}
