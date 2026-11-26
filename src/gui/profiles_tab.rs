@@ -234,9 +234,28 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             "Apps using this profile"
                         };
                         if waiting {
-                            ui.text(&format!("{caption} · {secs_left}s"), |t| {
-                                t.font(&fonts::SANS_BOLD).font_size(15).color(pal.text)
-                            });
+                            ui.element()
+                                .width(grow!())
+                                .height(fit!())
+                                .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(9))
+                                .children(|ui| {
+                                    ui.element()
+                                        .width(fixed!(46.0))
+                                        .height(fixed!(28.0))
+                                        .corner_radius(7.0)
+                                        .background_color(pal.accent)
+                                        .layout(|l| l.align(CenterX, CenterY))
+                                        .children(|ui| {
+                                            ui.text(&format!("{secs_left}s"), |t| {
+                                                t.font(&fonts::MONO_BOLD)
+                                                    .font_size(15)
+                                                    .color(pal.accent_ink)
+                                            });
+                                        });
+                                    ui.text(caption, |t| {
+                                        t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
+                                    });
+                                });
                         } else {
                             widgets::eyebrow(ui, &pal, caption);
                         }

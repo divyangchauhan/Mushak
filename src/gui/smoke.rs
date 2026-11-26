@@ -1005,6 +1005,13 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         ply.set_scroll_position("settings_content", (0.0, 10000.0));
         settle(ply, app).await;
         snapshot(&dir, "diagnostics-lower");
+        chrome::make_frameless(720.0, 540.0);
+        ply.set_scroll_position("settings_content", (0.0, 0.0));
+        settle(ply, app).await;
+        let report_button = ply.bounding_box("copy_device_report").unwrap();
+        assert!(report_button.x + report_button.width <= screen_width() + 0.25);
+        snapshot(&dir, "diagnostics-compact");
+        chrome::make_frameless(DESIGN_W, DESIGN_H);
         ply.set_scroll_position("settings_content", (0.0, 0.0));
         settle(ply, app).await;
         click(ply, app, "diagnostics_back").await;
@@ -1112,7 +1119,13 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         assert!(!app.resume_steps_visible());
         let mapping = ("btn_chip", buttons::slot_index("forward"));
         let before = ply.bounding_box(mapping).unwrap();
+        let show = ply.bounding_box("show_resume_steps").unwrap();
         click(ply, app, "show_resume_steps").await;
+        let hide = ply.bounding_box("hide_resume_steps").unwrap();
+        assert_eq!(
+            (show.x, show.y, show.width, show.height),
+            (hide.x, hide.y, hide.width, hide.height)
+        );
         let after = ply.bounding_box(mapping).unwrap();
         assert_eq!(
             (before.x, before.y, before.width, before.height),

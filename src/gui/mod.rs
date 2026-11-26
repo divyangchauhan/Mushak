@@ -864,9 +864,8 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
             }
             if app.resume_steps_visible() {
                 widgets::resume_help(ui, app);
-            } else {
-                ui.element().width(grow!()).height(fixed!(1.0)).empty();
             }
+            ui.element().width(grow!()).height(fixed!(1.0)).empty();
             widgets::titlebar_buttons(ui, app);
         });
 }

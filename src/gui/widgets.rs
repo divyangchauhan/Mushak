@@ -22,9 +22,11 @@ pub fn paused_status(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
     let pid = app.device_view.resume_pid;
     let failed = matches!(app.resume, super::ResumeState::Failed);
-    let can_show_steps = (failed || pid.is_none()) && !app.resume_steps_visible();
+    let has_steps = failed || pid.is_none();
+    let expanded = app.resume_steps_visible();
     let bg = Palette::mix(pal.danger, 15.0, pal.win);
     ui.element()
+        .id("pause_state")
         .height(fixed!(28.0))
         .corner_radius(8.0)
         .background_color(bg)
@@ -45,8 +47,15 @@ pub fn paused_status(ui: &mut Ui2, app: &mut App) {
                 t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
             });
             resume_button(ui, app);
-            if can_show_steps && pause_command(ui, &pal, "show_resume_steps", "Tray steps") {
-                app.show_resume_steps = Some(true);
+            if has_steps {
+                let (id, label) = if expanded {
+                    ("hide_resume_steps", "Hide steps")
+                } else {
+                    ("show_resume_steps", "Tray steps")
+                };
+                if pause_command(ui, &pal, id, label) {
+                    app.show_resume_steps = Some(!expanded);
+                }
             }
         });
 }
@@ -72,24 +81,40 @@ fn resume_button(ui: &mut Ui2, app: &mut App) {
     }
 }
 
-pub(super) fn resume_help(ui: &mut Ui2, app: &mut App) {
+pub(super) fn resume_help(ui: &mut Ui2, app: &App) {
     let pal = app.pal;
+    let failed = matches!(app.resume, super::ResumeState::Failed);
     ui.element()
         .id("resume_help")
-        .width(grow!())
+        .width(fixed!(334.0))
         .height(fit!())
-        .layout(|l| l.direction(TopToBottom).gap(1))
+        .floating(|f| {
+            f.attach_id("pause_state")
+                .anchor((Left, Top), (Left, Top))
+                .offset((0.0, 39.0))
+                .z_index(55)
+        })
+        .corner_radius(9.0)
+        .background_color(pal.pop)
+        .border(|b| b.all(1).color(pal.line_strong))
+        .layout(|l| l.direction(TopToBottom).gap(5).padding((10, 12, 10, 12)))
         .children(|ui| {
-            ui.text("Right-click Mushak by the clock or in hidden icons.", |t| {
-                t.font(&fonts::SANS).font_size(12).color(pal.muted)
-            });
+            ui.text(
+                if failed {
+                    "Resume failed"
+                } else {
+                    "Resume from the tray"
+                },
+                |t| t.font(&fonts::SANS_BOLD).font_size(15).color(pal.text),
+            );
+            ui.text(
+                "Right-click Mushak by the Windows clock or in hidden icons.",
+                |t| t.font(&fonts::SANS).font_size(14).color(pal.text),
+            );
             ui.text("Choose Resume remapping.", |t| {
-                t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
+                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
             });
         });
-    if pause_command(ui, &pal, "hide_resume_steps", "Hide steps") {
-        app.show_resume_steps = Some(false);
-    }
 }
 
 fn pause_command(ui: &mut Ui2, pal: &Palette, id: &'static str, label: &str) -> bool {
@@ -97,6 +122,11 @@ fn pause_command(ui: &mut Ui2, pal: &Palette, id: &'static str, label: &str) -> 
     let mut clicked = false;
     ui.element()
         .id(id)
+        .width(if matches!(id, "hide_resume_steps" | "show_resume_steps") {
+            fixed!(81.0)
+        } else {
+            fit!()
+        })
         .height(fixed!(26.0))
         .corner_radius(6.0)
         .background_color(if hovered { pal.s2 } else { pal.surface })

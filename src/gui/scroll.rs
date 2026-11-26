@@ -25,13 +25,17 @@ const MODES: [(SmartShiftMode, &str, &str); 3] = [
 
 pub fn section(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
+    let compact = screen_width() < 840.0;
     widgets::heading(
         ui,
         &pal,
         "Scroll",
         "Choose how the wheel feels and when a turn counts.",
     );
-    ui.element().width(grow!()).height(fixed!(22.0)).empty();
+    ui.element()
+        .width(grow!())
+        .height(fixed!(if compact { 10.0 } else { 22.0 }))
+        .empty();
 
     if !app.mouse_awake() {
         widgets::asleep_card(ui, &pal, &app.device_view.device);
@@ -98,8 +102,8 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             }
                             // Radio.
                             ui.element()
-                                .width(fixed!(18.0))
-                                .height(fixed!(18.0))
+                                .width(fixed!(if compact { 14.0 } else { 18.0 }))
+                                .height(fixed!(if compact { 14.0 } else { 18.0 }))
                                 .corner_radius(99.0)
                                 .border(|b| {
                                     b.all(2).color(if sel { pal.accent } else { pal.faint })
@@ -127,8 +131,19 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                             .font_size(widgets::px(13.5))
                                             .color(pal.text)
                                     });
-                                    if screen_width() >= 840.0 {
-                                        ui.text(desc, |t| {
+                                    {
+                                        let description = if compact {
+                                            match m {
+                                                SmartShiftMode::AlwaysRatchet => {
+                                                    "One notch at a time"
+                                                }
+                                                SmartShiftMode::AlwaysFreespin => "No notches",
+                                                SmartShiftMode::SmartShift => "Flick for free-spin",
+                                            }
+                                        } else {
+                                            desc
+                                        };
+                                        ui.text(description, |t| {
                                             t.font(&fonts::SANS)
                                                 .font_size(widgets::px(12.5))
                                                 .color(pal.muted)
@@ -139,12 +154,21 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 }
             });
 
-        ui.element().width(grow!()).height(fixed!(22.0)).empty();
+        ui.element()
+            .width(grow!())
+            .height(fixed!(if compact { 10.0 } else { 22.0 }))
+            .empty();
     }
     if caps.smartshift {
         // Flick sensitivity applies only in SmartShift mode.
         widgets::card(ui, &pal)
-            .layout(|l| l.direction(TopToBottom).gap(3).padding((16, 17, 16, 17)))
+            .layout(|l| {
+                l.direction(TopToBottom).gap(3).padding(if compact {
+                    (8, 12, 8, 12)
+                } else {
+                    (16, 17, 16, 17)
+                })
+            })
             .children(|ui| {
                 ui.element()
                     .width(grow!())
@@ -179,7 +203,10 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             .color(pal.muted)
                     },
                 );
-                ui.element().width(grow!()).height(fixed!(12.0)).empty();
+                ui.element()
+                    .width(grow!())
+                    .height(fixed!(if compact { 6.0 } else { 12.0 }))
+                    .empty();
                 ui.element()
                     .width(grow!())
                     .height(fit!())
@@ -239,7 +266,13 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     let mut new_deadzone: Option<i64> = None;
     if caps.hires_scroll {
         widgets::card(ui, &pal)
-            .layout(|l| l.direction(TopToBottom).gap(3).padding((16, 17, 16, 17)))
+            .layout(|l| {
+                l.direction(TopToBottom).gap(3).padding(if compact {
+                    (8, 12, 8, 12)
+                } else {
+                    (16, 17, 16, 17)
+                })
+            })
             .children(|ui| {
                 ui.element()
                     .width(grow!())
@@ -271,7 +304,10 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         .font_size(widgets::px(12.5))
                         .color(pal.muted)
                 });
-                ui.element().width(grow!()).height(fixed!(12.0)).empty();
+                ui.element()
+                    .width(grow!())
+                    .height(fixed!(if compact { 6.0 } else { 12.0 }))
+                    .empty();
                 ui.element()
                     .width(grow!())
                     .height(fit!())
@@ -302,7 +338,10 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     });
             });
 
-        ui.element().width(grow!()).height(fixed!(18.0)).empty();
+        ui.element()
+            .width(grow!())
+            .height(fixed!(if compact { 14.0 } else { 18.0 }))
+            .empty();
     }
     if let Some(m) = new_mode {
         app.draft.device.smartshift = m;
@@ -342,7 +381,11 @@ pub fn switch_row(
             l.direction(LeftToRight)
                 .align(Left, CenterY)
                 .gap(16)
-                .padding((15, 17, 15, 17))
+                .padding(if screen_width() < 840.0 {
+                    (8, 12, 8, 12)
+                } else {
+                    (15, 17, 15, 17)
+                })
         })
         .children(|ui| {
             ui.element()

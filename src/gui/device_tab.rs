@@ -446,6 +446,9 @@ fn feature_details(ui: &mut Ui2, app: &mut App) {
                                         });
                                     });
                             }
+                            if row.len() < columns {
+                                ui.element().width(grow!(0.0)).height(fixed!(1.0)).empty();
+                            }
                         });
                 }
             });
