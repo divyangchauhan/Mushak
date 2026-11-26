@@ -1,0 +1,218 @@
+{
+  "sol": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "The check beside Default stays inside the highlighted tile when the menu opens."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "Hovering Back button fills marker 2 and outlines its matching card. The extra control gets a separate row with its own edit affordance."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "Win and Tab appear as separate keycaps beside Task View, with Edit aligned at the right."
+    },
+    {
+      "id": 4,
+      "label": "Choose an action to assign now",
+      "detail": "The Thumb buttons crop puts an amber 2 at the physical Back button, and the same number labels the editor."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "The no-results dialog centers its message above Clear search and Record a keyboard shortcut."
+    },
+    {
+      "id": 6,
+      "label": "Switch between two pointer speeds",
+      "detail": "The DPI editor places the two number fields next to their sliders and spells out Current and Next press above Save."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut",
+      "detail": "The recording panel switches to Press a key, while the compact editor keeps all four checked modifiers and the complete chord visible."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "The slider shows 50% of a notch in amber. The simpler state preserves that value in the high-resolution scrolling description."
+    },
+    {
+      "id": 9,
+      "label": "Gesture recognition off",
+      "detail": "The arrows lose their accent while the edit pencils stay amber, and the off-state copy says the actions remain editable."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "The capture row puts a six-second extension beside Cancel. After capture, comet.exe appears as a chip beside preview.exe, and a confirmation names Preview app."
+    },
+    {
+      "id": 11,
+      "label": "Reported mouse features",
+      "detail": "The connected view pairs a green battery bar with its percentage. The disconnected card offers Edit button mappings immediately below."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "The amber monospace IDs align in two columns, while unnamed IDs wrap into smaller chips beside a dedicated copy action."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused",
+      "detail": "The paused chip remains after the alert is dismissed. The compact shortcut editor puts Applies after resume next to Save shortcut."
+    },
+    {
+      "id": 14,
+      "label": "Start with Windows",
+      "detail": "A check sits in the left gutter, and horizontal rules separate Open mouse settings and Quit from the other controls."
+    }
+  ],
+  "terra": [
+    {
+      "id": 1,
+      "label": "Buttons",
+      "detail": "The sidebar highlights Buttons, while Edit profile shows Default and a two-option profile menu."
+    },
+    {
+      "id": 2,
+      "label": "Buttons",
+      "detail": "Numbered markers connect MX Master artwork to assignment cards, with an Outside the diagram row for Button 0x01FF."
+    },
+    {
+      "id": 3,
+      "label": "Buttons",
+      "detail": "The compact list pairs each button with an action, keycaps, and an Edit button."
+    },
+    {
+      "id": 4,
+      "label": "Back button",
+      "detail": "The editor puts a Thumb buttons crop beside categories, action rows, and shortcut labels."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "Search for Copy returns one row with Ctrl and C keycaps; an empty search offers Clear search and Record a keyboard shortcut."
+    },
+    {
+      "id": 6,
+      "label": "Wheel mode button",
+      "detail": "Mouse actions offers Switch wheel mode and Switch pointer speed, followed by a two-speed DPI editor."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut",
+      "detail": "Recording changes New shortcut to Press a key, then shows the captured key and Save shortcut; saved state shows K."
+    },
+    {
+      "id": 8,
+      "label": "Scroll",
+      "detail": "Wheel mode uses three radio cards, with Flick sensitivity and Ignore accidental nudges sliders and switches below."
+    },
+    {
+      "id": 9,
+      "label": "Gestures",
+      "detail": "Tap and four directional swipe rows show icons, keycaps, assigned actions, and edit pencils."
+    },
+    {
+      "id": 10,
+      "label": "Profiles",
+      "detail": "Numbered profile cards include application chips, Pick a window, reordering controls, and Delete profile."
+    },
+    {
+      "id": 11,
+      "label": "Device",
+      "detail": "Connection and firmware cards sit above battery, pointer speed, and reported mouse features."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "Named feature IDs form two columns, and 18 unnamed feature IDs appear as chips with a copy button."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused",
+      "detail": "A persistent title-bar status offers Resume; errors show retry and tray instructions, and successful resume turns green."
+    },
+    {
+      "id": 14,
+      "label": "Open mouse settings",
+      "detail": "The native tray menu shows Pause remapping or Resume remapping, Start with Windows, and Quit Mushak."
+    }
+  ],
+  "astra": [
+    {
+      "id": 1,
+      "label": "Buttons / Edit profile",
+      "detail": "01/03-Dark-menu.webp places the checked Default choice beside Preview app beneath the profile selector. The amber navigation rail, large Buttons heading and persistent battery card make the shell easy to scan."
+    },
+    {
+      "id": 2,
+      "label": "Buttons / Outside the diagram",
+      "detail": "02/11-Dark-marker-hover.webp links the amber number 2 on the mouse to an outlined Back button card. The MX Master 4 frames add a sixth Haptic Sense Panel marker, and 17-Dark-named-button.webp shows Spare button below Outside the diagram."
+    },
+    {
+      "id": 3,
+      "label": "Buttons / Configure gestures",
+      "detail": "03/05-native-compact-Dark-buttons.webp fits five mapping rows in the compact window, with Ctrl and W keycaps beside Close tab and a consistently placed Edit button at the right."
+    },
+    {
+      "id": 4,
+      "label": "Back button / Actions",
+      "detail": "04/03-Dark-category-menu.webp highlights System in the left category column and aligns Task View and desktop actions with their shortcuts. The neighboring Thumb buttons crop shows the precise physical button."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "05/04-Light-no-results.webp centers a search icon above No matching actions and offers Clear search beside Record a keyboard shortcut. The successful Copy result uses separated Ctrl and C keycaps."
+    },
+    {
+      "id": 6,
+      "label": "Wheel mode button / Switch pointer speed",
+      "detail": "06/04-Light-dpi-editor.webp aligns Speed 1 and Speed 2 numeric fields with sliders, states the 200 to 4000 DPI range, and explicitly shows Current: 1000 DPI and Next press: 800 DPI above the save button."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut / Assigned now",
+      "detail": "07/09-Dark-draft-actions.webp labels Keyboard shortcut as Draft and warns that choosing an action discards draft M. 23-Dark-compact-chord.webp keeps all four selected modifiers and Space readable in the short window."
+    },
+    {
+      "id": 8,
+      "label": "Scroll / Ignore accidental nudges",
+      "detail": "08/01-Dark-scroll.webp distinguishes the selected SmartShift card with an amber radio and border. The nudge slider shows 50% of a notch, while 07-native-compact-Dark-wheel.webp stacks the wheel choices cleanly."
+    },
+    {
+      "id": 9,
+      "label": "Gestures / Minimum swipe distance",
+      "detail": "09/07-native-compact-Dark-gestures.webp fits Tap and four arrow-marked swipe rows above the distance slider. The 60 counts value has a concrete explanation of about 1.5 mm at 1000 DPI."
+    },
+    {
+      "id": 10,
+      "label": "Profiles / Pick a window",
+      "detail": "10/15-native-compact-Dark-long-profile.webp wraps Move up, Move down and Delete profile beneath Photo editing and color correction without truncating its name. The capture state shows a six-second countdown and an extension button."
+    },
+    {
+      "id": 11,
+      "label": "Device / Reported mouse features",
+      "detail": "11/09-native-compact-Dark-device.webp groups Bluetooth and firmware in paired cards, then shows a green 50% battery bar and amber 1000 DPI value. Disconnected frames offer Edit button mappings."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features / 18 unnamed features",
+      "detail": "12/02-Light-diagnostics.webp separates named features in two columns from compact hexadecimal chips for unnamed features. Copy device report and Copy unnamed IDs have distinct positions beside the relevant content."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused / Resume unconfirmed",
+      "detail": "13/39-native-resume-Light-08-resume-failed.webp keeps the paused badge and Retry action in the title bar while showing tray recovery instructions below. 18-Light-resume-compact-editor.webp places Applies after resume next to Save shortcut."
+    },
+    {
+      "id": 14,
+      "label": "Open mouse settings / Resume remapping",
+      "detail": "14/02-Windows-tray-paused.webp uses a native menu with Resume remapping, a checked Start with Windows item and a separator before Quit Mushak."
+    }
+  ]
+}
