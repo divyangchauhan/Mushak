@@ -185,7 +185,12 @@ def click(x, y):
         # Miniquad reads the last WM_MOUSEMOVE position when handling button messages.
         assert u.PostMessageW(h, 0x200, buttons_before, loc)
         assert u.PostMessageW(h, msg, buttons_after, loc)
-        time.sleep(wait)
+        # Keep this test window's pointer at the target until its next render.
+        # A real mouse move can otherwise replace the message coordinates between frames.
+        until = time.monotonic() + wait
+        while time.monotonic() < until:
+            assert u.PostMessageW(h, 0x200, buttons_after, loc)
+            time.sleep(0.01)
 
 
 def key(vk, scan):
@@ -430,6 +435,7 @@ def check_resume_command():
                 if matches_capture(reference, help_region) and matches_capture(reference, (245, 10, 420, 36)):
                     return
                 time.sleep(0.1)
+            client_pixels().save(Path("target") / f"help-observed-{theme}-{reference}.png")
             raise AssertionError(f"Settings did not show {reference} instructions")
         if has_recovery_help:
             wait_for_help("resume-error")

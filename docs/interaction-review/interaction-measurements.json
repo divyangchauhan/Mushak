@@ -599,7 +599,7 @@
       }
     }
   },
-  "round-33": {
+  "round-34": {
     "Dark": {
       "units": "logical client pixels",
       "geometry_xywh": {
@@ -890,8 +890,8 @@
       },
       "native_frames_match_first_cycle": {
         "preset_tab": [
-          true,
-          true
+          false,
+          false
         ],
         "shortcut_tab": [
           true,
