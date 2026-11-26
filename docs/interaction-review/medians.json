@@ -654,5 +654,21 @@
     "Device diagnostics": 8,
     "Conflict and feedback": 8,
     "Tray menu": 9
+  },
+  "round-41": {
+    "Shell and profile switcher": 9,
+    "Button artwork and reported controls": 9,
+    "Button mapping list": 8,
+    "Action editor and categories": 9,
+    "Action search": 9,
+    "Wheel button actions": 8,
+    "Shortcut interaction": 9,
+    "Wheel settings": 9,
+    "Gestures": 9,
+    "Profiles and window capture": 9,
+    "Device status": 9,
+    "Device diagnostics": 8,
+    "Conflict and feedback": 8,
+    "Tray menu": 9
   }
 }
