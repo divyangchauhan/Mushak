@@ -189,6 +189,9 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                         }
                                     });
                                 if locked {
+                                    if picking.is_none() {
+                                        edit_buttons_link(ui, app, i);
+                                    }
                                     ui.element()
                                         .height(fixed!(22.0))
                                         .corner_radius(6.0)
@@ -390,6 +393,9 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                             },
                                         );
                                     });
+                                if picking.is_none() {
+                                    edit_buttons_link(ui, app, i);
+                                }
                             });
                     });
             }
@@ -463,6 +469,37 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         app.pick_target = i;
         app.pick_deadline = Some(Instant::now() + Duration::from_secs(6));
     }
+}
+
+fn edit_buttons_link(ui: &mut Ui2, app: &mut App, index: usize) {
+    if !super::Section::Buttons.available(&app.device_view.device) {
+        return;
+    }
+    let pal = app.pal;
+    ui.element()
+        .id(("profile_buttons", index as u32))
+        .height(fixed!(28.0))
+        .corner_radius(7.0)
+        .background_color(pal.s2)
+        .accessibility(|a| a.button("Edit button mappings"))
+        .layout(|l| {
+            l.direction(LeftToRight)
+                .align(Left, CenterY)
+                .gap(5)
+                .padding((0, 9, 0, 9))
+        })
+        .children(|ui| {
+            widgets::icon(ui, &icons::NAV_BUTTONS, 14.0, pal.accent);
+            ui.text("Edit buttons", |t| {
+                t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
+            });
+            if ui.just_pressed() {
+                app.selected_profile = index;
+                app.section = super::Section::Buttons;
+                app.profile_menu_open = false;
+                ui.set_scroll_position("settings_content", (0.0, 0.0));
+            }
+        });
 }
 
 fn profile_name_editor(ui: &mut Ui2, app: &mut App, index: usize) {

@@ -65,7 +65,7 @@ if args.long_profile:
 fixture = json.loads(Path("docs/validation/mx-master-2s-bluetooth.json").read_text())[
     "status"
 ]
-(db / "status.json").write_text(json.dumps(dict(paused=False, device=fixture)))
+(db / "status.json").write_text(json.dumps(dict(paused=False, device=fixture, active_profile="Preview app")))
 theme = args.bounds.parent.name.lower()
 assert theme in ("light", "dark")
 (db / "ui.toml").write_text(f'theme = "{theme}"\naccent = "marigold"')

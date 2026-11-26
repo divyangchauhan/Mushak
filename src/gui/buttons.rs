@@ -516,6 +516,26 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
                         }
                     });
             }
+            if let Some(name) = app
+                .device_view
+                .active_profile
+                .as_ref()
+                .filter(|_| !app.device_view.paused)
+            {
+                ui.element()
+                    .width(grow!())
+                    .height(fit!())
+                    .border(|b| b.top(1).color(pal.line))
+                    .layout(|l| l.direction(TopToBottom).gap(3).padding((7, 10, 7, 10)))
+                    .children(|ui| {
+                        ui.text("Last reported active profile", |t| {
+                            t.font(&fonts::SANS).font_size(12).color(pal.muted)
+                        });
+                        ui.text(name, |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
+                        });
+                    });
+            }
         });
 }
 

@@ -834,6 +834,7 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         let dir = gallery.join(format!("{theme:?}"));
         std::fs::create_dir_all(&dir).unwrap();
         app.device_view.device = connected.clone();
+        app.device_view.active_profile = Some("Preview app".into());
         if std::env::args().any(|arg| arg == "--more-states") {
             let dir = gallery.join(format!("{theme:?}"));
             std::fs::create_dir_all(&dir).unwrap();
@@ -1075,6 +1076,13 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
                 );
             }
             if section == Section::Profiles {
+                let before = Config::load_strict().unwrap();
+                click(ply, app, ("profile_buttons", 1)).await;
+                assert_eq!(app.section, Section::Buttons);
+                assert_eq!(app.selected_profile, 1);
+                assert_eq!(Config::load_strict().unwrap(), before);
+                snapshot(&dir, "profile-buttons");
+                click(ply, app, "nav_profiles").await;
                 click(ply, app, ("p_pick", 1)).await;
                 snapshot(&dir, "window-pick");
                 let original_deadline = app.pick_deadline.unwrap();

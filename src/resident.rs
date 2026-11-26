@@ -51,6 +51,7 @@ pub fn run() {
     statusfile::write(&SharedStatus {
         device: (*state::device_status()).clone(),
         paused: state::is_paused(),
+        active_profile: state::active_profile_name(),
         resume_pid,
     });
 
@@ -102,6 +103,7 @@ pub fn run() {
             statusfile::write(&SharedStatus {
                 device: (*state::device_status()).clone(),
                 paused: state::is_paused(),
+                active_profile: state::active_profile_name(),
                 resume_pid,
             });
             last_status = Instant::now();
