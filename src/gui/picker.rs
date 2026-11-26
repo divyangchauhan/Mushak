@@ -143,7 +143,7 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                         return;
                     }
                     if app.shortcut_editor {
-                        shortcut_editor(ui, app, &current, &mut chosen, &mut close);
+                        shortcut_editor(ui, app, &target, &current, &mut chosen, &mut close);
                         return;
                     }
                     if app.picker_fresh {
@@ -237,7 +237,7 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
             miniquad::window::schedule_update();
         }
     } else if let Some(a) = chosen {
-        let display = actions::display(&a);
+        let display = actions::display_for(app, &target, &a);
         app.assign_action(&target, a);
         if app.failed_assignment.is_none() {
             let assignment = if display.label.is_empty() {
@@ -1233,9 +1233,17 @@ fn browse_categories(
                             })
                             .children(|ui| {
                                 ui.text(name, |t| {
-                                    t.font(&fonts::SANS_SEMIBOLD)
-                                        .font_size(14)
-                                        .color(if active { pal.text } else { pal.muted })
+                                    t.font(if active {
+                                        &fonts::SANS_SEMIBOLD
+                                    } else {
+                                        &fonts::SANS
+                                    })
+                                    .font_size(14)
+                                    .color(if active {
+                                        pal.text
+                                    } else {
+                                        pal.muted
+                                    })
                                 });
                                 if ui.just_pressed() {
                                     app.picker_category = i;
@@ -1562,6 +1570,12 @@ fn results(
                     });
 
                 for (n, (label, desc, keys, action, glyph)) in items.iter().enumerate() {
+                    let factory = app
+                        .picker
+                        .as_ref()
+                        .filter(|_| *action == Action::PassThrough)
+                        .map(|target| actions::display_for(app, target, action).label);
+                    let label = factory.as_deref().unwrap_or(label);
                     let id: Id = ("pk", (gi * 100 + n) as u32).into();
                     let hov = ui.pointer_over(id.clone());
                     let is_current = action == current;
@@ -1661,6 +1675,7 @@ fn results(
 fn shortcut_editor(
     ui: &mut Ui2,
     app: &mut App,
+    target: &PickerTarget,
     current: &Action,
     chosen: &mut Option<Action>,
     close: &mut bool,
@@ -1691,7 +1706,7 @@ fn shortcut_editor(
                 .padding((8, 16, 8, 16))
         })
         .children(|ui| {
-            let assigned = actions::display(current);
+            let assigned = actions::display_for(app, target, current);
             ui.element()
                 .width(grow!())
                 .height(fixed!(if short { 24.0 } else { 44.0 }))

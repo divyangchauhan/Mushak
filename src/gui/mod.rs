@@ -746,7 +746,8 @@ fn window(ui: &mut Ui2, app: &mut App) {
         .layout(|l| l.direction(TopToBottom))
         .children(|ui| {
             titlebar(ui, app);
-            if app.resume_steps_visible()
+            if screen_height() >= 430.0
+                && app.resume_steps_visible()
                 && widgets::resume_help(ui, &pal, matches!(app.resume, ResumeState::Failed))
             {
                 app.show_resume_steps = Some(false);
@@ -828,6 +829,11 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
                 24.0,
                 theme::WHITE,
             );
+            if screen_height() < 430.0 && app.resume_steps_visible() {
+                widgets::compact_resume_help(ui, app);
+                widgets::titlebar_buttons(ui, app);
+                return;
+            }
             ui.text("Mushak", |t| {
                 t.font(&fonts::DISPLAY_BOLD).font_size(17).color(pal.text)
             });

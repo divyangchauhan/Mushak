@@ -319,7 +319,8 @@ def check_window_pick():
             previous = current
             time.sleep(0.05)
         else:
-            raise AssertionError("The foreground test window was not captured")
+            client_pixels().save(Path("target") / "window-pick-timeout.png")
+            raise AssertionError(f"The foreground test window was not captured. Last executable: {previous!r}")
         wanted = copy.deepcopy(expected)
         matches = changed["profiles"][0]["match_processes"]
         wanted["profiles"][0]["match_processes"].append(

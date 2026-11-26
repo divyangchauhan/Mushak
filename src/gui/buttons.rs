@@ -442,12 +442,19 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
         1
     };
     let rows = names.len().div_ceil(columns);
+    let width = if columns == 1 {
+        212.0
+    } else if names.iter().all(|n| n.chars().count() <= 14) {
+        268.0
+    } else {
+        356.0
+    };
+    let padding = if columns == 2 { 3 } else { 5 };
     ui.element()
         .id("profile_menu")
-        .width(fixed!(if columns == 2 { 356.0 } else { 212.0 }))
-        .height(fixed!(
-            (10.0 + rows as f32 * 36.0 - 2.0).min((screen_height() - 178.0).clamp(42.0, 298.0))
-        ))
+        .width(fixed!(width))
+        .height(fixed!((2.0 * padding as f32 + rows as f32 * 36.0 - 2.0)
+            .min((screen_height() - 178.0).clamp(42.0, 298.0))))
         .overflow(|o| {
             o.scroll_y()
                 .scrollbar(|s| s.width(6.0).thumb_color(pal.track))
@@ -461,7 +468,7 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
         .corner_radius(11.0)
         .background_color(pal.pop)
         .border(|b| b.all(1).color(pal.line_strong))
-        .layout(|l| l.direction(LeftToRight).wrap().gap(2).padding(5))
+        .layout(|l| l.direction(LeftToRight).wrap().gap(2).padding(padding))
         .children(|ui| {
             for (i, name) in names.iter().enumerate() {
                 let id: Id = ("profile_opt", i as u32).into();
@@ -469,7 +476,11 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
                 let active = i == selected;
                 ui.element()
                     .id(id)
-                    .width(fixed!(if columns == 2 { 168.0 } else { 195.0 }))
+                    .width(fixed!(if columns == 2 {
+                        (width - 16.0) / 2.0
+                    } else {
+                        195.0
+                    }))
                     .height(fixed!(34.0))
                     .corner_radius(8.0)
                     .background_color(if active || hovered {

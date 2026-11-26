@@ -19,7 +19,7 @@ pub fn px(size: f32) -> u16 {
 
 /// "Remapping paused" pill in the title bar.
 pub fn paused_status(ui: &mut Ui2, app: &mut App) {
-    let pal = &app.pal;
+    let pal = app.pal;
     let pid = app.device_view.resume_pid;
     let failed = matches!(app.resume, super::ResumeState::Failed);
     let can_show_steps = (failed || pid.is_none()) && !app.resume_steps_visible();
@@ -44,24 +44,53 @@ pub fn paused_status(ui: &mut Ui2, app: &mut App) {
             ui.text("Remapping paused", |t| {
                 t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
             });
-            if let Some(pid) = pid {
-                let label = if failed { "Retry" } else { "Resume" };
-                if pause_command(ui, pal, "resume_remapping", label) {
-                    if crate::single_instance::ResumeEvent::request(pid).is_ok() {
-                        app.resume = super::ResumeState::Requested {
-                            pid,
-                            at: std::time::Instant::now(),
-                        };
-                    } else {
-                        app.resume = super::ResumeState::Failed;
-                        app.show_resume_steps = Some(true);
-                    }
-                }
-            }
-            if can_show_steps && pause_command(ui, pal, "show_resume_steps", "Tray steps") {
+            resume_button(ui, app);
+            if can_show_steps && pause_command(ui, &pal, "show_resume_steps", "Tray steps") {
                 app.show_resume_steps = Some(true);
             }
         });
+}
+
+fn resume_button(ui: &mut Ui2, app: &mut App) {
+    if let Some(pid) = app.device_view.resume_pid {
+        let label = if matches!(app.resume, super::ResumeState::Failed) {
+            "Retry"
+        } else {
+            "Resume"
+        };
+        if pause_command(ui, &app.pal, "resume_remapping", label) {
+            if crate::single_instance::ResumeEvent::request(pid).is_ok() {
+                app.resume = super::ResumeState::Requested {
+                    pid,
+                    at: std::time::Instant::now(),
+                };
+            } else {
+                app.resume = super::ResumeState::Failed;
+                app.show_resume_steps = Some(true);
+            }
+        }
+    }
+}
+
+pub(super) fn compact_resume_help(ui: &mut Ui2, app: &mut App) {
+    let pal = app.pal;
+    ui.element()
+        .width(grow!())
+        .height(fit!())
+        .layout(|l| l.direction(TopToBottom).gap(2))
+        .children(|ui| {
+            ui.text("Right-click Mushak by the Windows clock", |t| {
+                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+            });
+            ui.text(
+                "Choose Resume remapping. Check hidden icons if needed.",
+                |t| t.font(&fonts::SANS).font_size(13).color(pal.muted),
+            );
+        });
+    resume_button(ui, app);
+    if pause_command(ui, &pal, "hide_resume_steps", "Hide steps") {
+        app.show_resume_steps = Some(false);
+    }
 }
 
 fn pause_command(ui: &mut Ui2, pal: &Palette, id: &'static str, label: &str) -> bool {

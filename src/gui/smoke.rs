@@ -1045,7 +1045,15 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         );
         snapshot(&dir, "resume-legacy-compact");
         assert!(!app.resume_steps_visible());
+        let mapping = ("btn_chip", buttons::slot_index("forward"));
+        let before = ply.bounding_box(mapping).unwrap();
         click(ply, app, "show_resume_steps").await;
+        let after = ply.bounding_box(mapping).unwrap();
+        assert_eq!(
+            (before.x, before.y, before.width, before.height),
+            (after.x, after.y, after.width, after.height),
+            "Tray steps moved the compact mapping"
+        );
         assert!(app.resume_steps_visible());
         snapshot(&dir, "resume-compact-steps");
         click(ply, app, "hide_resume_steps").await;
