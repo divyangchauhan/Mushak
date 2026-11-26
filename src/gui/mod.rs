@@ -151,6 +151,7 @@ pub struct App {
     saved_notice: Option<(String, Section, usize, Instant)>,
     failed_assignment: Option<(crate::config::Action, &'static str)>,
     picker_feedback: Option<Instant>,
+    pending_action: Option<crate::config::Action>,
     pub custom_mods: Vec<Modifier>,
     pub custom_key: Option<u16>,
     pub capturing_key: bool,
@@ -229,6 +230,7 @@ impl App {
             saved_notice: None,
             failed_assignment: None,
             picker_feedback: None,
+            pending_action: None,
             custom_mods: Vec::new(),
             custom_key: None,
             capturing_key: false,
@@ -272,6 +274,7 @@ impl App {
         }
         self.shortcut_editor = self.custom_key.is_some();
         self.picker_feedback = None;
+        self.pending_action = None;
         self.saved_notice = None;
         self.wheel_presets = false;
         self.picker_speed_editor = false;
@@ -301,6 +304,7 @@ impl App {
     }
 
     pub fn close_picker(&mut self) {
+        self.pending_action = None;
         self.failed_assignment = None;
         self.picker = None;
         self.picker_anchor = None;

@@ -209,6 +209,35 @@ def control(id, frame):
     click(float(b["x"]) + float(b["w"]) / 2, float(b["y"]) + float(b["h"]) / 2)
 
 
+def check_action_selection():
+    coordinates = args.bounds.with_name("action-controls.csv")
+    if not coordinates.is_file():
+        return None
+    with coordinates.open() as stream:
+        centers = {row["id"]: (float(row["x"]), float(row["y"])) for row in csv.DictReader(stream)}
+    def open_back():
+        control("mouse_back", "seq-06-cancel")
+    open_back()
+    click(*centers["copy"])
+    assert config() == source, "Selecting Copy wrote an unsaved mapping"
+    click(*centers["cancel"])
+    assert config() == source, "Cancel changed the mapping"
+    open_back()
+    click(*centers["copy"])
+    click(*centers["save"])
+    time.sleep(0.7)
+    expected = copy.deepcopy(source)
+    expected["profiles"][0]["buttons"]["back"] = {"kind": "Key", "mods": ["Ctrl"], "vk": 67}
+    assert config() == expected, "Save action did not persist only Back = Copy"
+    open_back()
+    click(*centers["common"])
+    click(*centers["factory"])
+    click(*centers["save"])
+    time.sleep(0.7)
+    assert config() == source, "Restoring the native action changed the sample"
+    return True
+
+
 def nav_y(section, fallback):
     coordinates = args.bounds.with_name("navigation.csv")
     if coordinates.exists():
@@ -514,6 +543,7 @@ try:
         print("Visited all five sections at 720 by 540:", theme)
         sys.exit(0)
     profile()
+    action_saved_and_canceled = check_action_selection() if not args.cycles_only else None
     control("mouse_back", "seq-06-cancel")
     for cycle in range(1, 4):
         for tab, frame in [
@@ -585,6 +615,7 @@ try:
         "process_ids": [first, proc.pid],
         "sample_profile": "Preview app",
         "cancel_preserved_sample_config": True,
+        "action_selection_cancel_save_and_restore": action_saved_and_canceled,
         "save_changed_only": "profiles[0].buttons.back",
         "reopened_binding": binding(),
         "draft_m_survived_tab_switch": True if args.bounds.with_name("draft-return.webp").is_file() else None,

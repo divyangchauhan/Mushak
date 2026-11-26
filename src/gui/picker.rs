@@ -12,6 +12,14 @@ use ply_engine::prelude::*;
 
 const SELECTION_FEEDBACK_SECONDS: f32 = 0.12;
 
+pub(super) fn has_mouse_actions(app: &App, target: &PickerTarget) -> bool {
+    let device = &app.device_view.device;
+    matches!(target, PickerTarget::Button(slot) if slot == "control_00c4")
+        && device.connected
+        && (device.capabilities.smartshift
+            || (device.capabilities.dpi && device.dpi_list.len() > 1))
+}
+
 impl PickerTarget {
     pub fn label<'a>(&self, device: &'a crate::hidpp::device::DeviceStatus) -> &'a str {
         match self {
@@ -70,11 +78,7 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
         x = screen_width() - width - 20.0;
     }
 
-    let device = &app.device_view.device;
-    let has_mouse_actions = matches!(&target, PickerTarget::Button(slot) if slot == "control_00c4")
-        && device.connected
-        && (device.capabilities.smartshift
-            || (device.capabilities.dpi && device.dpi_list.len() > 1));
+    let has_mouse_actions = has_mouse_actions(app, &target);
     // Filtering and category changes keep the same viewport. Long lists scroll.
     let height = if app.naming_button {
         height.min(212.0)
@@ -87,7 +91,7 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
     } else if has_mouse_actions {
         height.min(367.0)
     } else {
-        height.min(427.0)
+        height.min(462.0)
     };
 
     // Backdrop. Clicking it dismisses.
@@ -191,7 +195,21 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                                 });
                         }
                         if !browse || app.wheel_presets {
-                            results(ui, app, &query, &current, &mut chosen);
+                            let mut selection = None;
+                            results(ui, app, &query, &current, &mut selection);
+                            if let Some(action) = selection {
+                                app.pending_action = (action != current).then_some(action);
+                            }
+                            let state = if app.picker_feedback.is_some() {
+                                SaveState::Saved
+                            } else if app.pending_action.is_some() {
+                                SaveState::Ready
+                            } else {
+                                SaveState::Empty
+                            };
+                            if assignment_footer(ui, app, EditorTab::Actions, state, &mut close) {
+                                chosen = app.pending_action.clone();
+                            }
                         }
                     }
                 });
@@ -249,7 +267,7 @@ fn panel_rect(
     window_w: f32,
     window_h: f32,
 ) -> (f32, f32, f32, f32) {
-    let margin = 20.0;
+    let margin = if window_h < 430.0 { 16.0 } else { 20.0 };
     let width = if anchor.is_some() {
         (window_w * 0.385).clamp(310.0, 408.0)
     } else if window_h < 430.0 && window_w >= 640.0 {
@@ -401,9 +419,9 @@ fn draft_replacement_hint(app: &App, current: &Action) -> Option<String> {
         .keys
         .join(" + ");
     Some(if keys.chars().count() <= 8 {
-        format!("Choosing an action discards draft {keys}")
+        format!("Saving an action replaces draft {keys}")
     } else {
-        "Choosing an action discards the draft".into()
+        "Saving an action replaces the draft".into()
     })
 }
 
@@ -415,7 +433,7 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
         .border(|b| b.bottom(1).color(pal.line))
         .layout(|l| {
             if screen_height() < 430.0 {
-                l.direction(TopToBottom).gap(6).padding((8, 16, 7, 16))
+                l.direction(TopToBottom).gap(4).padding((6, 16, 5, 16))
             } else {
                 l.direction(TopToBottom).gap(9).padding((13, 16, 11, 16))
             }
@@ -629,7 +647,7 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                             true,
                             "shortcut_tab",
                             if draft {
-                                "Keyboard shortcut · Draft"
+                                "Keyboard shortcut Â· Draft"
                             } else {
                                 "Keyboard shortcut"
                             },
@@ -729,7 +747,7 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                                 .font_size(14)
                                 .text_color(pal.text)
                                 .cursor_color(pal.text)
-                                .placeholder("Search actions…")
+                                .placeholder("Search actionsâ€¦")
                         })
                         .empty();
                     if !app.picker_query.is_empty() {
@@ -1180,7 +1198,7 @@ fn browse_categories(
                         ui.element()
                             .id(id)
                             .width(grow!())
-                            .height(fixed!(if wide_short { 24.0 } else { 32.0 }))
+                            .height(fixed!(if wide_short { 22.0 } else { 32.0 }))
                             .corner_radius(6.0)
                             .accessibility(|a| a.button(name))
                             .border(|b| {
@@ -1239,14 +1257,9 @@ fn browse_categories(
                         .layout(|l| l.align(Left, CenterY))
                         .children(|ui| {
                             let hint = draft_replacement_hint(app, current);
-                            ui.text(
-                                hint.as_deref().unwrap_or(if app.device_view.paused {
-                                    "Choose now. Applies after resume."
-                                } else {
-                                    "Choose an action to assign now"
-                                }),
-                                |t| t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text),
-                            );
+                            ui.text(hint.as_deref().unwrap_or("Select an action"), |t| {
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                            });
                         });
                     for (line, pair) in choices.chunks(columns).enumerate() {
                         ui.element()
@@ -1267,13 +1280,14 @@ fn browse_categories(
                                     let label = factory.as_deref().unwrap_or(label);
                                     let id: Id =
                                         ("pk", (100 * app.picker_category + i) as u32).into();
-                                    let active = action == current;
+                                    let active =
+                                        action == app.pending_action.as_ref().unwrap_or(current);
                                     let hover = ui.pointer_over(id.clone());
                                     ui.element()
                                         .id(id)
                                         .width(grow!())
                                         .height(fixed!(if wide_short {
-                                            36.0
+                                            32.0
                                         } else if screen_width() < 840.0 {
                                             42.0
                                         } else {
@@ -1319,18 +1333,11 @@ fn browse_categories(
                                             if active {
                                                 widgets::icon(ui, &icons::CHECK, 14.0, pal.accent);
                                             } else if hover && !wide_short {
-                                                ui.text(
-                                                    if app.device_view.paused {
-                                                        "Save"
-                                                    } else {
-                                                        "Assign now"
-                                                    },
-                                                    |t| {
-                                                        t.font(&fonts::SANS_SEMIBOLD)
-                                                            .font_size(13)
-                                                            .color(pal.accent)
-                                                    },
-                                                );
+                                                ui.text("Select", |t| {
+                                                    t.font(&fonts::SANS_SEMIBOLD)
+                                                        .font_size(13)
+                                                        .color(pal.accent)
+                                                });
                                             }
                                             if ui.just_pressed() {
                                                 *chosen = Some(action.clone());
@@ -1528,9 +1535,9 @@ fn results(
                         let heading = if gi == 0 {
                             draft_replacement_hint(app, current).unwrap_or_else(|| {
                                 if app.device_view.paused {
-                                    "Choose now. Applies after resume.".to_owned()
+                                    "Select an action".to_owned()
                                 } else {
-                                    format!("{header} · Select to assign now")
+                                    header.clone()
                                 }
                             })
                         } else {
@@ -1550,7 +1557,7 @@ fn results(
                     let label = factory.as_deref().unwrap_or(label);
                     let id: Id = ("pk", (gi * 100 + n) as u32).into();
                     let hov = ui.pointer_over(id.clone());
-                    let is_current = action == current;
+                    let is_current = action == app.pending_action.as_ref().unwrap_or(current);
                     ui.element()
                         .id(id)
                         .accessibility(|a| a.button(label))
@@ -1621,18 +1628,11 @@ fn results(
                                 widgets::keycap(ui, &pal, k);
                             }
                             if !is_current && hov {
-                                ui.text(
-                                    if app.device_view.paused {
-                                        "Save"
-                                    } else {
-                                        "Assign now"
-                                    },
-                                    |t| {
-                                        t.font(&fonts::SANS_SEMIBOLD)
-                                            .font_size(13)
-                                            .color(pal.accent)
-                                    },
-                                );
+                                ui.text("Select", |t| {
+                                    t.font(&fonts::SANS_SEMIBOLD)
+                                        .font_size(13)
+                                        .color(pal.accent)
+                                });
                             }
                             if is_current {
                                 widgets::icon(ui, &icons::CHECK, 15.0, pal.accent);
@@ -1657,10 +1657,8 @@ fn shortcut_editor(
     let key = app.custom_key;
     let capturing = app.capturing_key;
     let unchanged = key.is_some_and(|vk| Action::key(&mods, vk) == *current);
-    let pulse = feedback_pulse(app);
     let mut toggle_mod: Option<Modifier> = None;
     let mut start_capture = false;
-    let mut assign = false;
 
     let short = ui
         .bounding_box("picker_panel")
@@ -1850,105 +1848,14 @@ fn shortcut_editor(
                         });
                 });
         });
-    ui.element()
-        .width(grow!())
-        .height(fit!())
-        .border(|b| b.top(1).color(pal.line))
-        .layout(|l| {
-            l.direction(LeftToRight)
-                .align(Left, CenterY)
-                .gap(7)
-                .padding((8, 16, 0, 16))
-        })
-        .children(|ui| {
-            ui.element()
-                .id("cancel_shortcut")
-                .accessibility(|a| {
-                    a.button(if unchanged && !capturing {
-                        "Done"
-                    } else {
-                        "Cancel shortcut changes"
-                    })
-                })
-                .height(fixed!(32.0))
-                .corner_radius(8.0)
-                .border(|b| b.all(1).color(pal.line_strong))
-                .layout(|l| l.align(CenterX, CenterY).padding((0, 16, 0, 16)))
-                .children(|ui| {
-                    if ui.just_pressed() {
-                        *close = true;
-                    }
-                    ui.text(
-                        if unchanged && !capturing {
-                            "Done"
-                        } else {
-                            "Cancel"
-                        },
-                        |t| t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.text),
-                    );
-                });
-            ui.element().width(grow!()).height(fixed!(1.0)).empty();
-
-            if app.device_view.paused {
-                ui.text("Applies after resume", |t| {
-                    t.font(&fonts::SANS_MEDIUM).font_size(12).color(pal.muted)
-                });
-            }
-            if key.is_none() || capturing || unchanged {
-                ui.element()
-                    .id("assign")
-                    .width(fixed!(127.0))
-                    .height(fixed!(32.0))
-                    .corner_radius(8.0)
-                    .background_color(if unchanged && !capturing {
-                        super::theme::TRANSPARENT
-                    } else {
-                        pal.s2
-                    })
-                    .layout(|l| l.align(CenterX, CenterY))
-                    .children(|ui| {
-                        if unchanged && !capturing {
-                            widgets::icon(ui, &icons::CHECK, 14.0, pal.good);
-                            ui.text("Saved", |t| {
-                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.good)
-                            });
-                        } else {
-                            ui.text("Save shortcut", |t| {
-                                t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.faint)
-                            });
-                        }
-                    });
-                return;
-            }
-            ui.element()
-                .id("assign")
-                .accessibility(|a| a.button("Save shortcut"))
-                .width(fixed!(127.0))
-                .height(fixed!(32.0))
-                .corner_radius(8.0)
-                .background_color(super::theme::Palette::mix(
-                    pal.pop,
-                    30.0 * pulse,
-                    pal.accent,
-                ))
-                .layout(|l| {
-                    l.direction(LeftToRight)
-                        .align(CenterX, CenterY)
-                        .gap(6)
-                        .padding((0, 14, 0, 14))
-                })
-                .children(|ui| {
-                    if ui.just_pressed() {
-                        assign = true;
-                    }
-                    ui.text("Save shortcut", |t| {
-                        t.font(&fonts::SANS_BOLD)
-                            .font_size(widgets::px(12.5))
-                            .color(pal.accent_ink)
-                    });
-                });
-        });
-
+    let save_state = if capturing || key.is_none() {
+        SaveState::Empty
+    } else if unchanged {
+        SaveState::Saved
+    } else {
+        SaveState::Ready
+    };
+    let assign = assignment_footer(ui, app, EditorTab::Shortcut, save_state, close);
     if let Some(m) = toggle_mod {
         if app.custom_mods.contains(&m) {
             app.custom_mods.retain(|x| x != &m);
@@ -1964,6 +1871,132 @@ fn shortcut_editor(
             *chosen = Some(Action::key(&app.custom_mods, k));
         }
     }
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum SaveState {
+    Empty,
+    Ready,
+    Saved,
+}
+enum EditorTab {
+    Actions,
+    Shortcut,
+}
+
+fn assignment_footer(
+    ui: &mut Ui2,
+    app: &App,
+    tab: EditorTab,
+    state: SaveState,
+    close: &mut bool,
+) -> bool {
+    let pal = app.pal;
+    let (cancel_id, save_id, save_label) = match tab {
+        EditorTab::Actions => ("cancel_action", "save_action", "Save action"),
+        EditorTab::Shortcut => ("cancel_shortcut", "assign", "Save shortcut"),
+    };
+    let mut assign = false;
+    ui.element()
+        .width(grow!())
+        .height(fit!())
+        .border(|b| b.top(1).color(pal.line))
+        .layout(|l| {
+            l.direction(LeftToRight)
+                .align(Left, CenterY)
+                .gap(7)
+                .padding((if screen_height() < 430.0 { 4 } else { 8 }, 16, 0, 16))
+        })
+        .children(|ui| {
+            ui.element()
+                .id(cancel_id)
+                .accessibility(|a| {
+                    a.button(if state == SaveState::Saved {
+                        "Done"
+                    } else {
+                        "Cancel changes"
+                    })
+                })
+                .height(fixed!(32.0))
+                .corner_radius(8.0)
+                .border(|b| b.all(1).color(pal.line_strong))
+                .layout(|l| l.align(CenterX, CenterY).padding((0, 16, 0, 16)))
+                .children(|ui| {
+                    if ui.just_pressed() {
+                        *close = true;
+                    }
+                    ui.text(
+                        if state == SaveState::Saved {
+                            "Done"
+                        } else {
+                            "Cancel"
+                        },
+                        |t| t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.text),
+                    );
+                });
+            ui.element().width(grow!()).height(fixed!(1.0)).empty();
+
+            if app.device_view.paused {
+                ui.text("Applies after resume", |t| {
+                    t.font(&fonts::SANS_MEDIUM).font_size(12).color(pal.muted)
+                });
+            }
+            if state != SaveState::Ready {
+                ui.element()
+                    .id(save_id)
+                    .width(fixed!(127.0))
+                    .height(fixed!(32.0))
+                    .corner_radius(8.0)
+                    .background_color(if state == SaveState::Saved {
+                        super::theme::TRANSPARENT
+                    } else {
+                        pal.s2
+                    })
+                    .layout(|l| l.align(CenterX, CenterY))
+                    .children(|ui| {
+                        if state == SaveState::Saved {
+                            widgets::icon(ui, &icons::CHECK, 14.0, pal.good);
+                            ui.text("Saved", |t| {
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.good)
+                            });
+                        } else {
+                            ui.text(save_label, |t| {
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.faint)
+                            });
+                        }
+                    });
+                return;
+            }
+            ui.element()
+                .id(save_id)
+                .accessibility(|a| a.button(save_label))
+                .width(fixed!(127.0))
+                .height(fixed!(32.0))
+                .corner_radius(8.0)
+                .background_color(super::theme::Palette::mix(
+                    pal.pop,
+                    30.0 * feedback_pulse(app),
+                    pal.accent,
+                ))
+                .layout(|l| {
+                    l.direction(LeftToRight)
+                        .align(CenterX, CenterY)
+                        .gap(6)
+                        .padding((0, 14, 0, 14))
+                })
+                .children(|ui| {
+                    if ui.just_pressed() {
+                        assign = true;
+                    }
+                    ui.text(save_label, |t| {
+                        t.font(&fonts::SANS_BOLD)
+                            .font_size(widgets::px(12.5))
+                            .color(pal.accent_ink)
+                    });
+                });
+        });
+
+    assign
 }
 
 #[cfg(test)]

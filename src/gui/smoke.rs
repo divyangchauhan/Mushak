@@ -19,6 +19,7 @@ pub fn run() {
         buttons: ButtonMap::default(),
         gestures: None,
     });
+    config.save().expect("write isolated smoke settings");
     state::init(config);
     macroquad::Window::from_config(
         macroquad::conf::Conf {
@@ -101,6 +102,13 @@ fn assert_panel_fits(ply: &Ply<()>, app: &App) {
         controls.extend(["assign", "cancel_shortcut", "capture"]);
     } else {
         controls.push("picker_search");
+        if !app.picker_speed_editor
+            && (!picker::has_mouse_actions(app, app.picker.as_ref().unwrap())
+                || app.wheel_presets
+                || !app.picker_query.is_empty())
+        {
+            controls.extend(["save_action", "cancel_action"]);
+        }
     }
     for id in controls {
         let b = ply.bounding_box(id).unwrap();
@@ -111,6 +119,15 @@ fn assert_panel_fits(ply: &Ply<()>, app: &App) {
                 && b.y + b.height <= p.y + p.height + 1.0,
             "{id} must fit in the popover: {b:?} in {p:?}"
         );
+    }
+}
+
+async fn choose_first_action(ply: &mut Ply<()>, app: &mut App) {
+    click(ply, app, ("pk", 0)).await;
+    if app.pending_action.is_some() {
+        click(ply, app, "save_action").await;
+    } else {
+        click(ply, app, "cancel_action").await;
     }
 }
 
@@ -298,7 +315,7 @@ async fn check(output: PathBuf) {
     ply.set_text_value("picker_search", "Copy");
     settle(&mut ply, &mut app).await;
     snapshot(&output, "03-profile-search");
-    click(&mut ply, &mut app, ("pk", 0)).await;
+    choose_first_action(&mut ply, &mut app).await;
     assert!(app.picker.is_none());
     let saved = Config::load_strict().unwrap();
     assert_eq!(
@@ -434,7 +451,7 @@ async fn check(output: PathBuf) {
                 snapshot(&output, &format!("family-{slug}-haptic-{theme:?}"));
                 ply.set_text_value("picker_search", "Copy");
                 settle(&mut ply, &mut app).await;
-                click(&mut ply, &mut app, ("pk", 0)).await;
+                choose_first_action(&mut ply, &mut app).await;
                 let saved = Config::load_strict().unwrap();
                 assert_eq!(
                     saved.profiles[0].buttons.controls["01a0"],
@@ -575,7 +592,7 @@ async fn check(output: PathBuf) {
         assert_panel_fits(&ply, &app);
         ply.set_text_value("picker_search", "Copy");
         settle(&mut ply, &mut app).await;
-        click(&mut ply, &mut app, ("pk", 0)).await;
+        choose_first_action(&mut ply, &mut app).await;
         assert!(app.picker.is_none());
     }
     let saved = Config::load_strict().unwrap();
@@ -628,7 +645,7 @@ async fn check(output: PathBuf) {
         assert_panel_fits(&ply, &app);
         ply.set_text_value("picker_search", "Copy");
         settle(&mut ply, &mut app).await;
-        click(&mut ply, &mut app, ("pk", 0)).await;
+        choose_first_action(&mut ply, &mut app).await;
         let saved = Config::load_strict().unwrap();
         assert_eq!(
             saved.profiles[0].buttons.control_action(cid),
@@ -660,7 +677,7 @@ async fn check(output: PathBuf) {
         snapshot(&output, &format!("dpi-{cid:04x}-offline-popover"));
         ply.set_text_value("picker_search", "Disabled");
         settle(&mut ply, &mut app).await;
-        click(&mut ply, &mut app, ("pk", 0)).await;
+        choose_first_action(&mut ply, &mut app).await;
         assert_eq!(
             Config::load_strict().unwrap().profiles[0]
                 .buttons
@@ -670,7 +687,7 @@ async fn check(output: PathBuf) {
         click(&mut ply, &mut app, ("btn_chip", buttons::slot_index(&slot))).await;
         ply.set_text_value("picker_search", "Pass through");
         settle(&mut ply, &mut app).await;
-        click(&mut ply, &mut app, ("pk", 0)).await;
+        choose_first_action(&mut ply, &mut app).await;
         let saved = Config::load_strict().unwrap();
         assert_eq!(
             saved.profiles[0].buttons.control_action(cid),
@@ -711,7 +728,7 @@ async fn check(output: PathBuf) {
     assert!(app.picker == Some(PickerTarget::Button("control_00c4".into())));
     ply.set_text_value("picker_search", "Copy");
     settle(&mut ply, &mut app).await;
-    click(&mut ply, &mut app, ("pk", 0)).await;
+    choose_first_action(&mut ply, &mut app).await;
     snapshot(&output, "14-offline-top-button");
     assert_eq!(
         Config::load_strict().unwrap().profiles[0]
@@ -785,7 +802,7 @@ async fn check(output: PathBuf) {
     assert_eq!(app.picker_dpi, [800, 1600]);
     ply.set_text_value("picker_search", "Native action");
     settle(&mut ply, &mut app).await;
-    click(&mut ply, &mut app, ("pk", 0)).await;
+    choose_first_action(&mut ply, &mut app).await;
     assert_eq!(
         app.action_for(&PickerTarget::Button("control_00c4".into())),
         Action::PassThrough
@@ -861,7 +878,44 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         click(ply, app, "mouse_back").await;
         assert_panel_fits(ply, app);
         snapshot(&dir, "popover");
-        click(ply, app, "picker_close").await;
+        let before_action = Config::load_strict().unwrap();
+        let mut centers = String::from("id,x,y\n");
+        for (label, id) in [
+            ("copy", Id::from(("pk", 2))),
+            ("factory", Id::from(("pk", 0))),
+            ("common", Id::from(("action_category", 0))),
+            ("cancel", Id::from("cancel_action")),
+            ("save", Id::from("save_action")),
+        ] {
+            let rect = ply.bounding_box(id).unwrap();
+            centers.push_str(&format!(
+                "{label},{},{}\n",
+                rect.x + rect.width / 2.0,
+                rect.y + rect.height / 2.0
+            ));
+        }
+        std::fs::write(dir.join("action-controls.csv"), centers).unwrap();
+        let copy = Action::key(&[Modifier::Ctrl], 0x43);
+        click(ply, app, ("pk", 2)).await;
+        assert_eq!(app.pending_action, Some(copy.clone()));
+        assert_eq!(Config::load_strict().unwrap(), before_action);
+        snapshot(&dir, "action-draft");
+        click(ply, app, "cancel_action").await;
+        assert!(app.picker.is_none());
+        assert_eq!(Config::load_strict().unwrap(), before_action);
+        click(ply, app, "mouse_back").await;
+        click(ply, app, ("pk", 2)).await;
+        click(ply, app, "save_action").await;
+        let mut expected = before_action.clone();
+        expected.profiles[0].buttons.back = copy;
+        assert_eq!(Config::load_strict().unwrap(), expected);
+        snapshot(&dir, "action-saved");
+        click(ply, app, "mouse_back").await;
+        click(ply, app, ("action_category", 0)).await;
+        click(ply, app, ("pk", 0)).await;
+        click(ply, app, "save_action").await;
+        assert_eq!(Config::load_strict().unwrap(), before_action);
+        app.saved_notice = None;
         click(ply, app, "mouse_mode").await;
         snapshot(&dir, "wheel-actions");
         click(ply, app, "browse_wheel_actions").await;
@@ -1203,7 +1257,7 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
             .unwrap();
         ply.set_text_value("picker_search", "Copy");
         settle(ply, app).await;
-        click(ply, app, ("pk", 0)).await;
+        choose_first_action(ply, app).await;
         assert!(app.failed_assignment.is_some());
         assert_eq!(app.action_for(&target), original);
         snapshot(&dir, "save-error");
