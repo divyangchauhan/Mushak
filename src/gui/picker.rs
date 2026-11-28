@@ -521,7 +521,7 @@ fn wheel_header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut 
         "Applies to all profiles".to_owned()
     } else {
         format!(
-            "Button assignment for {}",
+            "Middle click for {}",
             app.profile_at(app.selected_profile)
                 .map_or("Default", |p| p.name.as_str())
         )
@@ -766,6 +766,7 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                             },
                         ),
                     ] {
+                        let nested = app.wheel_draft.is_some();
                         let selected = keyboard == app.shortcut_editor;
                         ui.element()
                             .id(id)
@@ -778,6 +779,13 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                                 super::theme::TRANSPARENT
                             })
                             .border(|b| {
+                                if nested {
+                                    return b.all(1).color(if selected {
+                                        pal.line_strong
+                                    } else {
+                                        super::theme::TRANSPARENT
+                                    });
+                                }
                                 b.bottom(2).color(if selected {
                                     pal.accent
                                 } else {
