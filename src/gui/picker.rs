@@ -1314,7 +1314,8 @@ fn browse_categories(
             .bounding_box("picker_panel")
             .is_some_and(|r| r.width >= 600.0);
     let columns = if wide_short { 2 } else { 1 };
-    let rail_width = 136.0;
+    let wheel = app.wheel_draft.is_some();
+    let rail_width = if wheel { 106.0 } else { 136.0 };
     ui.element()
         .width(grow!())
         .height(grow!(0.0))
@@ -1334,7 +1335,7 @@ fn browse_categories(
                         .padding((3, 7, 4, 2))
                 })
                 .children(|ui| {
-                    if !wide_short {
+                    if !wide_short && !wheel {
                         widgets::eyebrow(ui, &pal, "Categories");
                     }
                     for (i, (name, _)) in groups.iter().enumerate() {
@@ -1344,7 +1345,13 @@ fn browse_categories(
                         ui.element()
                             .id(id)
                             .width(grow!())
-                            .height(fixed!(if wide_short { 22.0 } else { 32.0 }))
+                            .height(fixed!(if wide_short {
+                                22.0
+                            } else if wheel {
+                                25.0
+                            } else {
+                                32.0
+                            }))
                             .corner_radius(6.0)
                             .accessibility(|a| a.button(name))
                             .border(|b| {
@@ -1398,15 +1405,17 @@ fn browse_categories(
                 })
                 .layout(|l| l.direction(TopToBottom).gap(3).padding((3, 9, 4, 0)))
                 .children(|ui| {
-                    ui.element()
-                        .height(fixed!(28.0))
-                        .layout(|l| l.align(Left, CenterY))
-                        .children(|ui| {
-                            let hint = draft_replacement_hint(app, current);
-                            ui.text(hint.as_deref().unwrap_or("Select an action"), |t| {
-                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                    if !wheel || draft_replacement_hint(app, current).is_some() {
+                        ui.element()
+                            .height(fixed!(28.0))
+                            .layout(|l| l.align(Left, CenterY))
+                            .children(|ui| {
+                                let hint = draft_replacement_hint(app, current);
+                                ui.text(hint.as_deref().unwrap_or("Select an action"), |t| {
+                                    t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                                });
                             });
-                        });
+                    }
                     for (line, pair) in choices.chunks(columns).enumerate() {
                         ui.element()
                             .width(grow!())
@@ -1434,6 +1443,8 @@ fn browse_categories(
                                         .width(grow!())
                                         .height(fixed!(if wide_short {
                                             32.0
+                                        } else if wheel {
+                                            27.0
                                         } else if screen_width() < 840.0 {
                                             42.0
                                         } else {
