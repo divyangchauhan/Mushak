@@ -40,7 +40,7 @@ parser.add_argument(
 parser.add_argument(
     "--compact-sections",
     action="store_true",
-    help="Click through all five Settings sections at 720 by 540 logical pixels",
+    help="Click through the available Settings sections at 720 by 540 logical pixels",
 )
 parser.add_argument(
     "--follow-foreground",
@@ -527,9 +527,13 @@ try:
     if args.compact_sections:
         resize(720, 540)
         previous = None
-        for name, y in [("buttons", 85), ("wheel", 127), ("gestures", 169), ("profiles", 211), ("device", 253)]:
-            section = "Scroll" if name == "wheel" else name.capitalize()
-            y = nav_y(section, y)
+        sections = [("Buttons", 85), ("Scroll", 127), ("Gestures", 169), ("Profiles", 211), ("Device", 253)]
+        navigation = args.bounds.with_name("navigation.csv")
+        if navigation.exists():
+            with navigation.open() as stream:
+                sections = [(row["section"], round(float(row["y"]))) for row in csv.DictReader(stream)]
+        for section, y in sections:
+            name = {"Scroll": "wheel", "Mouse controls": "buttons"}.get(section, section.lower())
             click(74, y)
             deadline = time.monotonic() + 5
             while time.monotonic() < deadline:
@@ -549,7 +553,7 @@ try:
             frame.save(out / (name + ".webp"), lossless=True)
             previous = heading
         assert config() == source
-        print("Visited all five sections at 720 by 540:", theme)
+        print(f"Visited {len(sections)} sections at 720 by 540 in {theme}")
         sys.exit(0)
     profile()
     action_saved_and_canceled = check_action_selection() if not args.cycles_only else None

@@ -1,368 +1,207 @@
-//! Scroll section: SmartShift (0x2110) + hi-res wheel (0x2121) settings.
+//! Wheel editor: SmartShift (0x2110) + hi-res wheel (0x2121) settings.
 
 use super::widgets::{self, Ui2};
 use super::{fonts, App};
 use crate::config::SmartShiftMode;
 use ply_engine::prelude::*;
 
-const MODES: [(SmartShiftMode, &str, &str); 3] = [
-    (
-        SmartShiftMode::AlwaysRatchet,
-        "Always ratchet",
-        "One notch at a time.",
-    ),
-    (
-        SmartShiftMode::AlwaysFreespin,
-        "Always freespin",
-        "Spin without notches.",
-    ),
-    (
-        SmartShiftMode::SmartShift,
-        "SmartShift",
-        "Flick to spin freely.",
-    ),
-];
+pub(super) fn available(device: &crate::hidpp::device::DeviceStatus) -> bool {
+    device.connected && device.capabilities.has_scroll_settings()
+}
 
-pub fn section(ui: &mut Ui2, app: &mut App) {
+/// Only the form scrolls; the wheel tabs and its shared Save button stay fixed.
+pub(super) fn form(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
-    let compact = screen_width() < 840.0;
-    widgets::heading(
-        ui,
-        &pal,
-        "Scroll",
-        "Choose how the wheel feels and when a turn counts.",
-    );
-    ui.element()
-        .width(grow!())
-        .height(fixed!(if compact { 10.0 } else { 22.0 }))
-        .empty();
-
-    if !app.mouse_awake() {
-        widgets::asleep_card(ui, &pal, &app.device_view.device);
+    let caps = &app.device_view.device.capabilities;
+    let Some(draft) = app.wheel_draft.as_mut() else {
         return;
-    }
-
-    let caps = app.device_view.device.capabilities.clone();
-    let mode = app.draft.device.smartshift;
-    let flick = app.draft.device.smartshift_threshold as i64;
-    let flick_max = i64::from(caps.smartshift_max_threshold.max(1));
-    let hires = app.draft.device.hires_scroll;
-    let invert = app.draft.device.invert_scroll;
-    let flick_on = mode == SmartShiftMode::SmartShift;
-
-    let mut new_mode: Option<SmartShiftMode> = None;
-    let mut new_flick: Option<i64> = None;
-    let mut toggle_hires = false;
-    let mut toggle_invert = false;
-
-    if caps.invert_scroll {
-        toggle_invert = switch_row(
-            ui,
-            app,
-            "sw_invert",
-            "Invert scroll direction",
-            "Push the wheel up to scroll the page up.",
-            invert,
-        );
-        ui.element().width(grow!()).height(fixed!(14.0)).empty();
-    }
-
-    if caps.smartshift {
-        widgets::eyebrow(ui, &pal, "Wheel mode");
-        ui.element().width(grow!()).height(fixed!(10.0)).empty();
-
-        ui.element()
-            .width(grow!())
-            .height(fit!())
-            .layout(|l| l.direction(LeftToRight).gap(6))
-            .children(|ui| {
-                for (i, (m, title, desc)) in MODES.into_iter().enumerate() {
-                    let id: Id = ("mode", i as u32).into();
-                    let sel = m == mode;
-                    ui.element()
-                        .id(id)
-                        .width(grow!())
-                        .height(fixed!(if screen_width() >= 840.0 { 86.0 } else { 64.0 }))
-                        .corner_radius(10.0)
-                        .background_color(if sel {
-                            Palette2::mix_accent(&pal)
-                        } else {
-                            pal.surface
-                        })
-                        .border(|b| b.all(1).color(if sel { pal.accent } else { pal.line }))
-                        .layout(|l| {
-                            l.direction(LeftToRight)
-                                .align(Left, CenterY)
-                                .gap(if screen_width() >= 840.0 { 8 } else { 5 })
-                                .padding(if screen_width() >= 840.0 { 12 } else { 7 })
-                        })
-                        .children(|ui| {
-                            if ui.just_pressed() {
-                                new_mode = Some(m);
-                            }
-                            // Radio.
-                            ui.element()
-                                .width(fixed!(if compact { 14.0 } else { 18.0 }))
-                                .height(fixed!(if compact { 14.0 } else { 18.0 }))
-                                .corner_radius(99.0)
-                                .border(|b| {
-                                    b.all(2).color(if sel { pal.accent } else { pal.faint })
-                                })
-                                .layout(|l| l.align(CenterX, CenterY))
-                                .children(|ui| {
-                                    ui.element()
-                                        .width(fixed!(9.0))
-                                        .height(fixed!(9.0))
-                                        .corner_radius(99.0)
-                                        .background_color(if sel {
-                                            pal.accent
-                                        } else {
-                                            super::theme::TRANSPARENT
-                                        })
-                                        .empty();
-                                });
-                            ui.element()
-                                .width(grow!())
-                                .height(fit!())
-                                .layout(|l| l.direction(TopToBottom).gap(1))
-                                .children(|ui| {
-                                    ui.text(title, |t| {
-                                        t.font(&fonts::SANS_SEMIBOLD)
-                                            .font_size(widgets::px(13.5))
-                                            .color(pal.text)
-                                    });
-                                    {
-                                        let description = if compact {
-                                            match m {
-                                                SmartShiftMode::AlwaysRatchet => {
-                                                    "One notch at a time"
-                                                }
-                                                SmartShiftMode::AlwaysFreespin => "No notches",
-                                                SmartShiftMode::SmartShift => "Flick for free-spin",
-                                            }
-                                        } else {
-                                            desc
-                                        };
-                                        ui.text(description, |t| {
-                                            t.font(&fonts::SANS)
-                                                .font_size(widgets::px(12.5))
-                                                .color(pal.muted)
-                                        });
-                                    }
-                                });
-                        });
-                }
-            });
-
-        ui.element()
-            .width(grow!())
-            .height(fixed!(if compact { 10.0 } else { 22.0 }))
-            .empty();
-    }
-    if caps.smartshift {
-        // Flick sensitivity applies only in SmartShift mode.
-        widgets::card(ui, &pal)
-            .layout(|l| {
-                l.direction(TopToBottom).gap(3).padding(if compact {
-                    (8, 12, 8, 12)
-                } else {
-                    (16, 17, 16, 17)
-                })
-            })
-            .children(|ui| {
-                ui.element()
-                    .width(grow!())
-                    .height(fit!())
-                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
-                    .children(|ui| {
-                        ui.element().width(grow!()).height(fit!()).children(|ui| {
-                            ui.text("SmartShift flick sensitivity", |t| {
-                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                            });
-                        });
-                        ui.text(
-                            &format!("Level {} of {flick_max}", flick.min(flick_max)),
-                            |t| {
-                                t.font(&fonts::MONO_BOLD).font_size(15).color(if flick_on {
-                                    pal.accent
-                                } else {
-                                    pal.muted
-                                })
-                            },
-                        );
-                    });
-                ui.text(
-                    if flick_on {
-                        "Lower for a gentler flick. Higher for a firmer flick."
-                    } else {
-                        "Select SmartShift to adjust the saved sensitivity."
-                    },
-                    |t| {
-                        t.font(&fonts::SANS)
-                            .font_size(widgets::px(12.5))
-                            .color(pal.muted)
-                    },
-                );
-                ui.element()
-                    .width(grow!())
-                    .height(fixed!(if compact { 6.0 } else { 12.0 }))
-                    .empty();
-                ui.element()
-                    .width(grow!())
-                    .height(fit!())
-                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
-                    .children(|ui| {
-                        ui.text("1", |t| {
-                            t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted)
-                        });
-
-                        if let Some(v) = widgets::slider_enabled(
-                            ui,
-                            &pal,
-                            "flick",
-                            flick.min(flick_max),
-                            1..=flick_max,
-                            1,
-                            flick_on,
-                        ) {
-                            new_flick = Some(v);
-                        }
-                        ui.text(&flick_max.to_string(), |t| {
-                            t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted)
-                        });
-                    });
-            });
-
-        ui.element().width(grow!()).height(fixed!(14.0)).empty();
-    }
-    let deadzone = i64::from(app.draft.device.scroll_deadzone);
-    let threshold = if deadzone == 0 {
-        "off".to_owned()
-    } else if let Some(m) = caps.wheel_multiplier.filter(|m| *m > 0) {
-        format!("{:.0}% of a notch", deadzone as f32 * 100.0 / f32::from(m))
-    } else {
-        format!("{deadzone} steps")
     };
-    if caps.hires_scroll {
-        let detail = if hires {
-            "Use finer steps for each wheel turn.".to_owned()
-        } else {
-            "Use standard wheel steps.".to_owned()
-        };
-        toggle_hires = switch_row(
-            ui,
-            app,
-            "sw_hires",
-            "High-resolution scrolling",
-            &detail,
-            hires,
-        );
-        ui.element().width(grow!()).height(fixed!(10.0)).empty();
-    }
-    // Wheel deadzone. Only meaningful with hi-res on: that is the only mode
-    // where the wheel reports to us rather than straight to Windows, so it is
-    // the only mode we can filter.
-    let multiplier = caps.wheel_multiplier.unwrap_or(1) as i64;
-    let mut new_deadzone: Option<i64> = None;
-    if caps.hires_scroll {
-        widgets::card(ui, &pal)
-            .layout(|l| {
-                l.direction(TopToBottom).gap(3).padding(if compact {
-                    (8, 12, 8, 12)
-                } else {
-                    (16, 17, 16, 17)
-                })
-            })
-            .children(|ui| {
+    ui.element()
+        .id("wheel_form")
+        .width(grow!())
+        .height(grow!(0.0))
+        .overflow(|o| {
+            o.scroll_y()
+                .scrollbar(|s| s.width(5.0).thumb_color(pal.track))
+        })
+        .layout(|l| l.direction(TopToBottom).gap(6).padding((10, 16, 12, 16)))
+        .children(|ui| {
+            if caps.smartshift {
+                widgets::eyebrow(ui, &pal, "Wheel mode");
                 ui.element()
                     .width(grow!())
                     .height(fit!())
-                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
+                    .layout(|l| l.direction(LeftToRight).gap(4))
                     .children(|ui| {
-                        ui.element().width(grow!()).height(fit!()).children(|ui| {
-                            ui.text("Ignore accidental nudges", |t| {
-                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                            });
-                        });
-                        ui.text(&threshold, |t| {
-                            t.font(&fonts::MONO_BOLD).font_size(15).color(if hires {
-                                pal.accent
-                            } else {
-                                pal.muted
-                            })
-                        });
+                        for (i, (mode, label)) in [
+                            (SmartShiftMode::AlwaysRatchet, "Ratchet"),
+                            (SmartShiftMode::AlwaysFreespin, "Free-spin"),
+                            (SmartShiftMode::SmartShift, "SmartShift"),
+                        ]
+                        .into_iter()
+                        .enumerate()
+                        {
+                            if choice(
+                                ui,
+                                &pal,
+                                ("mode", i as u32).into(),
+                                label,
+                                draft.smartshift == mode,
+                            ) {
+                                draft.smartshift = mode;
+                            }
+                        }
                     });
-                let hint = if !hires {
-                    "Turn on high-resolution scrolling to adjust the saved threshold."
-                } else if deadzone == 0 {
-                    "Every movement scrolls."
+                let enabled = draft.smartshift == SmartShiftMode::SmartShift;
+                let max = caps.smartshift_max_threshold.max(1);
+                let label = format!("{} / {max}", draft.smartshift_threshold.min(max));
+                if let Some(v) = range(
+                    ui,
+                    &pal,
+                    "flick",
+                    ("Flick sensitivity", &label),
+                    1..=i64::from(max),
+                    draft.smartshift_threshold,
+                    enabled,
+                ) {
+                    draft.smartshift_threshold = v;
+                }
+                let hint = if enabled {
+                    "Lower for a gentler flick."
                 } else {
-                    "After a pause or reversal, turn the wheel this far to start scrolling."
+                    "Select SmartShift to adjust sensitivity."
                 };
                 ui.text(hint, |t| {
-                    t.font(&fonts::SANS)
-                        .font_size(widgets::px(12.5))
-                        .color(pal.muted)
+                    t.font(&fonts::SANS).font_size(12).color(pal.muted)
                 });
-                ui.element()
-                    .width(grow!())
-                    .height(fixed!(if compact { 6.0 } else { 12.0 }))
-                    .empty();
-                ui.element()
-                    .width(grow!())
-                    .height(fit!())
-                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
-                    .children(|ui| {
-                        ui.text("off", |t| {
-                            t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted)
+            }
+            for (supported, id, title, value) in [
+                (
+                    caps.invert_scroll,
+                    "sw_invert",
+                    "Invert scroll direction",
+                    &mut draft.invert_scroll,
+                ),
+                (
+                    caps.hires_scroll,
+                    "sw_hires",
+                    "High-resolution scrolling",
+                    &mut draft.hires_scroll,
+                ),
+            ] {
+                if supported {
+                    ui.element()
+                        .width(grow!())
+                        .height(fixed!(34.0))
+                        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(8))
+                        .children(|ui| {
+                            ui.element().width(grow!()).height(fit!()).children(|ui| {
+                                ui.text(title, |t| {
+                                    t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                                });
+                            });
+                            if widgets::toggle(ui, &pal, id, *value) {
+                                *value = !*value
+                            }
                         });
-                        if let Some(v) = widgets::slider_enabled(
-                            ui,
-                            &pal,
-                            "deadzone",
-                            deadzone.min(multiplier),
-                            0..=multiplier,
-                            1,
-                            hires,
-                        ) {
-                            new_deadzone = Some(v);
-                        }
-                        ui.text(
-                            if caps.wheel_multiplier.is_some_and(|m| m > 0) {
-                                "100%"
-                            } else {
-                                "1 step"
-                            },
-                            |t| t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted),
-                        );
-                    });
-            });
+                }
+            }
+            if caps.hires_scroll {
+                let max = caps.wheel_multiplier.unwrap_or(1).max(1);
+                let value = draft.scroll_deadzone.min(max);
+                let label = if value == 0 {
+                    "Off".into()
+                } else if caps.wheel_multiplier.is_some_and(|m| m > 0) {
+                    format!(
+                        "{:.0}% of a notch",
+                        f32::from(value) * 100.0 / f32::from(max)
+                    )
+                } else {
+                    format!("{value} step")
+                };
+                if let Some(v) = range(
+                    ui,
+                    &pal,
+                    "deadzone",
+                    ("Ignore accidental nudges", &label),
+                    0..=i64::from(max),
+                    value,
+                    draft.hires_scroll,
+                ) {
+                    draft.scroll_deadzone = v;
+                }
+                let hint = if draft.hires_scroll {
+                    "Ignore wheel movement below this threshold."
+                } else {
+                    "Enable high-resolution scrolling to adjust."
+                };
+                ui.text(hint, |t| {
+                    t.font(&fonts::SANS).font_size(12).color(pal.muted)
+                });
+            }
+        });
+}
 
-        ui.element()
-            .width(grow!())
-            .height(fixed!(if compact { 14.0 } else { 18.0 }))
-            .empty();
-    }
-    if let Some(m) = new_mode {
-        app.draft.device.smartshift = m;
-        app.commit_config();
-    }
-    if let Some(v) = new_flick {
-        app.draft.device.smartshift_threshold = v as u8;
-        app.commit_config();
-    }
-    if let Some(v) = new_deadzone {
-        app.draft.device.scroll_deadzone = v as u8;
-        app.commit_config();
-    }
-    if toggle_hires {
-        app.draft.device.hires_scroll = !hires;
-        app.commit_config();
-    }
-    if toggle_invert {
-        app.draft.device.invert_scroll = !invert;
-        app.commit_config();
-    }
+pub(super) fn choice(
+    ui: &mut Ui2,
+    pal: &super::theme::Palette,
+    id: Id,
+    label: &str,
+    selected: bool,
+) -> bool {
+    let mut pressed = false;
+    ui.element()
+        .id(id)
+        .width(grow!())
+        .height(fixed!(30.0))
+        .corner_radius(6.0)
+        .accessibility(|a| a.button(label))
+        .background_color(if selected { pal.s2 } else { pal.win })
+        .border(|b| {
+            b.bottom(2)
+                .color(if selected { pal.accent } else { pal.line })
+        })
+        .layout(|l| l.align(CenterX, CenterY))
+        .children(|ui| {
+            pressed = ui.just_pressed();
+            ui.text(label, |t| {
+                t.font(&fonts::SANS_SEMIBOLD)
+                    .font_size(13)
+                    .color(if selected { pal.text } else { pal.muted })
+            });
+        });
+    pressed
+}
+
+fn range(
+    ui: &mut Ui2,
+    pal: &super::theme::Palette,
+    id: &'static str,
+    (title, value_label): (&str, &str),
+    bounds: std::ops::RangeInclusive<i64>,
+    value: u8,
+    enabled: bool,
+) -> Option<u8> {
+    ui.element()
+        .width(grow!())
+        .height(fit!())
+        .layout(|l| l.direction(LeftToRight).gap(6))
+        .children(|ui| {
+            ui.element().width(grow!()).height(fit!()).children(|ui| {
+                ui.text(title, |t| {
+                    t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                });
+            });
+            ui.text(value_label, |t| {
+                t.font(&fonts::MONO_MEDIUM).font_size(12).color(if enabled {
+                    pal.accent
+                } else {
+                    pal.muted
+                })
+            });
+        });
+    let value = i64::from(value).clamp(*bounds.start(), *bounds.end());
+    widgets::slider_enabled(ui, pal, id, value, bounds, 1, enabled).map(|v| v as u8)
 }
 
 /// A card with a title, description and a toggle on the right.
@@ -407,12 +246,4 @@ pub fn switch_row(
             }
         });
     clicked
-}
-
-/// The design tints a selected radio card with 12% accent over the surface.
-struct Palette2;
-impl Palette2 {
-    fn mix_accent(pal: &super::theme::Palette) -> Color {
-        super::theme::Palette::mix(pal.accent, 12.0, pal.surface)
-    }
 }

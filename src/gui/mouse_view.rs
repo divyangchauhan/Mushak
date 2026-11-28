@@ -254,7 +254,7 @@ impl Part {
         } else {
             PickerTarget::Button(self.slot.into())
         };
-        target.available(device).then_some(target)
+        target.can_open(device).then_some(target)
     }
 
     fn point_on_stage(&self, model: Model) -> (f32, f32) {
@@ -393,6 +393,36 @@ fn button_detail(ui: &mut Ui2, app: &App, model: Model, part: &Part, scale: f32)
         });
 }
 
+/// Forward marker clicks through the anchored editor's modal backdrop.
+pub(super) fn wheel_marker_input(ui: &mut Ui2, app: &App) -> Option<(PickerTarget, &'static str)> {
+    let device = &app.device_view.device;
+    let model = Model::for_device(device)?;
+    let mut next = None;
+    for (index, part) in model.parts().iter().enumerate() {
+        if Some(part.id) == app.picker_anchor {
+            continue;
+        }
+        let Some(target) = part.target(device) else {
+            continue;
+        };
+        let Some(r) = ui.bounding_box(part.id) else {
+            continue;
+        };
+        ui.element()
+            .id(("wheel_switch_marker", index as u32))
+            .width(fixed!(r.width))
+            .height(fixed!(r.height))
+            .floating(|f| f.attach_root().offset((r.x, r.y)).z_index(103))
+            .accessibility(|a| a.button(part.label))
+            .children(|ui| {
+                if ui.just_pressed() {
+                    next = Some((target, part.id));
+                }
+            });
+    }
+    next
+}
+
 pub fn section(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
     let Some(model) = Model::for_device(&app.device_view.device) else {
@@ -410,15 +440,20 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         .collect();
     let editing = app.picker_anchor.is_some() && screen_width() >= 840.0;
     // Reserve the right column for the editor while keeping every marker on the artwork.
-    let factor = if editing && model == Model::Master4 {
-        0.70
-    } else if editing {
-        0.78
+    let wheel_editor = app.wheel_draft.is_some();
+    let reserve_editor_space =
+        screen_width() >= 840.0 && (editing || super::scroll::available(&app.device_view.device));
+    let factor = if reserve_editor_space {
+        if model == Model::Master4 {
+            0.70
+        } else {
+            0.77
+        }
     } else {
         1.0
     };
     let art_scale = scale * factor;
-    let art_y = ((1.0 - factor) * 120.0 - if editing { 0.0 } else { 14.0 }) * scale;
+    let art_y = ((1.0 - factor) * 120.0 - if reserve_editor_space { 0.0 } else { 14.0 }) * scale;
     // Leave room for the separate row when firmware reports an unmapped location.
     let count = model
         .parts()
@@ -437,7 +472,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         .width(grow!())
         .height(fixed!(stage_height * scale))
         .children(|ui| {
-            if editing && model.has_detail(app.picker_anchor) {
+            if editing && !wheel_editor && model.has_detail(app.picker_anchor) {
                 if let Some(part) = model
                     .parts()
                     .iter()
@@ -479,16 +514,25 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 let Some(target) = part.target(&app.device_view.device) else {
                     continue;
                 };
+                let wheel = target.opens_scroll(&app.device_view.device);
+                let label = if wheel { "Scroll wheel" } else { part.label };
                 let action = actions::assignment(app, &target);
                 let action_label = if action.label.is_empty() {
                     action.keys.join(" + ")
                 } else {
                     action.label
                 };
+                let action_label = if wheel && !target.available(&app.device_view.device) {
+                    "Scrolling settings".to_owned()
+                } else if wheel {
+                    format!("Middle click: {action_label}")
+                } else {
+                    action_label
+                };
                 let active =
                     app.picker.as_ref() == Some(&target) && app.picker_anchor == Some(part.id);
                 // Only the active marker has a corresponding control while the editor is open.
-                if editing && !active {
+                if editing && !wheel_editor && !active {
                     continue;
                 }
                 let label_id: Id = ("mouse_label", index as u32).into();
@@ -541,7 +585,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         .corner_radius(6.0)
                         .layout(|l| l.align(CenterX, CenterY).padding((0, 9, 0, 9)))
                         .children(|ui| {
-                            ui.text(part.label, |t| {
+                            ui.text(label, |t| {
                                 t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
                             });
                         });
@@ -607,6 +651,24 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         .border(|b| b.all(1).color(Color::rgb(39.0, 43.0, 47.0)))
                         .empty();
                 }
+                if wheel && !editing {
+                    ui.element()
+                        .id("wheel_hit")
+                        .width(fixed!(36.0 * art_scale))
+                        .height(fixed!(48.0 * art_scale))
+                        .floating(|f| {
+                            f.attach_id("mouse_stage")
+                                .clip_by_parent()
+                                .offset(((x - 18.0) * art_scale, (y - 24.0) * art_scale + art_y))
+                                .z_index(1)
+                        })
+                        .accessibility(|a| a.button("Edit scroll wheel"))
+                        .children(|ui| {
+                            if ui.just_pressed() {
+                                selected = Some((target.clone(), part.id));
+                            }
+                        });
+                }
                 let lx = 379.0;
                 let ly = list_top + row as f32 * row_pitch;
                 row += 1;
@@ -638,14 +700,14 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     })
                     .accessibility(|a| {
                         if app.picker.is_none() {
-                            a.button(&format!("Configure {}", part.label))
+                            a.button(&format!("Configure {}", label))
                         } else {
-                            a.static_text(part.label)
+                            a.static_text(label)
                         }
                     })
                     .layout(|l| l.align(CenterX, CenterY))
                     .children(|ui| {
-                        if ui.just_pressed() {
+                        if ui.just_pressed() && !active {
                             selected = Some((target.clone(), part.id));
                         }
                         ui.text(&number, |t| {
@@ -659,6 +721,9 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         });
                     });
 
+                if editing && wheel_editor {
+                    continue;
+                }
                 if editing {
                     ui.element()
                         .width(fixed!(246.0 * scale))
@@ -705,9 +770,9 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     })
                     .accessibility(|a| {
                         if app.picker.is_none() {
-                            a.button(&format!("{}, {}", part.label, action_label))
+                            a.button(&format!("{}, {}", label, action_label))
                         } else {
-                            a.static_text(part.label)
+                            a.static_text(label)
                         }
                     })
                     .layout(|l| {
@@ -737,7 +802,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             .height(fit!())
                             .layout(|l| l.direction(TopToBottom).gap(3))
                             .children(|ui| {
-                                ui.text(part.label, |t| {
+                                ui.text(label, |t| {
                                     t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
                                 });
                                 let label = if matches!(target, PickerTarget::Gesture(_))

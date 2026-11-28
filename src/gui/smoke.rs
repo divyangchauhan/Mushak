@@ -223,6 +223,127 @@ async fn check_editor_sizing(ply: &mut Ply<()>, app: &mut App, output: &std::pat
     );
 }
 
+async fn check_wheel(ply: &mut Ply<()>, app: &mut App, output: &std::path::Path) {
+    let config = app.draft.clone();
+    let device = app.device_view.device.clone();
+    let profile = app.selected_profile;
+    let caps = &mut app.device_view.device.capabilities;
+    caps.smartshift = true;
+    caps.smartshift_max_threshold = 50;
+    caps.hires_scroll = true;
+    caps.invert_scroll = true;
+    caps.wheel_multiplier = Some(8);
+    app.selected_profile = 1;
+    assert!(app.commit_config());
+    let original = app.draft.clone();
+    for (theme, w, h) in [
+        (Theme::Dark, DESIGN_W, DESIGN_H),
+        (Theme::Light, 720.0, 360.0),
+    ] {
+        app.prefs.theme = theme;
+        app.pal = Palette::resolve(theme, app.prefs.accent);
+        chrome::make_frameless(w, h);
+        settle(ply, app).await;
+        if w >= 840.0 {
+            click(ply, app, "wheel_hit").await;
+        } else {
+            click(ply, app, ("btn_chip", 2)).await;
+        }
+        assert!(app.scrolling_tab);
+        let panel = ply.bounding_box("picker_panel").unwrap();
+        let save = ply.bounding_box("save_wheel").unwrap();
+        let image = ply.bounding_box("mouse_middle");
+        assert!(save.y + save.height <= h);
+        snapshot(output, &format!("wheel-scrolling-{theme:?}"));
+        click(ply, app, ("mode", 0)).await;
+        assert_eq!(Config::load_strict().unwrap(), original);
+        if w >= 840.0 {
+            assert_ne!(
+                app.wheel_draft.as_ref().unwrap().smartshift,
+                app.draft.device.smartshift
+            );
+            click(ply, app, "mouse_forward").await;
+            assert!(
+                app.wheel_switch.is_some(),
+                "clicking a different marker preserves the wheel draft"
+            );
+            click(ply, app, "keep_wheel").await;
+        }
+
+        for _ in 0..3 {
+            click(ply, app, "middle_click_tab").await;
+            assert!(!app.scrolling_tab);
+            let action_save = ply.bounding_box("save_action").unwrap();
+            assert!((action_save.y - save.y).abs() < 1.0);
+            click(ply, app, "scrolling_tab").await;
+            assert!(app.scrolling_tab);
+            assert_eq!(ply.bounding_box("picker_panel").unwrap().y, panel.y);
+            if let Some(old) = image {
+                assert_eq!(ply.bounding_box("mouse_middle").unwrap().x, old.x);
+            }
+        }
+        click(ply, app, "middle_click_tab").await;
+        snapshot(output, &format!("wheel-middle-click-{theme:?}"));
+        click(ply, app, "cancel_action").await;
+        assert_eq!(Config::load_strict().unwrap(), original);
+    }
+    chrome::make_frameless(DESIGN_W, DESIGN_H);
+    settle(ply, app).await;
+    click(ply, app, ("mouse_label", 0)).await;
+    click(ply, app, ("mode", 0)).await;
+    click(ply, app, "middle_click_tab").await;
+    click(ply, app, "shortcut_tab").await;
+    app.custom_key = Some(75);
+    app.custom_mods = vec![Modifier::Ctrl];
+    settle(ply, app).await;
+    click(ply, app, "scrolling_tab").await;
+    click(ply, app, "save_wheel").await;
+    let mut expected = original;
+    expected.device.smartshift = crate::config::SmartShiftMode::AlwaysRatchet;
+    expected.profiles.last_mut().unwrap().buttons.middle = Action::key(&[Modifier::Ctrl], 75);
+    assert_eq!(Config::load_strict().unwrap(), expected);
+    app.close_picker();
+    app.selected_profile = 0;
+    app.device_view.device.capabilities.buttons.clear();
+    app.device_view.device.name = Some("Wheel-only mouse".into());
+    settle(ply, app).await;
+    click(ply, app, ("btn_chip", 2)).await;
+    assert!(
+        app.scrolling_tab
+            && !app
+                .picker
+                .as_ref()
+                .unwrap()
+                .available(&app.device_view.device)
+    );
+    click(ply, app, "sw_invert").await;
+    click(ply, app, "save_wheel").await;
+    expected.device.invert_scroll = !expected.device.invert_scroll;
+    assert_eq!(
+        Config::load_strict().unwrap(),
+        expected,
+        "Wheel-only save must preserve every mapping"
+    );
+    click(ply, app, ("btn_chip", 2)).await;
+    click(ply, app, "sw_invert").await;
+    let mut offline = app.device_view.clone();
+    offline.device.connected = false;
+    app.accept_status(offline);
+    assert!(app.picker.is_none());
+    assert_eq!(
+        Config::load_strict().unwrap(),
+        expected,
+        "Disconnect must discard pending wheel changes"
+    );
+    app.draft = config;
+    app.selected_profile = profile;
+    app.device_view.device = device;
+    app.prefs.theme = Theme::Dark;
+    app.pal = Palette::resolve(Theme::Dark, app.prefs.accent);
+    assert!(app.commit_config());
+    settle(ply, app).await;
+}
+
 async fn check(output: PathBuf) {
     // Use explicit input while retaining Ply's normal layout and GPU renderer.
     let mut ply = Ply::<()>::new_headless((968.0, 668.0).into());
@@ -282,6 +403,7 @@ async fn check(output: PathBuf) {
         std::process::exit(0);
     }
 
+    check_wheel(&mut ply, &mut app, &output).await;
     check_editor_sizing(&mut ply, &mut app, &output).await;
 
     for (id, slot) in [
@@ -1015,15 +1137,20 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         assert!(!app.capturing_key && app.custom_key == Some(0x4B));
         click(ply, app, "picker_close").await;
         review_sequence(ply, app, &dir).await;
+        click(ply, app, "mouse_middle").await;
+        snapshot(&dir, "scroll");
+        ply.set_scroll_position("wheel_form", (0.0, 500.0));
+        settle(ply, app).await;
+        snapshot(&dir, "scroll-lower");
+        click(ply, app, "picker_close").await;
         for (section, name) in [
-            (Section::Scroll, "scroll"),
             (Section::Gestures, "gestures"),
             (Section::Profiles, "profiles"),
             (Section::Device, "device"),
         ] {
             click(ply, app, section.id()).await;
             snapshot(&dir, name);
-            if matches!(section, Section::Scroll | Section::Gestures) {
+            if section == Section::Gestures {
                 ply.set_scroll_position("settings_content", (0.0, 500.0));
                 settle(ply, app).await;
                 snapshot(&dir, &format!("{name}-lower"));
@@ -1043,37 +1170,6 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
                 assert!(Config::load_strict().unwrap().profiles[0]
                     .gestures
                     .is_none());
-            }
-            if section == Section::Scroll {
-                let before = ply.bounding_box("sw_invert").unwrap();
-                let hires_before = ply.bounding_box("sw_hires").unwrap();
-                click(ply, app, ("mode", 0)).await;
-                let hires_after = ply.bounding_box("sw_hires").unwrap();
-                assert_eq!(
-                    (hires_before.x, hires_before.y),
-                    (hires_after.x, hires_after.y)
-                );
-                let threshold = app.draft.device.smartshift_threshold;
-                click(ply, app, "flick").await;
-                assert_eq!(
-                    app.draft.device.smartshift_threshold, threshold,
-                    "Disabled flick slider accepted an edit"
-                );
-                let after = ply.bounding_box("sw_invert").unwrap();
-                assert_eq!(
-                    (before.x, before.y),
-                    (after.x, after.y),
-                    "Wheel mode moved the direction switch"
-                );
-                assert_eq!(
-                    Config::load_strict().unwrap().device.smartshift,
-                    crate::config::SmartShiftMode::AlwaysRatchet
-                );
-                click(ply, app, ("mode", 2)).await;
-                assert_eq!(
-                    Config::load_strict().unwrap().device.smartshift,
-                    crate::config::SmartShiftMode::SmartShift
-                );
             }
             if section == Section::Profiles {
                 let before = Config::load_strict().unwrap();
@@ -1636,9 +1732,11 @@ async fn extra_states(
     app.draft.gestures.enabled = true;
     app.draft.device.hires_scroll = false;
     app.draft.device.smartshift = crate::config::SmartShiftMode::AlwaysRatchet;
-    app.section = Section::Scroll;
+    app.section = Section::Buttons;
+    app.open_picker(PickerTarget::Button("middle".into()));
     settle(ply, app).await;
     snapshot(dir, "scroll-limited");
+    app.close_picker();
     app.device_view.device = DeviceStatus {
         connected: true,
         name: Some("USB mouse".into()),

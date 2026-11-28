@@ -262,11 +262,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
     let mut open_picker = None;
     let subtitle = if app.mouse_awake() {
-        "Choose a button to change its assignment."
+        "Select a control on the mouse or in the list."
     } else {
         "Choose an assignment to edit. Offline changes apply when your mouse connects."
     };
-    profile_heading(ui, app, "Buttons", subtitle);
+    profile_heading(ui, app, "Mouse controls", subtitle);
     ui.element()
         .width(grow!())
         .height(fixed!(if screen_width() < 840.0 { 12.0 } else { 22.0 }))
@@ -291,7 +291,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     let mut rows = Vec::new();
     for button in buttons {
         let slot = button.slot;
-        let name = app
+        let mut name = app
             .prefs
             .button_names
             .get(&format!("{}/{}", device.display_name(), slot))
@@ -300,7 +300,17 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         let id = ("btn_chip", slot_index(&slot)).into();
         let glyph = row_icon(&slot);
         let target = PickerTarget::Button(slot.clone());
-        let action = actions::assignment(app, &target);
+        let mut action = actions::assignment(app, &target);
+        if target.opens_scroll(device) {
+            name = "Scroll wheel".into();
+            let binding = if action.label.is_empty() {
+                action.keys.join(" + ")
+            } else {
+                action.label
+            };
+            action.label = format!("Middle click: {binding}");
+            action.keys.clear();
+        }
         rows.push(MappingRow {
             number: super::mouse_view::target_number(device, &target),
             target,
@@ -310,6 +320,24 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
             action,
             note: None,
         });
+    }
+    let middle = PickerTarget::Button("middle".into());
+    if middle.opens_scroll(device) && !middle.available(device) {
+        rows.insert(
+            0,
+            MappingRow {
+                number: super::mouse_view::target_number(device, &middle),
+                target: middle,
+                id: ("btn_chip", slot_index("middle")).into(),
+                glyph: &icons::NAV_SCROLL,
+                name: "Scroll wheel".into(),
+                action: actions::Display {
+                    label: "Scrolling settings".into(),
+                    ..actions::display(&crate::config::Action::PassThrough)
+                },
+                note: None,
+            },
+        );
     }
     let target = PickerTarget::Gesture("tap".into());
     if target.available(device) {
@@ -347,7 +375,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         ui.element().width(grow!()).height(fit!()).children(|ui| {
             super::mouse_view::gesture_footer(ui, app, hint, "Configure gestures");
         });
-    } else if app.mouse_awake() {
+    } else if app.mouse_awake() && !super::scroll::available(&app.device_view.device) {
         ui.element().width(grow!()).height(fixed!(16.0)).empty();
         ui.text("Windows handles left click and scrolling.", |t| {
             t.font(&fonts::SANS)

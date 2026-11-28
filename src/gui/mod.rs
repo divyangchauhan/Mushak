@@ -39,7 +39,6 @@ pub fn run_ui_smoke() {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Section {
     Buttons,
-    Scroll,
     Gestures,
     Profiles,
     Device,
@@ -48,28 +47,26 @@ pub enum Section {
 impl Section {
     fn available(self, device: &crate::hidpp::device::DeviceStatus) -> bool {
         match self {
-            Self::Scroll => device.connected && device.capabilities.has_scroll_settings(),
             // Gesture actions are saved software mappings and can be edited offline.
             Self::Gestures => !device.connected || device.capabilities.gestures,
             Self::Buttons => {
                 !device.connected
+                    || scroll::available(device)
                     || !device.capabilities.buttons.is_empty()
                     || device.capabilities.gestures
             }
             _ => true,
         }
     }
-    const ALL: [Section; 5] = [
+    const ALL: [Section; 4] = [
         Section::Device,
         Section::Profiles,
         Section::Buttons,
         Section::Gestures,
-        Section::Scroll,
     ];
     fn label(self) -> &'static str {
         match self {
-            Section::Buttons => "Buttons",
-            Section::Scroll => "Scroll",
+            Section::Buttons => "Mouse controls",
             Section::Gestures => "Gestures",
             Section::Profiles => "Profiles",
             Section::Device => "Device",
@@ -78,7 +75,6 @@ impl Section {
     fn icon(self) -> &'static ply_engine::prelude::GraphicAsset {
         match self {
             Section::Buttons => &icons::NAV_BUTTONS,
-            Section::Scroll => &icons::NAV_SCROLL,
             Section::Gestures => &icons::NAV_GESTURES,
             Section::Profiles => &icons::NAV_PROFILES,
             Section::Device => &icons::NAV_DEVICE,
@@ -87,7 +83,6 @@ impl Section {
     fn id(self) -> &'static str {
         match self {
             Section::Buttons => "nav_buttons",
-            Section::Scroll => "nav_scroll",
             Section::Gestures => "nav_gestures",
             Section::Profiles => "nav_profiles",
             Section::Device => "nav_device",
@@ -149,6 +144,9 @@ pub struct App {
     picker_dpi: [u16; 2],
     picker_speed_editor: bool,
     wheel_presets: bool,
+    wheel_draft: Option<crate::config::DeviceConfig>,
+    scrolling_tab: bool,
+    wheel_switch: Option<(PickerTarget, &'static str)>,
     saved_notice: Option<(String, Section, usize, Instant)>,
     failed_assignment: Option<(crate::config::Action, &'static str)>,
     picker_feedback: Option<Instant>,
@@ -168,6 +166,14 @@ pub enum PickerTarget {
 }
 
 impl PickerTarget {
+    fn opens_scroll(&self, device: &crate::hidpp::device::DeviceStatus) -> bool {
+        matches!(self, Self::Button(slot) if slot == "middle") && scroll::available(device)
+    }
+
+    fn can_open(&self, device: &crate::hidpp::device::DeviceStatus) -> bool {
+        self.available(device) || self.opens_scroll(device)
+    }
+
     fn available(&self, device: &crate::hidpp::device::DeviceStatus) -> bool {
         match self {
             Self::Gesture(_) => Section::Gestures.available(device),
@@ -229,6 +235,9 @@ impl App {
             picker_dpi: [800, 1600],
             picker_speed_editor: false,
             wheel_presets: false,
+            wheel_draft: None,
+            scrolling_tab: false,
+            wheel_switch: None,
             saved_notice: None,
             failed_assignment: None,
             picker_feedback: None,
@@ -285,6 +294,9 @@ impl App {
             _ => [800, 1600],
         };
         self.failed_assignment = None;
+        self.wheel_switch = None;
+        self.scrolling_tab = target.opens_scroll(&self.device_view.device);
+        self.wheel_draft = self.scrolling_tab.then(|| self.draft.device.clone());
         self.picker = Some(target);
         self.picker_anchor = None;
         self.picker_row_label = None;
@@ -306,6 +318,9 @@ impl App {
     }
 
     pub fn close_picker(&mut self) {
+        self.wheel_switch = None;
+        self.wheel_draft = None;
+        self.scrolling_tab = false;
         self.pending_action = None;
         self.failed_assignment = None;
         self.picker = None;
@@ -352,12 +367,17 @@ impl App {
 
     pub fn assign_action(&mut self, target: &PickerTarget, action: crate::config::Action) {
         let previous = self.draft.clone();
+        let update_binding =
+            self.wheel_draft.is_none() || target.available(&self.device_view.device);
         let pending = action.clone();
+        if let Some(wheel) = &self.wheel_draft {
+            self.draft.device = wheel.clone();
+        }
         match target {
             PickerTarget::Button(slot) => {
                 let idx = self.selected_profile;
                 let slot = slot.clone();
-                if let Some(p) = self.profile_at_mut(idx) {
+                if let Some(p) = self.profile_at_mut(idx).filter(|_| update_binding) {
                     match slot.as_str() {
                         "back" => p.buttons.back = action,
                         "forward" => p.buttons.forward = action,
@@ -476,6 +496,35 @@ impl App {
     }
 
     fn accept_status(&mut self, update: SharedStatus) {
+        if self.wheel_draft.is_some() {
+            let old = &self.device_view.device;
+            let new = &update.device;
+            let a = &old.capabilities;
+            let b = &new.capabilities;
+            if !scroll::available(new)
+                || old.name != new.name
+                || old.connection != new.connection
+                || (
+                    a.smartshift,
+                    a.smartshift_max_threshold,
+                    a.hires_scroll,
+                    a.wheel_multiplier,
+                    a.invert_scroll,
+                ) != (
+                    b.smartshift,
+                    b.smartshift_max_threshold,
+                    b.hires_scroll,
+                    b.wheel_multiplier,
+                    b.invert_scroll,
+                )
+                || self
+                    .picker
+                    .as_ref()
+                    .is_some_and(|p| p.available(old) != p.available(new))
+            {
+                self.close_picker();
+            }
+        }
         let changed = self.device_view.paused != update.paused
             || self.device_view.resume_pid != update.resume_pid;
         if changed {
@@ -525,7 +574,7 @@ impl App {
             if self
                 .picker
                 .as_ref()
-                .is_some_and(|target| !target.available(&self.device_view.device))
+                .is_some_and(|target| !target.can_open(&self.device_view.device))
             {
                 self.close_picker();
             }
@@ -976,7 +1025,6 @@ fn content(ui: &mut Ui2, app: &mut App) {
                     } else {
                         match app.section {
                             Section::Buttons => buttons::section(ui, app),
-                            Section::Scroll => scroll::section(ui, app),
                             Section::Gestures => gestures_tab::section(ui, app),
                             Section::Profiles => profiles_tab::section(ui, app),
                             Section::Device => device_tab::section(ui, app),
@@ -1021,17 +1069,17 @@ mod tests {
             connected: true,
             ..Default::default()
         };
-        assert!(!Section::Scroll.available(&device));
+        assert!(!scroll::available(&device));
         assert!(!Section::Gestures.available(&device));
         assert!(!PickerTarget::Gesture("tap".into()).available(&device));
         device.capabilities.hires_scroll = true;
-        assert!(Section::Scroll.available(&device));
+        assert!(scroll::available(&device));
         assert!(!Section::Gestures.available(&device));
         device.capabilities.gestures = true;
         assert!(Section::Gestures.available(&device));
         assert!(Section::Buttons.available(&device));
         device.connected = false;
-        assert!(!Section::Scroll.available(&device));
+        assert!(!scroll::available(&device));
         assert!(Section::Gestures.available(&device));
     }
 }

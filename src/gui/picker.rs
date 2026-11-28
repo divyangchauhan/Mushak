@@ -49,6 +49,17 @@ impl PickerTarget {
     }
 }
 
+fn wheel_changed(app: &App, current: &Action) -> bool {
+    app.wheel_draft.as_ref().is_some_and(|w| {
+        w != &app.draft.device
+            || if app.shortcut_editor {
+                pending_shortcut(app, current).is_some()
+            } else {
+                app.pending_action.is_some()
+            }
+    })
+}
+
 /// Draw the palette. Called last so it floats over the sections.
 pub fn overlay(ui: &mut Ui2, app: &mut App) {
     let Some(target) = app.picker.clone() else {
@@ -57,6 +68,12 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
     let return_focus = app.picker_anchor;
     let current = app.action_for(&target);
+    if !wheel_changed(app, &current) {
+        if let Some((next, anchor)) = app.wheel_switch.take() {
+            app.open_button_popover(next, anchor);
+            return;
+        }
+    }
     let mut chosen: Option<Action> = None;
     let mut close = false;
     let anchored = app
@@ -111,8 +128,17 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
             // A press on any descendant also marks its ancestors pressed, so the
             // backdrop sees every click inside the panel too. Only a press that
             // misses the panel is a dismissal.
-            if ui.just_pressed() && !ui.pointer_over("picker_panel") {
+            if ui.just_pressed()
+                && !ui.pointer_over("picker_panel")
+                && !wheel_changed(app, &current)
+            {
                 close = true;
+            }
+            if anchored.is_some() && app.wheel_draft.is_some() {
+                if let Some(next) = super::mouse_view::wheel_marker_input(ui, app) {
+                    app.wheel_switch = Some(next);
+                    close = false;
+                }
             }
             ui.element()
                 .id("picker_panel")
@@ -132,6 +158,23 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                     if let Some((pending, recovery)) = app.failed_assignment.clone() {
                         if retry_assignment(ui, app, &pending, recovery) {
                             chosen = Some(pending);
+                        }
+                        return;
+                    }
+                    if app.scrolling_tab {
+                        super::scroll::form(ui, app);
+                        let action = if app.shortcut_editor {
+                            pending_shortcut(app, &current)
+                        } else {
+                            app.pending_action.clone()
+                        };
+                        let state = if action.is_some() {
+                            SaveState::Ready
+                        } else {
+                            SaveState::Empty
+                        };
+                        if assignment_footer(ui, app, EditorTab::Scrolling, state, &mut close) {
+                            chosen = Some(action.unwrap_or_else(|| current.clone()));
                         }
                         return;
                     }
@@ -196,7 +239,11 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                         SaveState::Empty
                     };
                     if assignment_footer(ui, app, EditorTab::Actions, state, &mut close) {
-                        chosen = app.pending_action.clone();
+                        chosen = Some(
+                            app.pending_action
+                                .clone()
+                                .unwrap_or_else(|| current.clone()),
+                        );
                     }
                 });
         });
@@ -217,11 +264,15 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                 display.label
             };
             app.saved_notice = Some((
-                format!(
-                    "{} saved for {}",
-                    assignment,
-                    target.label(&app.device_view.device)
-                ),
+                if app.wheel_draft.is_some() {
+                    "Scroll wheel settings saved".to_owned()
+                } else {
+                    format!(
+                        "{} saved for {}",
+                        assignment,
+                        target.label(&app.device_view.device)
+                    )
+                },
                 app.section,
                 app.selected_profile,
                 std::time::Instant::now(),
@@ -411,6 +462,269 @@ fn draft_replacement_hint(app: &App, current: &Action) -> Option<String> {
     })
 }
 
+fn wheel_header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) {
+    let pal = app.pal;
+    ui.element()
+        .width(grow!())
+        .height(fit!())
+        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(8))
+        .children(|ui| {
+            widgets::icon(ui, &icons::NAV_SCROLL, 19.0, pal.accent);
+            ui.element().width(grow!()).height(fit!()).children(|ui| {
+                ui.text("Scroll wheel", |t| {
+                    t.font(&fonts::SANS_BOLD).font_size(19).color(pal.text)
+                });
+            });
+            ui.element()
+                .id("picker_close")
+                .width(fixed!(28.0))
+                .height(fixed!(28.0))
+                .corner_radius(8.0)
+                .background_color(pal.s2)
+                .accessibility(|a| a.button("Close wheel editor"))
+                .layout(|l| l.align(CenterX, CenterY))
+                .children(|ui| {
+                    if ui.just_pressed() {
+                        *close = true
+                    }
+                    widgets::icon(ui, &icons::CLOSE, 12.0, pal.muted);
+                });
+        });
+    if app.failed_assignment.is_some() {
+        return;
+    }
+    if target.available(&app.device_view.device) {
+        ui.element()
+            .width(grow!())
+            .height(fit!())
+            .layout(|l| l.direction(LeftToRight).gap(4))
+            .children(|ui| {
+                for (scroll, id, label) in [
+                    (true, "scrolling_tab", "Scrolling"),
+                    (false, "middle_click_tab", "Middle click"),
+                ] {
+                    if super::scroll::choice(
+                        ui,
+                        &pal,
+                        id.into(),
+                        label,
+                        app.scrolling_tab == scroll,
+                    ) && app.scrolling_tab != scroll
+                    {
+                        app.scrolling_tab = scroll;
+                        app.capturing_key = false;
+                        app.picker_fresh = true;
+                        ui.clear_focus();
+                    }
+                }
+            });
+    }
+    let scope = if app.scrolling_tab {
+        "Applies to all profiles".to_owned()
+    } else {
+        format!(
+            "Button assignment for {}",
+            app.profile_at(app.selected_profile)
+                .map_or("Default", |p| p.name.as_str())
+        )
+    };
+    ui.text(&scope, |t| {
+        t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
+    });
+}
+
+fn assignment_heading(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) {
+    let pal = app.pal;
+    ui.element()
+        .width(grow!())
+        .height(fit!())
+        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(8))
+        .children(|ui| {
+            ui.element()
+                .width(grow!())
+                .height(fit!())
+                .layout(|l| l.direction(TopToBottom).gap(3))
+                .children(|ui| {
+                    let label = if app.picker_anchor.is_some()
+                        && matches!(target, PickerTarget::Gesture(_))
+                    {
+                        if app.picker_anchor == Some("mouse_haptic") {
+                            "Haptic Sense Panel tap"
+                        } else {
+                            "Gesture button tap"
+                        }
+                    } else {
+                        app.picker_row_label
+                            .as_deref()
+                            .unwrap_or_else(|| target.label(&app.device_view.device))
+                    };
+                    let alias_key = match target {
+                        PickerTarget::Button(slot) => {
+                            format!("{}/{}", app.device_view.device.display_name(), slot)
+                        }
+                        _ => String::new(),
+                    };
+                    let label = app
+                        .prefs
+                        .button_names
+                        .get(&alias_key)
+                        .map(String::as_str)
+                        .unwrap_or(label);
+                    let number = app.picker_anchor.and_then(|id| {
+                        super::mouse_view::control_number(&app.device_view.device, id)
+                    });
+                    let number = number.or_else(|| {
+                        if app.section == super::Section::Buttons {
+                            super::mouse_view::target_number(&app.device_view.device, target)
+                        } else {
+                            None
+                        }
+                    });
+                    if let Some(n) = number {
+                        ui.element()
+                            .width(grow!())
+                            .height(fit!())
+                            .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(9))
+                            .children(|ui| {
+                                ui.element()
+                                    .width(fixed!(23.0))
+                                    .height(fixed!(23.0))
+                                    .corner_radius(12.0)
+                                    .background_color(pal.accent)
+                                    .layout(|l| l.align(CenterX, CenterY))
+                                    .children(|ui| {
+                                        ui.text(&n.to_string(), |t| {
+                                            t.font(&fonts::MONO_BOLD)
+                                                .font_size(14)
+                                                .color(pal.accent_ink)
+                                        });
+                                    });
+                                ui.text(label, |t| {
+                                    t.font(&fonts::SANS_SEMIBOLD).font_size(19).color(pal.text)
+                                });
+                            });
+                    } else {
+                        ui.text(label, |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(19).color(pal.text)
+                        });
+                    }
+                    let profile = if app.picker_anchor == Some("mouse_haptic") {
+                        if matches!(target, PickerTarget::Gesture(_)) {
+                            "Tap the thumb panel"
+                        } else {
+                            "Press the thumb panel"
+                        }
+                    } else {
+                        app.profile_at(app.selected_profile)
+                            .map(|p| p.name.as_str())
+                            .unwrap_or("Default")
+                    };
+                    let control_id = match target {
+                        PickerTarget::Button(slot) if app.picker_anchor.is_none() => {
+                            slot.strip_prefix("control_")
+                        }
+                        _ => None,
+                    };
+                    let pending = app.pending_action.as_ref().filter(|_| !app.shortcut_editor);
+                    let subtitle = if let Some(action) = pending {
+                        let display = actions::display_for(app, target, action);
+                        let name = if display.label.is_empty() {
+                            display.keys.join(" + ")
+                        } else {
+                            display.label
+                        };
+                        format!("{profile}  /  Unsaved: {name}")
+                    } else if let Some(id) = control_id {
+                        format!("{profile}  /  Control 0x{}", id.to_uppercase())
+                    } else if app.shortcut_editor {
+                        profile.to_owned()
+                    } else {
+                        let display = actions::assignment(app, target);
+                        let assigned = if display.label.is_empty() {
+                            display.keys.join(" + ")
+                        } else {
+                            display.label
+                        };
+                        format!("{profile}  /  Assigned: {assigned}")
+                    };
+                    let subtitle = if app.device_view.paused {
+                        format!("{subtitle}  /  Remapping paused")
+                    } else {
+                        subtitle
+                    };
+                    ui.text(&subtitle, |t| {
+                        t.font(&fonts::SANS_MEDIUM)
+                            .font_size(if screen_height() < 430.0 { 12 } else { 14 })
+                            .color(pal.text)
+                    });
+                    if let PickerTarget::Button(slot) = target {
+                        let device = &app.device_view.device;
+                        let unplaced = slot.starts_with("control_")
+                            && app.picker_anchor.is_none()
+                            && super::mouse_view::matches_device(device)
+                            && super::mouse_view::target_number(device, target).is_none();
+                        if unplaced && !app.naming_button {
+                            let task = device
+                                .capabilities
+                                .buttons
+                                .iter()
+                                .find(|button| &button.slot == slot)
+                                .and_then(|button| button.default_task());
+                            let detail = task.map_or_else(
+                                || {
+                                    "The device report has no location or factory action."
+                                        .to_owned()
+                                },
+                                |task| format!("Factory action: {task}. Position not reported."),
+                            );
+                            ui.text(&detail, |t| {
+                                t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                            });
+                            ui.element()
+                                .id("name_button")
+                                .height(fixed!(26.0))
+                                .corner_radius(5.0)
+                                .background_color(pal.s2)
+                                .accessibility(|a| a.button("Name this button"))
+                                .layout(|l| l.align(Left, CenterY).padding((0, 8, 0, 8)))
+                                .children(|ui| {
+                                    ui.text("Name this button", |t| {
+                                        t.font(&fonts::SANS_SEMIBOLD)
+                                            .font_size(13)
+                                            .color(pal.accent)
+                                    });
+                                    if ui.just_pressed() {
+                                        app.naming_button = true;
+                                        let name = app
+                                            .prefs
+                                            .button_names
+                                            .get(&alias_key)
+                                            .map(String::as_str)
+                                            .unwrap_or("");
+                                        ui.set_text_value("button_name_input", name);
+                                        ui.set_focus("button_name_input");
+                                    }
+                                });
+                        }
+                    }
+                });
+            ui.element()
+                .id("picker_close")
+                .width(fixed!(28.0))
+                .height(fixed!(28.0))
+                .corner_radius(8.0)
+                .background_color(pal.s2)
+                .accessibility(|a| a.button("Close action picker"))
+                .layout(|l| l.align(CenterX, CenterY))
+                .children(|ui| {
+                    if ui.just_pressed() {
+                        *close = true;
+                    }
+                    widgets::icon(ui, &icons::CLOSE, 12.0, pal.muted);
+                });
+        });
+}
+
 fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) {
     let pal = app.pal;
     ui.element()
@@ -425,207 +739,12 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
             }
         })
         .children(|ui| {
-            ui.element()
-                .width(grow!())
-                .height(fit!())
-                .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(8))
-                .children(|ui| {
-                    ui.element()
-                        .width(grow!())
-                        .height(fit!())
-                        .layout(|l| l.direction(TopToBottom).gap(3))
-                        .children(|ui| {
-                            let label = if app.picker_anchor.is_some()
-                                && matches!(target, PickerTarget::Gesture(_))
-                            {
-                                if app.picker_anchor == Some("mouse_haptic") {
-                                    "Haptic Sense Panel tap"
-                                } else {
-                                    "Gesture button tap"
-                                }
-                            } else {
-                                app.picker_row_label
-                                    .as_deref()
-                                    .unwrap_or_else(|| target.label(&app.device_view.device))
-                            };
-                            let alias_key = match target {
-                                PickerTarget::Button(slot) => {
-                                    format!("{}/{}", app.device_view.device.display_name(), slot)
-                                }
-                                _ => String::new(),
-                            };
-                            let label = app
-                                .prefs
-                                .button_names
-                                .get(&alias_key)
-                                .map(String::as_str)
-                                .unwrap_or(label);
-                            let number = app.picker_anchor.and_then(|id| {
-                                super::mouse_view::control_number(&app.device_view.device, id)
-                            });
-                            let number = number.or_else(|| {
-                                if app.section == super::Section::Buttons {
-                                    super::mouse_view::target_number(
-                                        &app.device_view.device,
-                                        target,
-                                    )
-                                } else {
-                                    None
-                                }
-                            });
-                            if let Some(n) = number {
-                                ui.element()
-                                    .width(grow!())
-                                    .height(fit!())
-                                    .layout(|l| {
-                                        l.direction(LeftToRight).align(Left, CenterY).gap(9)
-                                    })
-                                    .children(|ui| {
-                                        ui.element()
-                                            .width(fixed!(23.0))
-                                            .height(fixed!(23.0))
-                                            .corner_radius(12.0)
-                                            .background_color(pal.accent)
-                                            .layout(|l| l.align(CenterX, CenterY))
-                                            .children(|ui| {
-                                                ui.text(&n.to_string(), |t| {
-                                                    t.font(&fonts::MONO_BOLD)
-                                                        .font_size(14)
-                                                        .color(pal.accent_ink)
-                                                });
-                                            });
-                                        ui.text(label, |t| {
-                                            t.font(&fonts::SANS_SEMIBOLD)
-                                                .font_size(19)
-                                                .color(pal.text)
-                                        });
-                                    });
-                            } else {
-                                ui.text(label, |t| {
-                                    t.font(&fonts::SANS_SEMIBOLD).font_size(19).color(pal.text)
-                                });
-                            }
-                            let profile = if app.picker_anchor == Some("mouse_haptic") {
-                                if matches!(target, PickerTarget::Gesture(_)) {
-                                    "Tap the thumb panel"
-                                } else {
-                                    "Press the thumb panel"
-                                }
-                            } else {
-                                app.profile_at(app.selected_profile)
-                                    .map(|p| p.name.as_str())
-                                    .unwrap_or("Default")
-                            };
-                            let control_id = match target {
-                                PickerTarget::Button(slot) if app.picker_anchor.is_none() => {
-                                    slot.strip_prefix("control_")
-                                }
-                                _ => None,
-                            };
-                            let pending =
-                                app.pending_action.as_ref().filter(|_| !app.shortcut_editor);
-                            let subtitle = if let Some(action) = pending {
-                                let display = actions::display_for(app, target, action);
-                                let name = if display.label.is_empty() {
-                                    display.keys.join(" + ")
-                                } else {
-                                    display.label
-                                };
-                                format!("{profile}  /  Unsaved: {name}")
-                            } else if let Some(id) = control_id {
-                                format!("{profile}  /  Control 0x{}", id.to_uppercase())
-                            } else if app.shortcut_editor {
-                                profile.to_owned()
-                            } else {
-                                let display = actions::assignment(app, target);
-                                let assigned = if display.label.is_empty() {
-                                    display.keys.join(" + ")
-                                } else {
-                                    display.label
-                                };
-                                format!("{profile}  /  Assigned: {assigned}")
-                            };
-                            let subtitle = if app.device_view.paused {
-                                format!("{subtitle}  /  Remapping paused")
-                            } else {
-                                subtitle
-                            };
-                            ui.text(&subtitle, |t| {
-                                t.font(&fonts::SANS_MEDIUM)
-                                    .font_size(if screen_height() < 430.0 { 12 } else { 14 })
-                                    .color(pal.text)
-                            });
-                            if let PickerTarget::Button(slot) = target {
-                                let device = &app.device_view.device;
-                                let unplaced = slot.starts_with("control_")
-                                    && app.picker_anchor.is_none()
-                                    && super::mouse_view::matches_device(device)
-                                    && super::mouse_view::target_number(device, target).is_none();
-                                if unplaced && !app.naming_button {
-                                    let task = device
-                                        .capabilities
-                                        .buttons
-                                        .iter()
-                                        .find(|button| &button.slot == slot)
-                                        .and_then(|button| button.default_task());
-                                    let detail = task.map_or_else(
-                                        || {
-                                            "The device report has no location or factory action."
-                                                .to_owned()
-                                        },
-                                        |task| {
-                                            format!(
-                                                "Factory action: {task}. Position not reported."
-                                            )
-                                        },
-                                    );
-                                    ui.text(&detail, |t| {
-                                        t.font(&fonts::SANS).font_size(13).color(pal.muted)
-                                    });
-                                    ui.element()
-                                        .id("name_button")
-                                        .height(fixed!(26.0))
-                                        .corner_radius(5.0)
-                                        .background_color(pal.s2)
-                                        .accessibility(|a| a.button("Name this button"))
-                                        .layout(|l| l.align(Left, CenterY).padding((0, 8, 0, 8)))
-                                        .children(|ui| {
-                                            ui.text("Name this button", |t| {
-                                                t.font(&fonts::SANS_SEMIBOLD)
-                                                    .font_size(13)
-                                                    .color(pal.accent)
-                                            });
-                                            if ui.just_pressed() {
-                                                app.naming_button = true;
-                                                let name = app
-                                                    .prefs
-                                                    .button_names
-                                                    .get(&alias_key)
-                                                    .map(String::as_str)
-                                                    .unwrap_or("");
-                                                ui.set_text_value("button_name_input", name);
-                                                ui.set_focus("button_name_input");
-                                            }
-                                        });
-                                }
-                            }
-                        });
-                    ui.element()
-                        .id("picker_close")
-                        .width(fixed!(28.0))
-                        .height(fixed!(28.0))
-                        .corner_radius(8.0)
-                        .background_color(pal.s2)
-                        .accessibility(|a| a.button("Close action picker"))
-                        .layout(|l| l.align(CenterX, CenterY))
-                        .children(|ui| {
-                            if ui.just_pressed() {
-                                *close = true;
-                            }
-                            widgets::icon(ui, &icons::CLOSE, 12.0, pal.muted);
-                        });
-                });
-            if app.failed_assignment.is_some() || app.naming_button {
+            if app.wheel_draft.is_some() {
+                wheel_header(ui, app, target, close);
+            } else {
+                assignment_heading(ui, app, target, close);
+            }
+            if app.failed_assignment.is_some() || app.naming_button || app.scrolling_tab {
                 return;
             }
             ui.element()
@@ -739,6 +858,7 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
                 });
         });
     if app.shortcut_editor
+        || app.scrolling_tab
         || app.failed_assignment.is_some()
         || app.naming_button
         || app.picker_fresh
@@ -1897,9 +2017,7 @@ fn shortcut_editor(
         app.capturing_key = true;
     }
     if assign {
-        if let Some(k) = key {
-            *chosen = Some(Action::key(&app.custom_mods, k));
-        }
+        *chosen = Some(key.map_or_else(|| current.clone(), |k| Action::key(&app.custom_mods, k)));
     }
 }
 
@@ -1910,21 +2028,63 @@ enum SaveState {
     Saved,
 }
 enum EditorTab {
+    Scrolling,
     Actions,
     Shortcut,
 }
 
 fn assignment_footer(
     ui: &mut Ui2,
-    app: &App,
+    app: &mut App,
     tab: EditorTab,
     state: SaveState,
     close: &mut bool,
 ) -> bool {
     let pal = app.pal;
+    if app.wheel_switch.is_some() {
+        ui.element()
+            .width(grow!())
+            .height(fixed!(40.0))
+            .layout(|l| {
+                l.direction(LeftToRight)
+                    .align(Left, CenterY)
+                    .gap(6)
+                    .padding((0, 12, 0, 12))
+            })
+            .children(|ui| {
+                ui.text("Discard edits?", |t| {
+                    t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.text)
+                });
+                if super::scroll::choice(ui, &pal, "keep_wheel".into(), "Keep editing", true) {
+                    app.wheel_switch = None;
+                }
+                if super::scroll::choice(ui, &pal, "discard_wheel".into(), "Discard", false) {
+                    if let Some((target, anchor)) = app.wheel_switch.take() {
+                        app.open_button_popover(target, anchor);
+                    }
+                }
+            });
+        return false;
+    }
     let (cancel_id, save_id, save_label) = match tab {
+        EditorTab::Scrolling => ("cancel_wheel", "save_wheel", "Save"),
         EditorTab::Actions => ("cancel_action", "save_action", "Save action"),
         EditorTab::Shortcut => ("cancel_shortcut", "assign", "Save shortcut"),
+    };
+    let save_label = if app.wheel_draft.is_some() {
+        "Save"
+    } else {
+        save_label
+    };
+    let state = if app
+        .wheel_draft
+        .as_ref()
+        .is_some_and(|d| d != &app.draft.device)
+        && !app.capturing_key
+    {
+        SaveState::Ready
+    } else {
+        state
     };
     let mut assign = false;
     ui.element()
