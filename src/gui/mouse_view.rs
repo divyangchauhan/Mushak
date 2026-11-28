@@ -147,7 +147,7 @@ const CLASSIC_PARTS: [Part; 5] = [
     Part {
         id: "mouse_gesture",
         slot: "tap",
-        label: "Gesture button",
+        label: "Gesture button tap",
         point: (615.0, 370.0),
     },
     Part {
@@ -425,11 +425,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         .iter()
         .filter(|p| p.target(&app.device_view.device).is_some())
         .count();
-    let row_pitch = if extras.is_empty() { 55.0 } else { 47.0 };
+    let row_pitch = if model == Model::Master4 { 48.0 } else { 55.0 };
     let extra_heading = if extras.is_empty() { 0.0 } else { 21.0 };
     let list_height = (count + extras.len()) as f32 * row_pitch + extra_heading;
-    let stage_height = STAGE_HEIGHT.max(list_height + 10.0);
-    let list_top = (stage_height - list_height) / 2.0;
+    let list_top = ((STAGE_HEIGHT - count as f32 * row_pitch) / 2.0).max(5.0);
+    let stage_height = STAGE_HEIGHT.max(list_top + list_height + 5.0);
     let mut selected = None;
 
     ui.element()
@@ -747,9 +747,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                 } else {
                                     &action_label
                                 };
-                                ui.text(label, |t| {
-                                    t.font(&fonts::SANS_MEDIUM).font_size(14).color(pal.accent)
-                                });
+                                if screen_width() >= 840.0 {
+                                    ui.text(label, |t| {
+                                        t.font(&fonts::SANS_MEDIUM).font_size(14).color(pal.accent)
+                                    });
+                                }
                             });
                         widgets::icon(
                             ui,

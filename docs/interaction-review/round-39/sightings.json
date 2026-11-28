@@ -1,0 +1,218 @@
+{
+  "sol": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "The upper-right menu keeps the diagram visible and checks Default above Preview app."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "The MX Master 4 gets a sixth marker, and hover on the MX Master 2S pairs amber marker 2 with a matching border on Back button. The extra control changes from Button 0x01FF to Spare button after the name form."
+    },
+    {
+      "id": 3,
+      "label": "Edit",
+      "detail": "The compact layout gives Back button separate Ctrl and W keycaps and puts a labeled pencil button at the end of each row. Both native compact themes fit all five cards and Configure gestures in view."
+    },
+    {
+      "id": 4,
+      "label": "Unsaved: Copy",
+      "detail": "The Back button editor shows the thumb-wheel crop next to the action picker. Copy gets a Draft label, then the diagram returns with a green save check."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "The magnifier sits above Clear search and Record a keyboard shortcut. In the matching state, Copy has Ctrl and C keycaps beside Select."
+    },
+    {
+      "id": 6,
+      "label": "Switch pointer speed",
+      "detail": "The wheel crop identifies marker 5, and the speed form pairs 800 and 1600 inputs with sliders and a next-press readout."
+    },
+    {
+      "id": 7,
+      "label": "Saving an action replaces draft M",
+      "detail": "The recorded M survives Actions and a short layout. After cancellation, a later K save appears in the mapping card, and reopening shows a green Saved check. Across three additional rounds, the empty shortcut pane alternates with the checked preset without changing the assignment. The restarted editor still shows K."
+    },
+    {
+      "id": 8,
+      "label": "SmartShift flick sensitivity",
+      "detail": "The three mode cards use radio rings. Switching to Always ratchet mutes the sensitivity slider while retaining Level 10 of 50. The compact view keeps all three mode cards in one row with shorter captions."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "Orange arrows lead the swipe rows, and the distance card translates 60 counts to about 1.5 mm at 1000 DPI. The compact view keeps the five gestures and the distance control visible together."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "The inline countdown puts a strong 6s badge beside switch-window instructions and includes Add 6 seconds. The rename field replaces header controls in place. The picker result adds a python.exe chip and a green toast, and a renamed card reads Trial tools."
+    },
+    {
+      "id": 11,
+      "label": "Edit button mappings",
+      "detail": "A slashed mouse icon and status title introduce the disconnected and empty states. The connected state instead shows a green 50% battery bar and an amber DPI slider. The native compact Device page still fits the connection, firmware, battery, DPI and reported features without crowding."
+    },
+    {
+      "id": 12,
+      "label": "Copy unnamed IDs",
+      "detail": "The HID++ feature grid pairs plain-language feature names with monospace hex values, with unnamed values in a block below."
+    },
+    {
+      "id": 13,
+      "label": "Applies after resume",
+      "detail": "The compact editor repeats the paused state and places the qualification beside Save shortcut. The paused header remains after the green save message appears on the mapping list. On Profiles, the failure and tray help keep a Back to Profiles button, and the retry result returns to the cards with a green header badge. The native Buttons success and retry views restore the diagram and show Remapping resumed beside the window title in both themes."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "The native white menu changes Pause remapping to Resume remapping and keeps the Windows startup check in the left gutter."
+    }
+  ],
+  "terra": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "The Default dropdown opens a compact menu with a checkmark beside the active profile."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "Numbered markers connect the mouse artwork to assignment cards, while an extra reported button gets its own row."
+    },
+    {
+      "id": 3,
+      "label": "Edit",
+      "detail": "Compact rows pair numbered buttons with keycap chips and an Edit button."
+    },
+    {
+      "id": 4,
+      "label": "Select an action",
+      "detail": "The Back button editor pairs a thumb-button close-up with categories, assigned action, and a save button."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "An empty search shows Clear search and Record a keyboard shortcut beneath a search icon."
+    },
+    {
+      "id": 6,
+      "label": "Switch pointer speed",
+      "detail": "Two DPI inputs and sliders show current speed and the next press value."
+    },
+    {
+      "id": 7,
+      "label": "Record key",
+      "detail": "The shortcut editor changes from Record key to Press a key, then displays the recorded key and Save shortcut."
+    },
+    {
+      "id": 8,
+      "label": "SmartShift flick sensitivity",
+      "detail": "Three wheel mode cards precede a slider labeled Level 10 of 50 and a separate nudge threshold."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "Five direction rows pair orange arrows with their assignments and keycap chips."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "Profile cards show priority numbers, application chips, and a six-second capture countdown."
+    },
+    {
+      "id": 11,
+      "label": "Disconnected",
+      "detail": "The device page presents connection, firmware, battery, and DPI cards, with a separate disconnected message."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "Feature names and hexadecimal IDs appear in two columns above a list of unnamed IDs."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused",
+      "detail": "A persistent title-bar indicator pairs Resume with a red state dot, while error banners offer retry and dismiss."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "The native tray menu swaps Pause remapping for Resume remapping and retains a checkmark for startup."
+    }
+  ],
+  "astra": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "The top-right Default menu opens directly beneath its field with an amber check, while the selected Buttons navigation item has an amber leading edge."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "Numbered pins connect the mouse artwork to the right-hand assignments. Hovering Back button turns pin 2 amber and outlines the matching card; the extra control becomes Spare button after naming."
+    },
+    {
+      "id": 3,
+      "label": "Configure gestures",
+      "detail": "Compact rows retain numbered badges, separate Ctrl and W keycaps, and explicit Edit buttons. The offline list substitutes button icons and retains the profile selector."
+    },
+    {
+      "id": 4,
+      "label": "Select an action",
+      "detail": "The editor pairs a close-up labeled Behind the thumb wheel with category and action columns. Copy gains an amber Draft label and an enabled Save action button before the saved toast appears."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "An empty search presents Clear search and Record a keyboard shortcut. A Copy result includes Ctrl and C keycaps plus a Select affordance."
+    },
+    {
+      "id": 6,
+      "label": "Switch between two pointer speeds",
+      "detail": "The DPI editor aligns Speed 1 and Speed 2 numeric fields with amber sliders and states Current: 1000 DPI and Next press: 800 DPI."
+    },
+    {
+      "id": 7,
+      "label": "Press a key",
+      "detail": "Recording adds an amber border and Stop recording button. The M draft survives a tab return and compact resize; saving K changes the list and reopening shows Assigned now K with a green Saved status."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "Wheel modes appear as three large radio cards. SmartShift shows Level 10 of 50, and inactive settings keep their values while the helper text explains which switch enables them. The compact layout retains all five control groups within the visible content area."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "Amber direction arrows align with the five gesture rows. The distance control shows 60 counts and translates that to about 1.5 mm; turning gestures off removes the distance card but preserves editable assignments."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "Profile cards display executable chips, numbered precedence badges, and Move up or Move down controls. Window capture shows a 6s badge with Add 6 seconds and Cancel. The compact long name Photo editing and color correction wraps onto two lines without colliding with the Up, Down, and Delete controls."
+    },
+    {
+      "id": 11,
+      "label": "Reapply mouse settings",
+      "detail": "Device status separates Bluetooth connection and firmware into paired cards, with a green 50% battery bar and a 1000 DPI slider below. Disconnected states offer Edit button mappings."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "Named features form a two-column table with muted monospace IDs underneath. The 18 unnamed features sit below, with Copy device report and Copy unnamed IDs buttons above."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused",
+      "detail": "A persistent red-tinted titlebar badge distinguishes paused state. Failed quit attempts use a red bottom banner with Retry quit, while save failures retain Unsaved: Copy and offer Try again or Back to editing."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "The native tray menu places Open mouse settings first, separates Quit Mushak with a divider, and shows a check beside Start with Windows. Pause remapping changes to Resume remapping."
+    }
+  ]
+}

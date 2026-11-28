@@ -65,7 +65,7 @@ if args.long_profile:
 fixture = json.loads(Path("docs/validation/mx-master-2s-bluetooth.json").read_text())[
     "status"
 ]
-(db / "status.json").write_text(json.dumps(dict(paused=False, device=fixture)))
+(db / "status.json").write_text(json.dumps(dict(paused=False, device=fixture, active_profile="Preview app")))
 theme = args.bounds.parent.name.lower()
 assert theme in ("light", "dark")
 (db / "ui.toml").write_text(f'theme = "{theme}"\naccent = "marigold"')
@@ -113,9 +113,10 @@ def launch():
     h = handles[0]
     time.sleep(1)
     scale = u.GetDpiForWindow(h) / 96
-    u.ShowWindow(h, 5)
-    u.SetForegroundWindow(h)
-    u.SetWindowPos(h, -1, 20, 20, 0, 0, 0x1 | 0x10)
+    # These checks deliver input to one HWND and capture its client directly.
+    # Leave other apps above it so physical input cannot land on the test fixture.
+    u.ShowWindow(h, 8)
+    assert u.SetWindowPos(h, 1, 20, 20, 0, 0, 0x1 | 0x10)
     # The HWND exists before the renderer has applied the theme and frameless layout.
     until = time.monotonic() + 8
     while time.monotonic() < until:
@@ -185,7 +186,12 @@ def click(x, y):
         # Miniquad reads the last WM_MOUSEMOVE position when handling button messages.
         assert u.PostMessageW(h, 0x200, buttons_before, loc)
         assert u.PostMessageW(h, msg, buttons_after, loc)
-        time.sleep(wait)
+        # Keep this test window's pointer at the target until its next render.
+        # A real mouse move can otherwise replace the message coordinates between frames.
+        until = time.monotonic() + wait
+        while time.monotonic() < until:
+            assert u.PostMessageW(h, 0x200, buttons_after, loc)
+            time.sleep(0.01)
 
 
 def key(vk, scan):
@@ -201,6 +207,43 @@ with args.bounds.open(encoding="utf-8") as handle:
 def control(id, frame):
     b = next(b for b in bounds if b["control"] == id and b["frame"] == frame)
     click(float(b["x"]) + float(b["w"]) / 2, float(b["y"]) + float(b["h"]) / 2)
+
+
+def check_action_selection():
+    coordinates = args.bounds.with_name("action-controls.csv")
+    if not coordinates.is_file():
+        return None
+    with coordinates.open() as stream:
+        centers = {row["id"]: (float(row["x"]), float(row["y"])) for row in csv.DictReader(stream)}
+    def open_back():
+        control("mouse_back", "seq-06-cancel")
+    open_back()
+    click(*centers["copy"])
+    assert config() == source, "Selecting Copy wrote an unsaved mapping"
+    click(*centers["cancel"])
+    assert config() == source, "Cancel changed the mapping"
+    open_back()
+    click(*centers["copy"])
+    click(*centers["save"])
+    time.sleep(0.7)
+    expected = copy.deepcopy(source)
+    expected["profiles"][0]["buttons"]["back"] = {"kind": "Key", "mods": ["Ctrl"], "vk": 67}
+    assert config() == expected, "Save action did not persist only Back = Copy"
+    open_back()
+    click(*centers["common"])
+    click(*centers["factory"])
+    click(*centers["save"])
+    time.sleep(0.7)
+    assert config() == source, "Restoring the native action changed the sample"
+    return True
+
+
+def nav_y(section, fallback):
+    coordinates = args.bounds.with_name("navigation.csv")
+    if coordinates.exists():
+        with coordinates.open() as stream:
+            return round(float(next(row["y"] for row in csv.DictReader(stream) if row["section"] == section)))
+    return fallback
 
 
 def profile():
@@ -264,7 +307,7 @@ def check_window_pick():
     import tkinter as tk
 
     click(918, 176)
-    click(88, 208)
+    click(88, nav_y("Profiles", 208))
     assert matches_capture("profiles", (229, 68, 367, 102)), "Profiles did not open"
     click(434, 247)
     helper = tk.Tk()
@@ -319,7 +362,8 @@ def check_window_pick():
             previous = current
             time.sleep(0.05)
         else:
-            raise AssertionError("The foreground test window was not captured")
+            client_pixels().save(Path("target") / "window-pick-timeout.png")
+            raise AssertionError(f"The foreground test window was not captured. Last executable: {previous!r}")
         wanted = copy.deepcopy(expected)
         matches = changed["profiles"][0]["match_processes"]
         wanted["profiles"][0]["match_processes"].append(
@@ -414,12 +458,25 @@ def check_resume_command():
         wait_for_header("paused-dismissed")
         click(float(row["x"]), float(row["y"]))
         has_recovery_help = args.bounds.with_name("resume-error.webp").exists()
+        help_region = (50, 54, 700, 88)
+        help_bounds = args.bounds.with_name("resume-help.csv")
+        if help_bounds.exists():
+            with help_bounds.open() as stream:
+                box = next(csv.DictReader(stream))
+            x, y = round(float(box["x"])), round(float(box["y"]))
+            width, height = round(float(box["w"])), round(float(box["h"]))
+            # The help page begins with a section-specific Back button. Compare its heading.
+            offset = 40 if args.bounds.with_name("tray-help-button.csv").is_file() else 0
+            help_region = (x + 4, y + offset + 2, x + min(width - 4, 220), y + min(height - 2, offset + 38))
+
         def wait_for_help(reference):
             deadline = time.monotonic() + 4
             while time.monotonic() < deadline:
-                if matches_capture(reference, (50, 54, 700, 88)):
+                # The pointer can still be over Retry. Compare the status label beside it.
+                if matches_capture(reference, help_region) and matches_capture(reference, (246, 11, 373, 35)):
                     return
                 time.sleep(0.1)
+            client_pixels().save(Path("target") / f"help-observed-{theme}-{reference}.png")
             raise AssertionError(f"Settings did not show {reference} instructions")
         if has_recovery_help:
             wait_for_help("resume-error")
@@ -436,6 +493,12 @@ def check_resume_command():
             wait_for_header("resumed")
             shot("08b-retry-confirmed")
         publish(dict(original, paused=True))
+        tray_help = args.bounds.with_name("tray-help-button.csv")
+        if tray_help.is_file():
+            with tray_help.open() as stream:
+                help_button = next(csv.DictReader(stream))
+            wait_for_header("resume-legacy")
+            click(float(help_button["x"]), float(help_button["y"]))
         if has_recovery_help:
             wait_for_help("resume-legacy")
         else:
@@ -465,6 +528,8 @@ try:
         resize(720, 540)
         previous = None
         for name, y in [("buttons", 85), ("wheel", 127), ("gestures", 169), ("profiles", 211), ("device", 253)]:
+            section = "Scroll" if name == "wheel" else name.capitalize()
+            y = nav_y(section, y)
             click(74, y)
             deadline = time.monotonic() + 5
             while time.monotonic() < deadline:
@@ -487,6 +552,7 @@ try:
         print("Visited all five sections at 720 by 540:", theme)
         sys.exit(0)
     profile()
+    action_saved_and_canceled = check_action_selection() if not args.cycles_only else None
     control("mouse_back", "seq-06-cancel")
     for cycle in range(1, 4):
         for tab, frame in [
@@ -558,6 +624,7 @@ try:
         "process_ids": [first, proc.pid],
         "sample_profile": "Preview app",
         "cancel_preserved_sample_config": True,
+        "action_selection_cancel_save_and_restore": action_saved_and_canceled,
         "save_changed_only": "profiles[0].buttons.back",
         "reopened_binding": binding(),
         "draft_m_survived_tab_switch": True if args.bounds.with_name("draft-return.webp").is_file() else None,

@@ -381,10 +381,14 @@ mod device_action_tests {
 }
 
 impl Config {
-    pub fn gestures_for(&self, process: Option<&str>) -> &GestureConfig {
-        let profile = process
+    pub fn profile_for(&self, process: Option<&str>) -> &Profile {
+        process
             .and_then(|name| self.profiles.iter().find(|p| p.matches(name)))
-            .unwrap_or(&self.default_profile);
+            .unwrap_or(&self.default_profile)
+    }
+
+    pub fn gestures_for(&self, process: Option<&str>) -> &GestureConfig {
+        let profile = self.profile_for(process);
         profile.gestures.as_ref().unwrap_or(&self.gestures)
     }
 }

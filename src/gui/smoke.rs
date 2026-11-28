@@ -19,6 +19,7 @@ pub fn run() {
         buttons: ButtonMap::default(),
         gestures: None,
     });
+    config.save().expect("write isolated smoke settings");
     state::init(config);
     macroquad::Window::from_config(
         macroquad::conf::Conf {
@@ -101,6 +102,7 @@ fn assert_panel_fits(ply: &Ply<()>, app: &App) {
         controls.extend(["assign", "cancel_shortcut", "capture"]);
     } else {
         controls.push("picker_search");
+        controls.extend(["save_action", "cancel_action"]);
     }
     for id in controls {
         let b = ply.bounding_box(id).unwrap();
@@ -111,6 +113,15 @@ fn assert_panel_fits(ply: &Ply<()>, app: &App) {
                 && b.y + b.height <= p.y + p.height + 1.0,
             "{id} must fit in the popover: {b:?} in {p:?}"
         );
+    }
+}
+
+async fn choose_first_action(ply: &mut Ply<()>, app: &mut App) {
+    click(ply, app, ("pk", 0)).await;
+    if app.pending_action.is_some() {
+        click(ply, app, "save_action").await;
+    } else {
+        click(ply, app, "cancel_action").await;
     }
 }
 
@@ -298,7 +309,7 @@ async fn check(output: PathBuf) {
     ply.set_text_value("picker_search", "Copy");
     settle(&mut ply, &mut app).await;
     snapshot(&output, "03-profile-search");
-    click(&mut ply, &mut app, ("pk", 0)).await;
+    choose_first_action(&mut ply, &mut app).await;
     assert!(app.picker.is_none());
     let saved = Config::load_strict().unwrap();
     assert_eq!(
@@ -434,7 +445,7 @@ async fn check(output: PathBuf) {
                 snapshot(&output, &format!("family-{slug}-haptic-{theme:?}"));
                 ply.set_text_value("picker_search", "Copy");
                 settle(&mut ply, &mut app).await;
-                click(&mut ply, &mut app, ("pk", 0)).await;
+                choose_first_action(&mut ply, &mut app).await;
                 let saved = Config::load_strict().unwrap();
                 assert_eq!(
                     saved.profiles[0].buttons.controls["01a0"],
@@ -575,7 +586,7 @@ async fn check(output: PathBuf) {
         assert_panel_fits(&ply, &app);
         ply.set_text_value("picker_search", "Copy");
         settle(&mut ply, &mut app).await;
-        click(&mut ply, &mut app, ("pk", 0)).await;
+        choose_first_action(&mut ply, &mut app).await;
         assert!(app.picker.is_none());
     }
     let saved = Config::load_strict().unwrap();
@@ -628,7 +639,7 @@ async fn check(output: PathBuf) {
         assert_panel_fits(&ply, &app);
         ply.set_text_value("picker_search", "Copy");
         settle(&mut ply, &mut app).await;
-        click(&mut ply, &mut app, ("pk", 0)).await;
+        choose_first_action(&mut ply, &mut app).await;
         let saved = Config::load_strict().unwrap();
         assert_eq!(
             saved.profiles[0].buttons.control_action(cid),
@@ -660,7 +671,7 @@ async fn check(output: PathBuf) {
         snapshot(&output, &format!("dpi-{cid:04x}-offline-popover"));
         ply.set_text_value("picker_search", "Disabled");
         settle(&mut ply, &mut app).await;
-        click(&mut ply, &mut app, ("pk", 0)).await;
+        choose_first_action(&mut ply, &mut app).await;
         assert_eq!(
             Config::load_strict().unwrap().profiles[0]
                 .buttons
@@ -670,7 +681,7 @@ async fn check(output: PathBuf) {
         click(&mut ply, &mut app, ("btn_chip", buttons::slot_index(&slot))).await;
         ply.set_text_value("picker_search", "Pass through");
         settle(&mut ply, &mut app).await;
-        click(&mut ply, &mut app, ("pk", 0)).await;
+        choose_first_action(&mut ply, &mut app).await;
         let saved = Config::load_strict().unwrap();
         assert_eq!(
             saved.profiles[0].buttons.control_action(cid),
@@ -711,7 +722,7 @@ async fn check(output: PathBuf) {
     assert!(app.picker == Some(PickerTarget::Button("control_00c4".into())));
     ply.set_text_value("picker_search", "Copy");
     settle(&mut ply, &mut app).await;
-    click(&mut ply, &mut app, ("pk", 0)).await;
+    choose_first_action(&mut ply, &mut app).await;
     snapshot(&output, "14-offline-top-button");
     assert_eq!(
         Config::load_strict().unwrap().profiles[0]
@@ -755,7 +766,18 @@ async fn check(output: PathBuf) {
     settle(&mut ply, &mut app).await;
     assert_panel_fits(&ply, &app);
     snapshot(&output, "15-device-actions");
+    let before_wheel = Config::load_strict().unwrap();
     click(&mut ply, &mut app, "picker_wheel_action").await;
+    assert_eq!(Config::load_strict().unwrap(), before_wheel);
+    app.device_view.device.capabilities.smartshift = false;
+    settle(&mut ply, &mut app).await;
+    assert!(app.pending_action.is_none());
+    click(&mut ply, &mut app, "save_action").await;
+    assert_eq!(Config::load_strict().unwrap(), before_wheel);
+    app.device_view.device.capabilities.smartshift = true;
+    settle(&mut ply, &mut app).await;
+    click(&mut ply, &mut app, "picker_wheel_action").await;
+    click(&mut ply, &mut app, "save_action").await;
     assert!(app.failed_assignment.is_none());
     if app.picker_feedback.is_some() {
         snapshot(&output, "17-wheel-action-feedback");
@@ -772,7 +794,7 @@ async fn check(output: PathBuf) {
     click(&mut ply, &mut app, "picker_speed_setup").await;
     assert!(app.picker_speed_editor);
     snapshot(&output, "16-pointer-speed-editor");
-    click(&mut ply, &mut app, "picker_dpi_action").await;
+    click(&mut ply, &mut app, "save_action").await;
     assert_eq!(
         app.action_for(&PickerTarget::Button("control_00c4".into())),
         Action::ChangePointerSpeed {
@@ -785,7 +807,7 @@ async fn check(output: PathBuf) {
     assert_eq!(app.picker_dpi, [800, 1600]);
     ply.set_text_value("picker_search", "Native action");
     settle(&mut ply, &mut app).await;
-    click(&mut ply, &mut app, ("pk", 0)).await;
+    choose_first_action(&mut ply, &mut app).await;
     assert_eq!(
         app.action_for(&PickerTarget::Button("control_00c4".into())),
         Action::PassThrough
@@ -812,6 +834,7 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         let dir = gallery.join(format!("{theme:?}"));
         std::fs::create_dir_all(&dir).unwrap();
         app.device_view.device = connected.clone();
+        app.device_view.active_profile = Some("Preview app".into());
         if std::env::args().any(|arg| arg == "--more-states") {
             let dir = gallery.join(format!("{theme:?}"));
             std::fs::create_dir_all(&dir).unwrap();
@@ -837,9 +860,15 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         let caption = ply.bounding_box("profile_caption").unwrap();
         let menu = ply.bounding_box("profile_menu").unwrap();
         assert!(
-            menu.y >= caption.y + caption.height,
+            menu.x >= caption.x + caption.width || menu.y >= caption.y + caption.height,
             "Profile menu covers its caption"
         );
+        let mut navigation = String::from("section,y\n");
+        for section in Section::ALL {
+            let b = ply.bounding_box(section.id()).unwrap();
+            navigation.push_str(&format!("{},{}\n", section.label(), b.y + b.height / 2.0));
+        }
+        std::fs::write(dir.join("navigation.csv"), navigation).unwrap();
         snapshot(&dir, "menu");
         let option = ply.bounding_box(("profile_opt", 1)).unwrap();
         std::fs::write(
@@ -855,24 +884,115 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         click(ply, app, "mouse_back").await;
         assert_panel_fits(ply, app);
         snapshot(&dir, "popover");
-        click(ply, app, "picker_close").await;
+        let before_action = Config::load_strict().unwrap();
+        let mut centers = String::from("id,x,y\n");
+        for (label, id) in [
+            ("copy", Id::from(("pk", 2))),
+            ("factory", Id::from(("pk", 0))),
+            ("common", Id::from(("action_category", 0))),
+            ("cancel", Id::from("cancel_action")),
+            ("save", Id::from("save_action")),
+        ] {
+            let rect = ply.bounding_box(id).unwrap();
+            centers.push_str(&format!(
+                "{label},{},{}\n",
+                rect.x + rect.width / 2.0,
+                rect.y + rect.height / 2.0
+            ));
+        }
+        std::fs::write(dir.join("action-controls.csv"), centers).unwrap();
+        let copy = Action::key(&[Modifier::Ctrl], 0x43);
+        click(ply, app, ("pk", 2)).await;
+        assert_eq!(app.pending_action, Some(copy.clone()));
+        assert_eq!(Config::load_strict().unwrap(), before_action);
+        snapshot(&dir, "action-draft");
+        click(ply, app, "cancel_action").await;
+        assert!(app.picker.is_none());
+        assert_eq!(Config::load_strict().unwrap(), before_action);
+        click(ply, app, "mouse_back").await;
+        click(ply, app, ("pk", 2)).await;
+        click(ply, app, "save_action").await;
+        let mut expected = before_action.clone();
+        expected.profiles[0].buttons.back = copy;
+        assert_eq!(Config::load_strict().unwrap(), expected);
+        snapshot(&dir, "action-saved");
+        click(ply, app, "mouse_back").await;
+        click(ply, app, ("action_category", 0)).await;
+        click(ply, app, ("pk", 0)).await;
+        click(ply, app, "save_action").await;
+        assert_eq!(Config::load_strict().unwrap(), before_action);
+        app.saved_notice = None;
         click(ply, app, "mouse_mode").await;
         snapshot(&dir, "wheel-actions");
+        let wheel_before = Config::load_strict().unwrap();
+        click(ply, app, "picker_wheel_action").await;
+        assert_eq!(app.pending_action, Some(Action::ShiftWheelMode));
+        snapshot(&dir, "wheel-draft");
+        click(ply, app, "cancel_action").await;
+        assert_eq!(Config::load_strict().unwrap(), wheel_before);
+        click(ply, app, "mouse_mode").await;
+        let original_search = ply.bounding_box("picker_search").unwrap();
+        let original_footer = ply.bounding_box("save_action").unwrap();
         click(ply, app, "browse_wheel_actions").await;
         assert!(app.wheel_presets);
         snapshot(&dir, "wheel-presets");
-        click(ply, app, "browse_wheel_actions").await;
+        let preset_back = ply.bounding_box("mouse_actions_back").unwrap();
+        click(ply, app, "mouse_actions_back").await;
         assert!(!app.wheel_presets);
         click(ply, app, "picker_speed_setup").await;
         snapshot(&dir, "dpi-editor");
+        chrome::make_frameless(720.0, 360.0);
+        settle(ply, app).await;
+        assert_panel_fits(ply, app);
+        let footer = ply.bounding_box("save_action").unwrap();
+        for id in [
+            Id::from(("dpi_value", 0)),
+            Id::from(("dpi_value", 1)),
+            Id::from("dpi_outlook"),
+        ] {
+            let rect = ply.bounding_box(id).unwrap();
+            assert!(
+                rect.y + rect.height <= footer.y - 4.0,
+                "Speed editor clipped above Save: {rect:?}, {footer:?}"
+            );
+        }
+        snapshot(&dir, "dpi-compact");
+        chrome::make_frameless(DESIGN_W, DESIGN_H);
+        settle(ply, app).await;
+        let speed_search = ply.bounding_box("picker_search").unwrap();
+        let speed_footer = ply.bounding_box("save_action").unwrap();
+        assert_eq!(
+            (original_search.x, original_search.y),
+            (speed_search.x, speed_search.y)
+        );
+        assert_eq!(
+            (original_footer.x, original_footer.y),
+            (speed_footer.x, speed_footer.y)
+        );
         ply.set_text_value(("dpi_value", 0), "9999");
         settle(ply, app).await;
-        click(ply, app, "picker_dpi_action").await;
+        click(ply, app, "save_action").await;
         assert!(app.picker_speed_editor && app.picker.is_some());
         ply.set_text_value(("dpi_value", 0), "1000");
         settle(ply, app).await;
         assert_eq!(app.picker_dpi[0], 1000);
-        click(ply, app, "picker_speed_back").await;
+        let speed_back = ply.bounding_box("mouse_actions_back").unwrap();
+        assert_eq!(
+            (
+                preset_back.x,
+                preset_back.y,
+                preset_back.width,
+                preset_back.height
+            ),
+            (
+                speed_back.x,
+                speed_back.y,
+                speed_back.width,
+                speed_back.height
+            ),
+            "Back moved between wheel subpages"
+        );
+        click(ply, app, "mouse_actions_back").await;
         click(ply, app, "picker_close").await;
         click(ply, app, "mouse_back").await;
         click(ply, app, ("action_category", 4)).await;
@@ -925,7 +1045,26 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
                     .is_none());
             }
             if section == Section::Scroll {
+                let before = ply.bounding_box("sw_invert").unwrap();
+                let hires_before = ply.bounding_box("sw_hires").unwrap();
                 click(ply, app, ("mode", 0)).await;
+                let hires_after = ply.bounding_box("sw_hires").unwrap();
+                assert_eq!(
+                    (hires_before.x, hires_before.y),
+                    (hires_after.x, hires_after.y)
+                );
+                let threshold = app.draft.device.smartshift_threshold;
+                click(ply, app, "flick").await;
+                assert_eq!(
+                    app.draft.device.smartshift_threshold, threshold,
+                    "Disabled flick slider accepted an edit"
+                );
+                let after = ply.bounding_box("sw_invert").unwrap();
+                assert_eq!(
+                    (before.x, before.y),
+                    (after.x, after.y),
+                    "Wheel mode moved the direction switch"
+                );
                 assert_eq!(
                     Config::load_strict().unwrap().device.smartshift,
                     crate::config::SmartShiftMode::AlwaysRatchet
@@ -937,6 +1076,13 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
                 );
             }
             if section == Section::Profiles {
+                let before = Config::load_strict().unwrap();
+                click(ply, app, ("profile_buttons", 1)).await;
+                assert_eq!(app.section, Section::Buttons);
+                assert_eq!(app.selected_profile, 1);
+                assert_eq!(Config::load_strict().unwrap(), before);
+                snapshot(&dir, "profile-buttons");
+                click(ply, app, "nav_profiles").await;
                 click(ply, app, ("p_pick", 1)).await;
                 snapshot(&dir, "window-pick");
                 let original_deadline = app.pick_deadline.unwrap();
@@ -952,10 +1098,32 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         click(ply, app, "hidpp_head").await;
         ply.set_scroll_position("settings_content", (0.0, 0.0));
         settle(ply, app).await;
+        for bounds in ["titlebar", "copy_device_report", "copy_feature_ids"] {
+            let box_ = ply.bounding_box(bounds).unwrap();
+            assert!(
+                box_.x + box_.width <= screen_width() + 0.25,
+                "Diagnostics clipped {bounds}"
+            );
+        }
         snapshot(&dir, "diagnostics");
         ply.set_scroll_position("settings_content", (0.0, 10000.0));
         settle(ply, app).await;
         snapshot(&dir, "diagnostics-lower");
+        chrome::make_frameless(720.0, 540.0);
+        ply.set_scroll_position("settings_content", (0.0, 0.0));
+        settle(ply, app).await;
+        for id in ["copy_device_report", "copy_feature_ids"] {
+            let rect = ply.bounding_box(id).unwrap();
+            assert!(
+                rect.x >= 0.0
+                    && rect.y >= 0.0
+                    && rect.x + rect.width <= screen_width() + 0.25
+                    && rect.y + rect.height <= screen_height(),
+                "Diagnostics copy action outside compact window"
+            );
+        }
+        snapshot(&dir, "diagnostics-compact");
+        chrome::make_frameless(DESIGN_W, DESIGN_H);
         ply.set_scroll_position("settings_content", (0.0, 0.0));
         settle(ply, app).await;
         click(ply, app, "diagnostics_back").await;
@@ -985,6 +1153,7 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         app.conflict_dismissed = false;
         app.conflict_names = vec!["Logi Options+".into()];
         settle(ply, app).await;
+        let warned = ply.bounding_box(("mouse_label", 0)).unwrap();
         snapshot(&dir, "alert");
         app.kill_outcome = Some(crate::conflicts::KillOutcome {
             killed: 0,
@@ -994,6 +1163,12 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         snapshot(&dir, "paused-quit-error");
         click(ply, app, "banner_ignore").await;
         assert!(app.conflict_dismissed && app.device_view.paused);
+        let dismissed = ply.bounding_box(("mouse_label", 0)).unwrap();
+        assert_eq!(
+            (warned.x, warned.y),
+            (dismissed.x, dismissed.y),
+            "Dismissing a driver warning moved the first mapping"
+        );
         snapshot(&dir, "paused-dismissed");
         let resume = ply.bounding_box("resume_remapping").unwrap();
         std::fs::write(
@@ -1026,6 +1201,15 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         settle(ply, app).await;
         click(ply, app, "resume_remapping").await;
         assert!(matches!(app.resume, ResumeState::Failed));
+        let help = ply.bounding_box("resume_help").unwrap();
+        std::fs::write(
+            dir.join("resume-help.csv"),
+            format!(
+                "x,y,w,h\n{},{},{},{}\n",
+                help.x, help.y, help.width, help.height
+            ),
+        )
+        .unwrap();
         snapshot(&dir, "resume-error");
         let retry_event = crate::single_instance::ResumeEvent::create().unwrap();
         click(ply, app, "resume_remapping").await;
@@ -1035,7 +1219,19 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
             ..app.device_view.clone()
         });
         settle(ply, app).await;
+        let show = ply.bounding_box("show_resume_steps").unwrap();
+        std::fs::write(
+            dir.join("tray-help-button.csv"),
+            format!(
+                "x,y\n{},{}\n",
+                show.x + show.width / 2.0,
+                show.y + show.height / 2.0
+            ),
+        )
+        .unwrap();
+        click(ply, app, "show_resume_steps").await;
         snapshot(&dir, "resume-legacy");
+        click(ply, app, "return_from_tray_help").await;
         chrome::make_frameless(720.0, 360.0);
         settle(ply, app).await;
         let card = ply.bounding_box("rail_device_status").unwrap();
@@ -1045,10 +1241,33 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         );
         snapshot(&dir, "resume-legacy-compact");
         assert!(!app.resume_steps_visible());
+        let mapping = ("btn_chip", buttons::slot_index("forward"));
+        let before = ply.bounding_box(mapping).unwrap();
+        let show = ply.bounding_box("show_resume_steps").unwrap();
         click(ply, app, "show_resume_steps").await;
+        let hide = ply.bounding_box("hide_resume_steps").unwrap();
+        assert_eq!(
+            (show.x, show.y, show.width, show.height),
+            (hide.x, hide.y, hide.width, hide.height)
+        );
+        let help = ply.bounding_box("resume_help").unwrap();
+        let title = ply.bounding_box("titlebar").unwrap();
+        assert!(
+            help.x >= super::rail_width()
+                && help.y >= title.y + title.height
+                && help.x + help.width <= screen_width() + 0.25
+                && help.y + help.height <= screen_height() + 0.25,
+            "Tray help must fit inside the compact content pane"
+        );
         assert!(app.resume_steps_visible());
         snapshot(&dir, "resume-compact-steps");
         click(ply, app, "hide_resume_steps").await;
+        let after = ply.bounding_box(mapping).unwrap();
+        assert_eq!(
+            (before.x, before.y, before.width, before.height),
+            (after.x, after.y, after.width, after.height),
+            "Returning from tray help moved the compact mapping"
+        );
         assert!(!app.resume_steps_visible());
         let target = PickerTarget::Button("back".into());
         let original = app.action_for(&target);
@@ -1069,10 +1288,25 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         let forward = ("btn_chip", buttons::slot_index("forward"));
         let row = ply.bounding_box(forward).unwrap();
         let caption = ply.bounding_box("profile_caption").unwrap();
-        assert!(caption.y + caption.height < row.y && row.y + row.height <= screen_height());
+        assert!(
+            caption.y + caption.height < row.y && row.y + row.height <= screen_height(),
+            "Forward row {row:?} / caption {caption:?} / viewport {} x {}",
+            screen_width(),
+            screen_height()
+        );
         assert!(app.saved_notice.is_some());
         click(ply, app, forward).await;
         assert!(app.picker == Some(PickerTarget::Button("forward".into())));
+        let viewport = ply.bounding_box(("category_results", 0)).unwrap();
+        for i in 0..6 {
+            let category = ply.bounding_box(("action_category", i)).unwrap();
+            assert!(category.y + category.height <= viewport.y + viewport.height);
+            let item = ply.bounding_box(("pk", i)).unwrap();
+            assert!(
+                item.y >= viewport.y && item.y + item.height <= viewport.y + viewport.height,
+                "Short action picker clips choice {i}: {item:?} in {viewport:?}"
+            );
+        }
         snapshot(&dir, "next-mapping");
         click(ply, app, "picker_close").await;
         let after = ply.bounding_box(forward).unwrap();
@@ -1102,7 +1336,7 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
             .unwrap();
         ply.set_text_value("picker_search", "Copy");
         settle(ply, app).await;
-        click(ply, app, ("pk", 0)).await;
+        choose_first_action(ply, app).await;
         assert!(app.failed_assignment.is_some());
         assert_eq!(app.action_for(&target), original);
         snapshot(&dir, "save-error");
@@ -1326,6 +1560,11 @@ async fn extra_states(
             slot: "control_01ff".into(),
         });
     settle(ply, app).await;
+    let gestures = ply.bounding_box("mouse_gestures").unwrap();
+    assert!(
+        gestures.y + gestures.height <= screen_height(),
+        "Extra button pushed Configure gestures below the window"
+    );
     snapshot(dir, "extra-button");
     click(ply, app, ("mouse_extra", 0x01ff + 3)).await;
     assert!(app.picker == Some(PickerTarget::Button("control_01ff".into())));
@@ -1373,10 +1612,27 @@ async fn extra_states(
     settle(ply, app).await;
     snapshot(dir, "offline-diagram");
     app.device_view.device = connected.clone();
-    app.draft.gestures.enabled = false;
+    app.draft.gestures.enabled = true;
     app.section = Section::Gestures;
     settle(ply, app).await;
+    let tap = ply.bounding_box(("g_chip", 0)).unwrap();
+    click(ply, app, "sw_gestures").await;
+    assert!(!app.selected_gestures().enabled);
+    let disabled_tap = ply.bounding_box(("g_chip", 0)).unwrap();
+    assert_eq!(
+        (tap.x, tap.y),
+        (disabled_tap.x, disabled_tap.y),
+        "Turning off gestures moved the tap assignment"
+    );
     snapshot(dir, "gestures-off");
+    let saved_before = Config::load_strict().unwrap();
+    ply.set_scroll_position("settings_content", (0.0, 10000.0));
+    settle(ply, app).await;
+    click(ply, app, "threshold").await;
+    assert_eq!(Config::load_strict().unwrap(), saved_before);
+    snapshot(dir, "gesture-saved-distance");
+    ply.set_scroll_position("settings_content", (0.0, 0.0));
+    settle(ply, app).await;
     app.draft.gestures.enabled = true;
     app.draft.device.hires_scroll = false;
     app.draft.device.smartshift = crate::config::SmartShiftMode::AlwaysRatchet;
@@ -1458,6 +1714,17 @@ async fn extra_states(
     chrome::make_frameless(720.0, 540.0);
     settle(ply, app).await;
     snapshot(dir, "compact");
+    let first_row = ply.bounding_box(("btn_chip", 0)).unwrap();
+    click(ply, app, "compact_diagram_toggle").await;
+    assert!(app.compact_diagram);
+    snapshot(dir, "compact-diagram");
+    click(ply, app, "mouse_back").await;
+    assert!(app.picker == Some(PickerTarget::Button("back".into())));
+    assert_panel_fits(ply, app);
+    click(ply, app, "picker_close").await;
+    click(ply, app, "compact_diagram_toggle").await;
+    let returned = ply.bounding_box(("btn_chip", 0)).unwrap();
+    assert_eq!((first_row.x, first_row.y), (returned.x, returned.y));
     click(ply, app, "mouse_gestures").await;
     assert_eq!(app.section, Section::Gestures);
     for slot in 0..5 {
@@ -1499,7 +1766,10 @@ async fn extra_states(
     let title = ply.bounding_box(("rename_profile", 2)).unwrap();
     let move_up = ply.bounding_box(("p_up", 2)).unwrap();
     let delete = ply.bounding_box(("p_del", 2)).unwrap();
-    assert!(title.y + title.height <= move_up.y);
+    assert!(
+        title.x + title.width <= move_up.x + 0.25,
+        "Long profile name overlaps priority commands"
+    );
     assert!(delete.x + delete.width <= screen_width());
     click(ply, app, ("rename_profile", 2)).await;
     assert_eq!(

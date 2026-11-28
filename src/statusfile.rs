@@ -13,6 +13,8 @@ pub struct SharedStatus {
     pub paused: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resume_pid: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub active_profile: Option<String>,
 }
 
 fn path() -> Option<PathBuf> {

@@ -1,0 +1,72 @@
+{
+  "before": "One round-39 Dark retry missed its test event. The same test passed on a fresh run. The old titlebar dispatched HTCAPTION for clicks within its command buttons.",
+  "change": "Only presses on the brand and empty titlebar space start a system drag.",
+  "runs": [
+    {
+      "theme": "Dark",
+      "cycle": 1,
+      "observed": [
+        "06-paused-settings",
+        "07-resumed-settings",
+        "08-resume-failed",
+        "08b-retry-confirmed",
+        "09-tray-fallback"
+      ]
+    },
+    {
+      "theme": "Light",
+      "cycle": 1,
+      "observed": [
+        "06-paused-settings",
+        "07-resumed-settings",
+        "08-resume-failed",
+        "08b-retry-confirmed",
+        "09-tray-fallback"
+      ]
+    },
+    {
+      "theme": "Dark",
+      "cycle": 2,
+      "observed": [
+        "06-paused-settings",
+        "07-resumed-settings",
+        "08-resume-failed",
+        "08b-retry-confirmed",
+        "09-tray-fallback"
+      ]
+    },
+    {
+      "theme": "Light",
+      "cycle": 2,
+      "observed": [
+        "06-paused-settings",
+        "07-resumed-settings",
+        "08-resume-failed",
+        "08b-retry-confirmed",
+        "09-tray-fallback"
+      ]
+    },
+    {
+      "theme": "Dark",
+      "cycle": 3,
+      "observed": [
+        "06-paused-settings",
+        "07-resumed-settings",
+        "08-resume-failed",
+        "08b-retry-confirmed",
+        "09-tray-fallback"
+      ]
+    },
+    {
+      "theme": "Light",
+      "cycle": 3,
+      "observed": [
+        "06-paused-settings",
+        "07-resumed-settings",
+        "08-resume-failed",
+        "08b-retry-confirmed",
+        "09-tray-fallback"
+      ]
+    }
+  ]
+}

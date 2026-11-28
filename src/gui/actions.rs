@@ -55,6 +55,16 @@ pub struct Preset {
     pub action: fn() -> Action,
 }
 
+impl Preset {
+    pub fn display_label(&self) -> &'static str {
+        match self.label {
+            "Back" => "Back shortcut",
+            "Forward" => "Forward shortcut",
+            label => label,
+        }
+    }
+}
+
 /// The preset list, transcribed from the design's `this.actions`.
 pub fn presets() -> Vec<Preset> {
     macro_rules! p {
@@ -131,7 +141,11 @@ pub fn key_name(code: u16) -> String {
 
 /// Describe the native event or firmware behavior when a mapped control passes through.
 pub fn assignment(app: &super::App, target: &super::PickerTarget) -> Display {
-    let mut binding = display(&app.action_for(target));
+    display_for(app, target, &app.action_for(target))
+}
+
+pub fn display_for(app: &super::App, target: &super::PickerTarget, action: &Action) -> Display {
+    let mut binding = display(action);
     if let (Kind::PassThrough, super::PickerTarget::Button(slot)) = (&binding.kind, target) {
         let label = match slot.as_str() {
             "back" => "Send Back to the app",
@@ -179,7 +193,7 @@ pub fn display(action: &Action) -> Display {
         Action::Key { .. } => {
             if let Some(p) = presets().into_iter().find(|p| &(p.action)() == action) {
                 return Display {
-                    label: p.label.into(),
+                    label: p.display_label().into(),
                     keys: p.keys.iter().map(|s| s.to_string()).collect(),
                     kind: Kind::Preset,
                 };

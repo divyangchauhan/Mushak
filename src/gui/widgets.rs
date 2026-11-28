@@ -19,12 +19,14 @@ pub fn px(size: f32) -> u16 {
 
 /// "Remapping paused" pill in the title bar.
 pub fn paused_status(ui: &mut Ui2, app: &mut App) {
-    let pal = &app.pal;
+    let pal = app.pal;
     let pid = app.device_view.resume_pid;
     let failed = matches!(app.resume, super::ResumeState::Failed);
-    let can_show_steps = (failed || pid.is_none()) && !app.resume_steps_visible();
+    let has_steps = failed || pid.is_none();
+    let expanded = app.resume_steps_visible();
     let bg = Palette::mix(pal.danger, 15.0, pal.win);
     ui.element()
+        .id("pause_state")
         .height(fixed!(28.0))
         .corner_radius(8.0)
         .background_color(bg)
@@ -44,23 +46,78 @@ pub fn paused_status(ui: &mut Ui2, app: &mut App) {
             ui.text("Remapping paused", |t| {
                 t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
             });
-            if let Some(pid) = pid {
-                let label = if failed { "Retry" } else { "Resume" };
-                if pause_command(ui, pal, "resume_remapping", label) {
-                    if crate::single_instance::ResumeEvent::request(pid).is_ok() {
-                        app.resume = super::ResumeState::Requested {
-                            pid,
-                            at: std::time::Instant::now(),
-                        };
-                    } else {
-                        app.resume = super::ResumeState::Failed;
-                        app.show_resume_steps = Some(true);
-                    }
+            resume_button(ui, app);
+            if has_steps {
+                let (id, label) = if expanded {
+                    ("hide_resume_steps", "Close help")
+                } else {
+                    ("show_resume_steps", "Tray help")
+                };
+                if pause_command(ui, &pal, id, label) {
+                    app.show_resume_steps = Some(!expanded);
                 }
             }
-            if can_show_steps && pause_command(ui, pal, "show_resume_steps", "Tray steps") {
+        });
+}
+
+fn resume_button(ui: &mut Ui2, app: &mut App) {
+    if let Some(pid) = app.device_view.resume_pid {
+        let label = if matches!(app.resume, super::ResumeState::Failed) {
+            "Retry"
+        } else {
+            "Resume"
+        };
+        if pause_command(ui, &app.pal, "resume_remapping", label) {
+            if crate::single_instance::ResumeEvent::request(pid).is_ok() {
+                app.resume = super::ResumeState::Requested {
+                    pid,
+                    at: std::time::Instant::now(),
+                };
+            } else {
+                app.resume = super::ResumeState::Failed;
                 app.show_resume_steps = Some(true);
             }
+        }
+    }
+}
+
+pub(super) fn resume_help(ui: &mut Ui2, app: &mut App) {
+    let pal = app.pal;
+    let failed = matches!(app.resume, super::ResumeState::Failed);
+    ui.element()
+        .id("resume_help")
+        .width(grow!())
+        .height(fit!())
+        .layout(|l| l.direction(TopToBottom).gap(14))
+        .children(|ui| {
+            let back = format!("Back to {}", app.section.label());
+            if pause_command(ui, &pal, "return_from_tray_help", &back) {
+                app.show_resume_steps = Some(false);
+            }
+            heading(ui, &pal,
+                if failed { "Resume failed" } else { "Resume from the tray" },
+                if failed { "Mushak is still paused. Use Retry or resume remapping from the tray." }
+                else { "Your saved button assignments will apply when remapping resumes." });
+            card(ui, &pal)
+                .layout(|l| l.direction(TopToBottom).gap(12).padding((16,18,16,18)))
+                .children(|ui| {
+                    for (step, instruction) in [
+                        ("1", "Right-click Mushak by the Windows clock. Check hidden icons if needed."),
+                        ("2", "Choose Resume remapping."),
+                    ] {
+                        ui.element().width(grow!()).height(fit!())
+                            .layout(|l| l.direction(LeftToRight).gap(12).align(Left,CenterY))
+                            .children(|ui| {
+                                ui.element().width(fixed!(26.0)).height(fixed!(26.0)).corner_radius(13.0)
+                                    .background_color(pal.s2)
+                                    .layout(|l| l.align(CenterX, CenterY))
+                                    .children(|ui| { ui.text(step, |t| t.font(&fonts::SANS_BOLD).font_size(14).color(pal.accent)); });
+                                ui.element().width(grow!(0.0)).height(fit!()).children(|ui| {
+                                    ui.text(instruction, |t| t.font(&fonts::SANS_MEDIUM).font_size(15).color(pal.text));
+                                });
+                            });
+                    }
+                });
         });
 }
 
@@ -69,6 +126,11 @@ fn pause_command(ui: &mut Ui2, pal: &Palette, id: &'static str, label: &str) -> 
     let mut clicked = false;
     ui.element()
         .id(id)
+        .width(if matches!(id, "hide_resume_steps" | "show_resume_steps") {
+            fixed!(81.0)
+        } else {
+            fit!()
+        })
         .height(fixed!(26.0))
         .corner_radius(6.0)
         .background_color(if hovered { pal.s2 } else { pal.surface })
@@ -82,34 +144,6 @@ fn pause_command(ui: &mut Ui2, pal: &Palette, id: &'static str, label: &str) -> 
             clicked = ui.just_pressed();
         });
     clicked
-}
-
-/// Keep the tray steps visible while Settings cannot send the resume command.
-pub fn resume_help(ui: &mut Ui2, pal: &Palette, failed: bool) -> bool {
-    let mut hide = false;
-    let title = if failed {
-        "Resume unconfirmed"
-    } else {
-        "Resume from the tray"
-    };
-    ui.element()
-        .id("resume_help")
-        .width(grow!())
-        .height(fit!(46.0))
-        .background_color(Palette::mix(pal.warn, 9.0, pal.win))
-        .border(|b| b.bottom(1).color(pal.line_strong))
-        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(10).padding((5, 14, 5, 14)))
-        .children(|ui| {
-            icon(ui, &icons::MODAK_PAUSED, 24.0, pal.text);
-            ui.element().width(grow!()).height(fit!())
-                .layout(|l| l.direction(TopToBottom).gap(3)).children(|ui| {
-                    ui.text(title, |t| t.font(&fonts::SANS_BOLD).font_size(15).color(pal.text));
-                    ui.text("By the Windows clock, right-click Mushak and choose Resume remapping. Use Show hidden icons if needed.",
-                        |t| t.font(&fonts::SANS).font_size(14).color(pal.text));
-                });
-            hide = pause_command(ui, pal, "hide_resume_steps", "Hide steps");
-        });
-    hide
 }
 
 /// A tinted icon. Ply multiplies the texture by the element's background
@@ -200,7 +234,7 @@ pub fn conflict_banner(ui: &mut Ui2, app: &mut App) {
         .width(grow!())
         .height(fit!())
         .background_color(bg)
-        .border(|b| b.bottom(1).color(border))
+        .border(|b| b.top(1).color(border))
         .layout(|l| {
             l.direction(LeftToRight)
                 .align(Left, CenterY)
@@ -221,7 +255,7 @@ pub fn conflict_banner(ui: &mut Ui2, app: &mut App) {
                         ),
                         None => (
                             format!("{names} is running"),
-                            "The other mouse app can intercept button presses. Quit it to use your mappings.".into(),
+                            "The other app can intercept button presses. Quit it, then use Resume if Mushak is paused.".into(),
                         ),
                     };
                     ui.element()
@@ -527,9 +561,23 @@ pub fn slider(
     max: i64,
     step: i64,
 ) -> Option<i64> {
+    slider_enabled(ui, pal, id, value, min..=max, step, true)
+}
+
+pub fn slider_enabled(
+    ui: &mut Ui2,
+    pal: &Palette,
+    id: &'static str,
+    value: i64,
+    range: std::ops::RangeInclusive<i64>,
+    step: i64,
+    enabled: bool,
+) -> Option<i64> {
+    let (min, max) = range.into_inner();
+    let ink = if enabled { pal.accent } else { pal.line_strong };
     let mut out = None;
     let frac = ((value - min) as f32 / (max - min).max(1) as f32).clamp(0.0, 1.0);
-    let active = ui.is_pressed(id);
+    let active = enabled && ui.is_pressed(id);
 
     // Pointer x within the track, resolved from last frame's geometry.
     if active {
@@ -565,15 +613,15 @@ pub fn slider(
                         .width(Sizing::Percent(frac.max(0.001)))
                         .height(fixed!(4.0))
                         .corner_radius(2.0)
-                        .background_color(pal.accent)
+                        .background_color(ink)
                         .layout(|l| l.direction(LeftToRight).align(Right, CenterY))
                         .children(|ui| {
                             // Knob rides the end of the fill.
                             ui.element()
-                                .width(fixed!(14.0))
-                                .height(fixed!(14.0))
-                                .corner_radius(99.0)
-                                .background_color(pal.accent)
+                                .width(fixed!(if enabled { 14.0 } else { 3.0 }))
+                                .height(fixed!(if enabled { 14.0 } else { 8.0 }))
+                                .corner_radius(if enabled { 7.0 } else { 1.0 })
+                                .background_color(ink)
                                 .empty();
                         });
                 });

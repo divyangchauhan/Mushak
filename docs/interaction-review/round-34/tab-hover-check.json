@@ -1,0 +1,33 @@
+{
+  "original_difference_xyxy": [
+    664,
+    451,
+    931,
+    489
+  ],
+  "observation": "Only the Paste row showed the pointer hover treatment and Assign now. The tab, editor, diagram and footer stayed in place.",
+  "repeat": {
+    "preset_tab": {
+      "raw_difference_bounds": [
+        null,
+        null
+      ],
+      "pixel_sha256": [
+        "6fc20c0ef74acbd4a6040a08225ef19a51c5058c8ecf29aa7e7da1ce4cac1a7f",
+        "6fc20c0ef74acbd4a6040a08225ef19a51c5058c8ecf29aa7e7da1ce4cac1a7f",
+        "6fc20c0ef74acbd4a6040a08225ef19a51c5058c8ecf29aa7e7da1ce4cac1a7f"
+      ]
+    },
+    "shortcut_tab": {
+      "raw_difference_bounds": [
+        null,
+        null
+      ],
+      "pixel_sha256": [
+        "c65fd5aeaf1b778ac34971277e072d080033c04a9de2869d82a8a2eeb69dd6a3",
+        "c65fd5aeaf1b778ac34971277e072d080033c04a9de2869d82a8a2eeb69dd6a3",
+        "c65fd5aeaf1b778ac34971277e072d080033c04a9de2869d82a8a2eeb69dd6a3"
+      ]
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "commit": "71ee0175a769dcd4a25067533172d95d3553d1bd",
+  "release_sha256": "71879dd846aa72ad102834ca2854497e0a0cc14768fb757b82374c36990e9842",
+  "tests_passed": 62,
+  "review_input_frames": 194,
+  "themes": [
+    "Dark",
+    "Light"
+  ],
+  "host_display_scale_percent": 200,
+  "native_restart": {
+    "display_scale": 2.0,
+    "resume_command_received_by_test_process": true,
+    "process_ids": [
+      51240,
+      54728
+    ],
+    "sample_profile": "Preview app",
+    "cancel_preserved_sample_config": true,
+    "action_selection_cancel_save_and_restore": true,
+    "save_changed_only": "profiles[0].buttons.back",
+    "reopened_binding": {
+      "kind": "Key",
+      "mods": [],
+      "vk": 75
+    },
+    "draft_m_survived_tab_switch": true
+  }
+}

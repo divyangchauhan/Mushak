@@ -91,11 +91,6 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         .children(|ui| {
             for i in (1..count).chain(std::iter::once(0)) {
                 let locked = i == 0;
-                // At compact width a middle profile can have three editing commands.
-                // Give its title room to wrap above those commands.
-                let middle = i > 1 && i + 1 < count;
-                let separate_controls =
-                    screen_width() < 840.0 && (middle || names[i].chars().count() > 18);
                 let mut row_actions = |ui: &mut Ui2, app: &App| {
                     if i > 1 && profile_action(ui, app, ("p_up", i as u32), &icons::ARROW_UP) {
                         move_up = Some(i);
@@ -173,11 +168,13 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                         });
                                         if !locked {
                                             widgets::icon(ui, &icons::CAT_EDIT, 16.0, pal.muted);
-                                            ui.text("Rename", |t| {
-                                                t.font(&fonts::SANS_MEDIUM)
-                                                    .font_size(13)
-                                                    .color(pal.muted)
-                                            });
+                                            if screen_width() >= 840.0 {
+                                                ui.text("Rename", |t| {
+                                                    t.font(&fonts::SANS_MEDIUM)
+                                                        .font_size(13)
+                                                        .color(pal.muted)
+                                                });
+                                            }
                                             if ui.just_pressed() {
                                                 app.renaming_profile = Some(i);
                                                 app.profile_name_error = None;
@@ -192,6 +189,9 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                         }
                                     });
                                 if locked {
+                                    if picking.is_none() {
+                                        edit_buttons_link(ui, app, i);
+                                    }
                                     ui.element()
                                         .height(fixed!(22.0))
                                         .corner_radius(6.0)
@@ -204,19 +204,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                                     .color(pal.faint)
                                             });
                                         });
-                                } else if !separate_controls {
+                                } else {
                                     row_actions(ui, app);
                                 }
                             });
 
-                        if separate_controls && !locked {
-                            ui.element().height(fixed!(5.0)).empty();
-                            ui.element()
-                                .width(grow!())
-                                .height(fit!())
-                                .layout(|l| l.direction(LeftToRight).gap(8).align(Left, CenterY))
-                                .children(|ui| row_actions(ui, app));
-                        }
                         if app.renaming_profile == Some(i) {
                             if let Some(message) = app.profile_name_error {
                                 ui.text(message, |t| {
@@ -240,14 +232,33 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         ui.element().width(grow!()).height(fixed!(12.0)).empty();
                         let waiting = picking == Some(i);
                         let caption = if waiting {
-                            "Switch to the app window you want to add"
+                            "Switch windows. Mushak adds the active app when the timer ends."
                         } else {
                             "Apps using this profile"
                         };
                         if waiting {
-                            ui.text(&format!("{caption} · {secs_left}s"), |t| {
-                                t.font(&fonts::SANS_BOLD).font_size(15).color(pal.text)
-                            });
+                            ui.element()
+                                .width(grow!())
+                                .height(fit!())
+                                .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(9))
+                                .children(|ui| {
+                                    ui.element()
+                                        .width(fixed!(46.0))
+                                        .height(fixed!(28.0))
+                                        .corner_radius(7.0)
+                                        .background_color(pal.accent)
+                                        .layout(|l| l.align(CenterX, CenterY))
+                                        .children(|ui| {
+                                            ui.text(&format!("{secs_left}s"), |t| {
+                                                t.font(&fonts::MONO_BOLD)
+                                                    .font_size(15)
+                                                    .color(pal.accent_ink)
+                                            });
+                                        });
+                                    ui.text(caption, |t| {
+                                        t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
+                                    });
+                                });
                         } else {
                             widgets::eyebrow(ui, &pal, caption);
                         }
@@ -312,7 +323,8 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                         .id("extend_window_pick")
                                         .height(fixed!(28.0))
                                         .corner_radius(8.0)
-                                        .background_color(pal.s2)
+                                        .background_color(pal.surface)
+                                        .border(|b| b.all(1).color(pal.line_strong))
                                         .accessibility(|a| a.button("Add 6 seconds"))
                                         .layout(|l| {
                                             l.direction(LeftToRight)
@@ -321,8 +333,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                                 .padding((0, 8, 0, 8))
                                         })
                                         .children(|ui| {
-                                            widgets::icon(ui, &icons::PLUS, 12.0, pal.text);
-                                            ui.text("6 seconds", |t| {
+                                            ui.text("Add 6 seconds", |t| {
                                                 t.font(&fonts::SANS_SEMIBOLD)
                                                     .font_size(13)
                                                     .color(pal.text)
@@ -382,6 +393,9 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                                             },
                                         );
                                     });
+                                if picking.is_none() {
+                                    edit_buttons_link(ui, app, i);
+                                }
                             });
                     });
             }
@@ -457,6 +471,37 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     }
 }
 
+fn edit_buttons_link(ui: &mut Ui2, app: &mut App, index: usize) {
+    if !super::Section::Buttons.available(&app.device_view.device) {
+        return;
+    }
+    let pal = app.pal;
+    ui.element()
+        .id(("profile_buttons", index as u32))
+        .height(fixed!(28.0))
+        .corner_radius(7.0)
+        .background_color(pal.s2)
+        .accessibility(|a| a.button("Edit button mappings"))
+        .layout(|l| {
+            l.direction(LeftToRight)
+                .align(Left, CenterY)
+                .gap(5)
+                .padding((0, 9, 0, 9))
+        })
+        .children(|ui| {
+            widgets::icon(ui, &icons::NAV_BUTTONS, 14.0, pal.accent);
+            ui.text("Edit buttons", |t| {
+                t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
+            });
+            if ui.just_pressed() {
+                app.selected_profile = index;
+                app.section = super::Section::Buttons;
+                app.profile_menu_open = false;
+                ui.set_scroll_position("settings_content", (0.0, 0.0));
+            }
+        });
+}
+
 fn profile_name_editor(ui: &mut Ui2, app: &mut App, index: usize) {
     let pal = app.pal;
     ui.element()
@@ -524,6 +569,16 @@ fn profile_action(
         "p_down" => "Move down",
         _ => "Delete profile",
     };
+    let visible_label = if screen_width() < 840.0 {
+        match id.0 {
+            "p_up" => "Up",
+            "p_down" => "Down",
+            "p_del" => "Delete",
+            _ => label,
+        }
+    } else {
+        label
+    };
     let destructive = id.0 == "p_del";
     let primary = id.0 == "save_profile_name";
     let ink = if destructive {
@@ -560,7 +615,7 @@ fn profile_action(
                 clicked = true;
             }
             widgets::icon(ui, glyph, 15.0, ink);
-            ui.text(label, |t| {
+            ui.text(visible_label, |t| {
                 t.font(&fonts::SANS_MEDIUM).font_size(13).color(ink)
             });
         });

@@ -1,0 +1,218 @@
+{
+  "sol": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "At x671, y129 the menu places a check on Default and keeps the Middle click card fixed at y174."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "The light Back button hover fills marker 2 near x555, y230 and outlines the matching row. The MX Master 4 adds Button 0x01FF below marker 6's row."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "At 720 px wide the Win and Tab keycaps sit at x237 and x275, with an Edit button on the same row."
+    },
+    {
+      "id": 4,
+      "label": "Choose an action to assign now",
+      "detail": "In the desktop editor the category divider stays near x658 as Common, System and Edit replace the rows. The compact dialog keeps Reopen tab visible near y422."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "In the light dialog two recovery buttons sit side by side at y339, with an additional clear x near x670 in the search field."
+    },
+    {
+      "id": 6,
+      "label": "Save pointer speed action",
+      "detail": "The two numeric boxes line up at x586 and the orange save button spans x528 to x932. Current and Next press sit above it."
+    },
+    {
+      "id": 7,
+      "label": "Save shortcut",
+      "detail": "At 720 by 360, the Ctrl + Win + Alt + Shift + Space draft fits on one line and the save button stays inside the dialog at y299. The reopened editor shows K with a green Saved label. The three native tab cycles keep the tabs fixed at y204, and after restart K is still shown under Assigned now."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "The active slider thumb sits around x575, and 50% of a notch is right aligned. With high-resolution scrolling off the saved threshold moves into the helper text."
+    },
+    {
+      "id": 9,
+      "label": "Gesture recognition off",
+      "detail": "Turning recognition off grays out the arrows near x260 and keeps the amber pencils at x904. The Tap row moves down about 53 px."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "The 6s countdown appears above the app chip and the + 6 seconds and Cancel buttons. Rename keeps the second card in place with the field beginning at x288. Native capture adds a python.exe chip and confirms it in the lower-right corner."
+    },
+    {
+      "id": 11,
+      "label": "Disconnected",
+      "detail": "The slashed mouse sits inside a 52 px tile near x256 and the Edit button mappings command sits directly below the card."
+    },
+    {
+      "id": 12,
+      "label": "18 unnamed features",
+      "detail": "Amber hexadecimal IDs align at x249 and x594 above two rows of smaller chips. Copy device report and Copy unnamed IDs stay separately labeled."
+    },
+    {
+      "id": 13,
+      "label": "Applies after resume",
+      "detail": "The compact editor puts the note just left of Save shortcut at y314. On save, a green check appears under Buttons and the Back button row shows an M keycap. Native Retry restores the green Remapping resumed chip in both themes."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "The native menu changes the second command label in place, and the Start with Windows check stays at about x28, y125."
+    }
+  ],
+  "terra": [
+    {
+      "id": 1,
+      "label": "Buttons",
+      "detail": "The Edit profile selector sits at the upper right; the opened menu shows Default and Preview app side by side."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "MX Master 4 has six numbered markers and a separate Button 0x01FF row under Outside the diagram."
+    },
+    {
+      "id": 3,
+      "label": "Button mapping list",
+      "detail": "At 720 by 540, five full-width rows show Edit buttons and keycaps such as Ctrl W."
+    },
+    {
+      "id": 4,
+      "label": "Back button",
+      "detail": "The editor pairs a cropped Thumb buttons image with categories and a scrollable action list."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "The empty search shows Clear search and Record a keyboard shortcut beneath a magnifying glass."
+    },
+    {
+      "id": 6,
+      "label": "Wheel mode button",
+      "detail": "Switch pointer speed opens two numeric DPI fields, two sliders, and a full-width Save pointer speed action."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut",
+      "detail": "Recording changes the outlined panel to Press a key; a draft survives switching to Actions and is labeled Draft."
+    },
+    {
+      "id": 8,
+      "label": "Scroll",
+      "detail": "SmartShift is selected in an amber bordered card, with a 10 sensitivity and a 50% of a notch threshold."
+    },
+    {
+      "id": 9,
+      "label": "Gestures",
+      "detail": "Five directional rows pair orange arrow icons with action pills, and the threshold reads 60 counts."
+    },
+    {
+      "id": 10,
+      "label": "Profiles",
+      "detail": "The window picker shows a six-second countdown and later adds a python.exe chip to Preview app."
+    },
+    {
+      "id": 11,
+      "label": "Device",
+      "detail": "The device page displays Bluetooth, firmware MPM 12.01.B0006, a 50% battery bar and 1000 DPI."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "Eleven named entries appear in two columns above 18 unnamed hexadecimal chips and a copy button."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused",
+      "detail": "A red status pill and Resume button sit in the title bar; an error banner supplies Retry and tray instructions."
+    },
+    {
+      "id": 14,
+      "label": "Pause remapping",
+      "detail": "The native tray menu has Open mouse settings, Pause or Resume remapping, a checked Start with Windows, and Quit Mushak."
+    }
+  ],
+  "astra": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "The selector stays at the upper right. Its open menu puts Default with a check beside Preview app, above the five assignment cards."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "The MX Master 4 has six numbered markers, with a separate seventh card for Button 0x01FF. Hovering marker 2 outlines the matching Back button card in amber."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "The 720 by 540 layout uses five rows with labeled Edit buttons. Ctrl and W appear as separate keycaps next to Close tab."
+    },
+    {
+      "id": 4,
+      "label": "Choose an action to assign now",
+      "detail": "The category column stays left of a thin divider. System shows four commands while Edit shows six, with the editor's lower edge held steady."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "The empty search state centers a magnifier above Clear search and Record a keyboard shortcut. Copy results show Ctrl and C in separate keycaps."
+    },
+    {
+      "id": 6,
+      "label": "Save pointer speed action",
+      "detail": "Two numeric DPI fields, 800 and 1600, sit beside aligned sliders. Current: 1000 DPI and Next press: 800 DPI appear above the full-width save button."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut \u00b7 Draft",
+      "detail": "Recording outlines the key card in amber. The M draft survives the tab switch, the 720 by 360 layout retains both footer buttons, and reopening K shows a green Saved state. Three native cycles keep the same editor position and dimensions."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "The nudge value reads 50% of a notch at the right edge of its card. SmartShift has an amber radio border, and both toggle thumbs remain distinct in each theme."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "Five gesture rows pair amber direction icons with shortcut chips. The distance card says 60 counts and explains about 1.5 mm at 1000 DPI."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "The running capture replaces its button with + 6 seconds and Cancel. Renaming Design tools keeps the text field, Cancel and Save name on one row. A long profile name moves its reorder controls to a second row without overlap."
+    },
+    {
+      "id": 11,
+      "label": "Reported mouse features",
+      "detail": "The connected screen shows a half-filled green battery bar, a DPI slider at 1000 and a 29 detected disclosure. Disconnected and No device both offer Edit button mappings."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "Eleven named hexadecimal IDs form two aligned columns. Eighteen unnamed IDs wrap into two rows below a Copy unnamed IDs button."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused",
+      "detail": "The title bar retains a red paused badge after dismissing the conflict banner. The compact shortcut footer says Applies after resume beside Save shortcut."
+    },
+    {
+      "id": 14,
+      "label": "Start with Windows",
+      "detail": "A native light menu places a check left of Start with Windows and separators above Pause remapping and Quit Mushak."
+    }
+  ]
+}

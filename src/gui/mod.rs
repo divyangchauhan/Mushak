@@ -60,11 +60,11 @@ impl Section {
         }
     }
     const ALL: [Section; 5] = [
-        Section::Buttons,
-        Section::Scroll,
-        Section::Gestures,
-        Section::Profiles,
         Section::Device,
+        Section::Profiles,
+        Section::Buttons,
+        Section::Gestures,
+        Section::Scroll,
     ];
     fn label(self) -> &'static str {
         match self {
@@ -126,6 +126,7 @@ pub struct App {
     status_next_check: Instant,
     resume: ResumeState,
     show_resume_steps: Option<bool>,
+    compact_diagram: bool,
     /// The OS title bar is stripped after the first frame, once the window exists.
     framed: bool,
     /// Buttons section: is the profile dropdown open?
@@ -151,6 +152,7 @@ pub struct App {
     saved_notice: Option<(String, Section, usize, Instant)>,
     failed_assignment: Option<(crate::config::Action, &'static str)>,
     picker_feedback: Option<Instant>,
+    pending_action: Option<crate::config::Action>,
     pub custom_mods: Vec<Modifier>,
     pub custom_key: Option<u16>,
     pub capturing_key: bool,
@@ -208,6 +210,7 @@ impl App {
             device_view: statusfile::read(),
             resume: ResumeState::Idle,
             show_resume_steps: None,
+            compact_diagram: false,
             status_next_check: Instant::now() + Duration::from_millis(500),
             framed: false,
             profile_menu_open: false,
@@ -229,6 +232,7 @@ impl App {
             saved_notice: None,
             failed_assignment: None,
             picker_feedback: None,
+            pending_action: None,
             custom_mods: Vec::new(),
             custom_key: None,
             capturing_key: false,
@@ -272,6 +276,7 @@ impl App {
         }
         self.shortcut_editor = self.custom_key.is_some();
         self.picker_feedback = None;
+        self.pending_action = None;
         self.saved_notice = None;
         self.wheel_presets = false;
         self.picker_speed_editor = false;
@@ -301,6 +306,7 @@ impl App {
     }
 
     pub fn close_picker(&mut self) {
+        self.pending_action = None;
         self.failed_assignment = None;
         self.picker = None;
         self.picker_anchor = None;
@@ -466,7 +472,7 @@ impl App {
     fn resume_steps_visible(&self) -> bool {
         self.device_view.paused
             && (matches!(self.resume, ResumeState::Failed) || self.device_view.resume_pid.is_none())
-            && self.show_resume_steps.unwrap_or(screen_height() >= 430.0)
+            && self.show_resume_steps.unwrap_or(false)
     }
 
     fn accept_status(&mut self, update: SharedStatus) {
@@ -746,21 +752,22 @@ fn window(ui: &mut Ui2, app: &mut App) {
         .layout(|l| l.direction(TopToBottom))
         .children(|ui| {
             titlebar(ui, app);
-            if app.resume_steps_visible()
-                && widgets::resume_help(ui, &pal, matches!(app.resume, ResumeState::Failed))
-            {
-                app.show_resume_steps = Some(false);
-            }
-            if app.show_conflict() {
-                widgets::conflict_banner(ui, app);
-            }
             ui.element()
                 .width(grow!())
                 .height(grow!())
                 .layout(|l| l.direction(LeftToRight))
                 .children(|ui| {
                     rail(ui, app);
-                    content(ui, app);
+                    ui.element()
+                        .width(grow!())
+                        .height(grow!())
+                        .layout(|l| l.direction(TopToBottom))
+                        .children(|ui| {
+                            content(ui, app);
+                            if app.show_conflict() {
+                                widgets::conflict_banner(ui, app);
+                            }
+                        });
                 });
             // Last, so it floats over everything.
             picker::overlay(ui, app);
@@ -812,33 +819,41 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
         })
         .border(|b| b.bottom(1).color(pal.line))
         .children(|ui| {
-            // Dragging the title bar drags the window.
-            if ui.just_pressed() {
-                chrome::begin_drag();
-            }
-            // Brand mark. Full-colour, so it is tinted white (a no-op multiply)
-            // rather than taking a palette colour like the UI glyphs do.
-            widgets::icon(
-                ui,
-                if paused {
-                    &icons::MODAK_PAUSED
-                } else {
-                    &icons::MODAK_ACTIVE
-                },
-                24.0,
-                theme::WHITE,
-            );
-            ui.text("Mushak", |t| {
-                t.font(&fonts::DISPLAY_BOLD).font_size(17).color(pal.text)
-            });
+            // Only the brand and empty space start a native drag. A click on a
+            // child command otherwise posts HTCAPTION and steals the button-up.
             ui.element()
-                .width(fixed!(1.0))
-                .height(fixed!(15.0))
-                .background_color(pal.line_strong)
-                .empty();
-            ui.text("Mouse settings", |t| {
-                t.font(&fonts::SANS).font_size(13).color(pal.muted)
-            });
+                .id("titlebar_brand")
+                .height(grow!())
+                .width(fit!())
+                .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(11))
+                .children(|ui| {
+                    if ui.just_pressed() {
+                        chrome::begin_drag();
+                    }
+                    widgets::icon(
+                        ui,
+                        if paused {
+                            &icons::MODAK_PAUSED
+                        } else {
+                            &icons::MODAK_ACTIVE
+                        },
+                        24.0,
+                        theme::WHITE,
+                    );
+                    ui.text("Mushak", |t| {
+                        t.font(&fonts::DISPLAY_BOLD).font_size(17).color(pal.text)
+                    });
+                    if screen_width() >= 840.0 {
+                        ui.element()
+                            .width(fixed!(1.0))
+                            .height(fixed!(15.0))
+                            .background_color(pal.line_strong)
+                            .empty();
+                        ui.text("Mouse settings", |t| {
+                            t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                        });
+                    }
+                });
             if paused {
                 widgets::paused_status(ui, app);
             } else if matches!(app.resume, ResumeState::Confirmed(_)) {
@@ -859,10 +874,25 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
                         });
                     });
             }
-            // Push the window controls to the right.
-            ui.element().width(grow!()).height(fixed!(1.0)).empty();
+            ui.element()
+                .id("titlebar_drag_space")
+                .width(grow!())
+                .height(grow!())
+                .children(|ui| {
+                    if ui.just_pressed() {
+                        chrome::begin_drag();
+                    }
+                });
             widgets::titlebar_buttons(ui, app);
         });
+}
+
+fn rail_width() -> f32 {
+    if screen_width() < 840.0 {
+        158.0
+    } else {
+        204.0
+    }
 }
 
 fn rail(ui: &mut Ui2, app: &mut App) {
@@ -871,7 +901,7 @@ fn rail(ui: &mut Ui2, app: &mut App) {
     let short = screen_height() < 430.0;
     let mut clicked: Option<Section> = None;
     ui.element()
-        .width(fixed!(if screen_width() < 840.0 { 158.0 } else { 204.0 }))
+        .width(fixed!(rail_width()))
         .height(grow!())
         .background_color(pal.rail)
         .overflow(|o| {
@@ -889,6 +919,7 @@ fn rail(ui: &mut Ui2, app: &mut App) {
         })
         .border(|b| b.right(1).color(pal.line))
         .children(|ui| {
+            // Keep device information and profiles in reach as hardware comes and goes.
             for s in Section::ALL {
                 if !s.available(&app.device_view.device) {
                     continue;
@@ -904,6 +935,7 @@ fn rail(ui: &mut Ui2, app: &mut App) {
     if let Some(s) = clicked {
         app.profile_menu_open = false;
         app.section = s;
+        app.show_resume_steps = Some(false);
     }
 }
 
@@ -916,8 +948,13 @@ fn content(ui: &mut Ui2, app: &mut App) {
         app.section = Section::Device;
     }
     let pal = app.pal;
+    let help = app.resume_steps_visible();
     ui.element()
-        .id("settings_content")
+        .id(if help {
+            "tray_help_content"
+        } else {
+            "settings_content"
+        })
         .width(grow!())
         .height(grow!())
         .overflow(|o| {
@@ -933,12 +970,18 @@ fn content(ui: &mut Ui2, app: &mut App) {
                 .width(grow!(0.0, 824.0))
                 .height(fit!())
                 .layout(|l| l.direction(TopToBottom).padding((24, 28, 24, 28)))
-                .children(|ui| match app.section {
-                    Section::Buttons => buttons::section(ui, app),
-                    Section::Scroll => scroll::section(ui, app),
-                    Section::Gestures => gestures_tab::section(ui, app),
-                    Section::Profiles => profiles_tab::section(ui, app),
-                    Section::Device => device_tab::section(ui, app),
+                .children(|ui| {
+                    if help {
+                        widgets::resume_help(ui, app);
+                    } else {
+                        match app.section {
+                            Section::Buttons => buttons::section(ui, app),
+                            Section::Scroll => scroll::section(ui, app),
+                            Section::Gestures => gestures_tab::section(ui, app),
+                            Section::Profiles => profiles_tab::section(ui, app),
+                            Section::Device => device_tab::section(ui, app),
+                        }
+                    }
                 });
         });
 }

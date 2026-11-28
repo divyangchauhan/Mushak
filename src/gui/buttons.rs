@@ -182,41 +182,69 @@ pub(super) fn profile_heading(ui: &mut Ui2, app: &mut App, title: &str, subtitle
                 "Mapping saved"
             }
         });
+    let offer_diagram = app.section == super::Section::Buttons
+        && screen_width() < 840.0
+        && super::mouse_view::matches_device(&app.device_view.device);
     ui.element()
-        .id("profile_caption")
         .width(grow!())
         .height(fit!())
+        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(8))
         .children(|ui| {
-            let caption = if app.profile_menu_open {
-                "The active app determines which profile runs."
-            } else {
-                subtitle
-            };
-            // The caption sets the row height even when an offline hint wraps.
-            ui.text(caption, |t| {
-                t.font(&fonts::SANS)
-                    .font_size(14)
-                    .color(if notice.is_some() {
-                        super::theme::TRANSPARENT
-                    } else {
-                        pal.muted
-                    })
-            });
-            if let Some(message) = notice {
+            ui.element()
+                .id("profile_caption")
+                .width(if offer_diagram { grow!(0.0) } else { fit!() })
+                .height(fit!())
+                .children(|ui| {
+                    // The caption sets the row height even when an offline hint wraps.
+                    ui.text(subtitle, |t| {
+                        t.font(&fonts::SANS)
+                            .font_size(14)
+                            .color(if notice.is_some() {
+                                super::theme::TRANSPARENT
+                            } else {
+                                pal.muted
+                            })
+                    });
+                    if let Some(message) = notice {
+                        ui.element()
+                            .width(fit!())
+                            .height(fit!())
+                            .floating(|f| {
+                                f.attach_id("profile_caption")
+                                    .anchor((Left, CenterY), (Left, CenterY))
+                                    .passthrough()
+                            })
+                            .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(6))
+                            .children(|ui| {
+                                widgets::icon(ui, &icons::CHECK, 14.0, pal.good);
+                                ui.text(message, |t| {
+                                    t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                                });
+                            });
+                    }
+                });
+            if offer_diagram {
+                let label = if app.compact_diagram {
+                    "Button list"
+                } else {
+                    "Show diagram"
+                };
                 ui.element()
-                    .width(fit!())
-                    .height(fit!())
-                    .floating(|f| {
-                        f.attach_id("profile_caption")
-                            .anchor((Left, CenterY), (Left, CenterY))
-                            .passthrough()
-                    })
-                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(6))
+                    .id("compact_diagram_toggle")
+                    .height(fixed!(26.0))
+                    .width(fixed!(112.0))
+                    .corner_radius(6.0)
+                    .background_color(pal.surface)
+                    .border(|b| b.all(1).color(pal.line_strong))
+                    .accessibility(|a| a.button(label))
+                    .layout(|l| l.align(CenterX, CenterY))
                     .children(|ui| {
-                        widgets::icon(ui, &icons::CHECK, 14.0, pal.good);
-                        ui.text(message, |t| {
-                            t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                        ui.text(label, |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
                         });
+                        if ui.just_pressed() {
+                            app.compact_diagram = !app.compact_diagram;
+                        }
                     });
             }
         });
@@ -239,9 +267,14 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         "Choose an assignment to edit. Offline changes apply when your mouse connects."
     };
     profile_heading(ui, app, "Buttons", subtitle);
-    ui.element().width(grow!()).height(fixed!(22.0)).empty();
+    ui.element()
+        .width(grow!())
+        .height(fixed!(if screen_width() < 840.0 { 12.0 } else { 22.0 }))
+        .empty();
 
-    if super::mouse_view::matches_device(&app.device_view.device) && screen_width() >= 840.0 {
+    if super::mouse_view::matches_device(&app.device_view.device)
+        && (screen_width() >= 840.0 || app.compact_diagram)
+    {
         super::mouse_view::section(ui, app);
         return;
     }
@@ -297,7 +330,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     }
     rows.sort_by_key(|row| row.number.unwrap_or(usize::MAX));
     ui.element()
-        .width(grow!(0.0, 570.0))
+        .width(grow!())
         .height(fit!())
         .layout(|l| l.direction(TopToBottom).gap(10))
         .children(|ui| {
@@ -310,17 +343,10 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
 
     if super::Section::Gestures.available(&app.device_view.device) {
         ui.element().width(grow!()).height(fixed!(10.0)).empty();
-        let hint = if app.mouse_awake() {
-            "Windows handles left click and scrolling."
-        } else {
-            "Swipe actions follow the selected profile."
-        };
-        ui.element()
-            .width(grow!(0.0, 570.0))
-            .height(fit!())
-            .children(|ui| {
-                super::mouse_view::gesture_footer(ui, app, hint, "Configure gestures");
-            });
+        let hint = "Gesture actions follow the selected profile.";
+        ui.element().width(grow!()).height(fit!()).children(|ui| {
+            super::mouse_view::gesture_footer(ui, app, hint, "Configure gestures");
+        });
     } else if app.mouse_awake() {
         ui.element().width(grow!()).height(fixed!(16.0)).empty();
         ui.text("Windows handles left click and scrolling.", |t| {
@@ -367,7 +393,7 @@ fn mapping_row(ui: &mut Ui2, pal: &super::theme::Palette, row: &MappingRow) -> b
         })
         .children(|ui| {
             clicked = ui.just_pressed();
-            if let Some(number) = row.number.filter(|_| screen_width() >= 840.0) {
+            if let Some(number) = row.number {
                 ui.element()
                     .width(fixed!(24.0))
                     .height(fixed!(24.0))
@@ -436,18 +462,11 @@ fn mapping_row(ui: &mut Ui2, pal: &super::theme::Palette, row: &MappingRow) -> b
 fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usize>) {
     let pal = app.pal;
     let selected = app.selected_profile;
-    let columns = if screen_width() >= 840.0 && names.iter().all(|n| n.chars().count() <= 18) {
-        2
-    } else {
-        1
-    };
-    let rows = names.len().div_ceil(columns);
+    let wide = screen_width() >= 840.0;
     ui.element()
         .id("profile_menu")
-        .width(fixed!(if columns == 2 { 356.0 } else { 212.0 }))
-        .height(fixed!(
-            (10.0 + rows as f32 * 36.0 - 2.0).min((screen_height() - 178.0).clamp(42.0, 298.0))
-        ))
+        .width(fixed!(212.0))
+        .height(fit!(0.0, (screen_height() - 170.0).clamp(52.0, 298.0)))
         .overflow(|o| {
             o.scroll_y()
                 .scrollbar(|s| s.width(6.0).thumb_color(pal.track))
@@ -455,13 +474,13 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
         .floating(|f| {
             f.attach_id("profile_btn")
                 .anchor((Right, Top), (Right, Top))
-                .offset((0.0, if columns == 2 { 59.0 } else { 65.0 }))
+                .offset((0.0, if wide { 41.0 } else { 65.0 }))
                 .z_index(50)
         })
         .corner_radius(11.0)
         .background_color(pal.pop)
         .border(|b| b.all(1).color(pal.line_strong))
-        .layout(|l| l.direction(LeftToRight).wrap().gap(2).padding(5))
+        .layout(|l| l.direction(TopToBottom).gap(1).padding(2))
         .children(|ui| {
             for (i, name) in names.iter().enumerate() {
                 let id: Id = ("profile_opt", i as u32).into();
@@ -469,8 +488,8 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
                 let active = i == selected;
                 ui.element()
                     .id(id)
-                    .width(fixed!(if columns == 2 { 168.0 } else { 195.0 }))
-                    .height(fixed!(34.0))
+                    .width(grow!())
+                    .height(fit!(26.0))
                     .corner_radius(8.0)
                     .background_color(if active || hovered {
                         super::theme::Palette::mix(pal.accent, 12.0, pal.pop)
@@ -495,6 +514,26 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
                         if active {
                             widgets::icon(ui, &icons::CHECK, 14.0, pal.accent);
                         }
+                    });
+            }
+            if let Some(name) = app
+                .device_view
+                .active_profile
+                .as_ref()
+                .filter(|_| !app.device_view.paused)
+            {
+                ui.element()
+                    .width(grow!())
+                    .height(fit!())
+                    .border(|b| b.top(1).color(pal.line))
+                    .layout(|l| l.direction(TopToBottom).gap(3).padding((7, 10, 7, 10)))
+                    .children(|ui| {
+                        ui.text("Last reported active profile", |t| {
+                            t.font(&fonts::SANS).font_size(12).color(pal.muted)
+                        });
+                        ui.text(name, |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
+                        });
                     });
             }
         });

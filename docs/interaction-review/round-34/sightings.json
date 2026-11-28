@@ -1,0 +1,218 @@
+{
+  "sol": [
+    {
+      "id": 1,
+      "label": "Buttons and edit profile",
+      "detail": "Both themes show the full Buttons page and the opened Default and Preview app dropdown."
+    },
+    {
+      "id": 2,
+      "label": "Mouse diagram and reported buttons",
+      "detail": "Both themes cover MX Master 2S, 3S, and 4, plus disconnected layout, Back button hover, raw and named extra controls, and the reported factory Mute action."
+    },
+    {
+      "id": 3,
+      "label": "Button mapping list",
+      "detail": "Both themes show the narrow connected list and the wide, offline Preview app list. Native compact captures repeat the complete five-row list in both themes."
+    },
+    {
+      "id": 4,
+      "label": "Action editor and categories",
+      "detail": "Both themes cover inline Common, System and Edit, the offline modal, the compact Tabs & windows picker, and the haptic panel editor."
+    },
+    {
+      "id": 5,
+      "label": "Action search",
+      "detail": "Both themes cover Copy as a sole match and the zzzz no-match modal."
+    },
+    {
+      "id": 6,
+      "label": "Wheel mode button actions",
+      "detail": "Both themes show the wheel-specific actions, 800 and 1600 DPI fields, and the general action browser."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut recording",
+      "detail": "Both themes cover opening tabs, recording, draft retention, resizing, canceling, saving, reopening, and a long chord. Native frames cover three tab cycles per theme and the K assignment after restart."
+    },
+    {
+      "id": 8,
+      "label": "Scroll settings",
+      "detail": "Both themes show SmartShift and high-resolution scrolling on, then Always ratchet and high-resolution scrolling off. Native compact captures stack the mode cards and show a vertical scrollbar."
+    },
+    {
+      "id": 9,
+      "label": "Gestures",
+      "detail": "Both themes show Tap and the four swipe actions, the distance slider, and gestures off with edit buttons still available. Both native compact captures fit the full list and distance slider."
+    },
+    {
+      "id": 10,
+      "label": "Profiles and window capture",
+      "detail": "Both themes show profiles, priority controls, default-only, picking a window and inline rename. Native frames show a newly added python.exe chip and a renamed Trial tools profile. Native compact frames include a longer profile name with a separate action row."
+    },
+    {
+      "id": 11,
+      "label": "Device status",
+      "detail": "Both themes show a connected MX Master 2S, disconnected, no device and a standard USB mouse. Native compact captures show the full connected Device page in both themes."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "Both themes show the top and lower diagnostics captures. The right edge cuts across the named and unnamed sections."
+    },
+    {
+      "id": 13,
+      "label": "Remapping conflict and save feedback",
+      "detail": "Both themes show the Options+ conflict and quit failure, pausing, dismissing, resuming, retry, short-window tray help, saving while paused, and failed assignment. Native frames follow pause, resume, failed resume, retry success and tray fallback. The native Buttons sequence shows the same five resume states in both themes."
+    },
+    {
+      "id": 14,
+      "label": "Windows tray menu",
+      "detail": "The native Windows menu shows both Pause remapping and Resume remapping with Start with Windows checked."
+    }
+  ],
+  "terra": [
+    {
+      "id": 1,
+      "label": "Buttons and profile switcher",
+      "detail": "The numbered mouse image aligns with five assignment cards. The profile menu opens beneath the selector with a check beside Default."
+    },
+    {
+      "id": 2,
+      "label": "Button artwork and reported controls",
+      "detail": "Three mouse models have matching artwork and markers. Hover highlights both marker 2 and its card; an extra control appears under Outside the diagram and can be named."
+    },
+    {
+      "id": 3,
+      "label": "Button mapping list",
+      "detail": "The compact view replaces the mouse artwork with numbered rows, shortcut keycaps and explicit Edit buttons. The no-device view uses icons and full-width rows."
+    },
+    {
+      "id": 4,
+      "label": "Action editor and categories",
+      "detail": "A cropped mouse image identifies the control beside a category list and action picker. The compact and offline versions use a centered dialog."
+    },
+    {
+      "id": 5,
+      "label": "Action search",
+      "detail": "Searching Copy shows a single result with Ctrl and C keycaps. An empty search offers Clear search and Record a keyboard shortcut."
+    },
+    {
+      "id": 6,
+      "label": "Wheel mode button",
+      "detail": "The wheel action panel offers ratchet switching, pointer speed settings, and browsing all actions. Two DPI values have numeric fields and sliders."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut",
+      "detail": "Recording changes the outlined card to Press a key, then shows the draft and enables Save shortcut. Draft status persists across tabs, resizing, and reopening."
+    },
+    {
+      "id": 8,
+      "label": "Scroll settings",
+      "detail": "Wheel mode uses three radio cards; sliders show the selected level and endpoints. Disabled controls retain explanations of the prerequisite."
+    },
+    {
+      "id": 9,
+      "label": "Gestures",
+      "detail": "Tap and four swipe rows pair direction icons with assigned actions and keycaps. Turning gestures off changes the description and removes the distance control."
+    },
+    {
+      "id": 10,
+      "label": "Profiles",
+      "detail": "Profile cards show app executables, ordering controls and a default fallback. Window capture replaces the app label with a countdown and cancel control. In the compact long-name view, ordering and delete buttons wrap to a second line."
+    },
+    {
+      "id": 11,
+      "label": "Device status",
+      "detail": "Connection, firmware, battery and DPI are grouped in cards. Disconnected and no-device screens explain what remains editable."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "Named features and hexadecimal IDs are shown in two columns above a list of unnamed feature IDs. Copy controls sit at the right."
+    },
+    {
+      "id": 13,
+      "label": "Conflict and feedback",
+      "detail": "A paused badge offers Resume, while a bottom warning names Logi Options+ and provides quit and dismiss actions. Save errors explain that the old assignment remains active."
+    },
+    {
+      "id": 14,
+      "label": "Windows tray menu",
+      "detail": "The native menu lists Open mouse settings, Pause or Resume remapping, Start with Windows, and Quit Mushak. A check indicates startup is enabled."
+    }
+  ],
+  "astra": [
+    {
+      "id": 1,
+      "label": "Buttons and Edit profile",
+      "detail": "Numbered mouse illustration matches five assignment cards. The profile menu opens directly below its control without moving the page."
+    },
+    {
+      "id": 2,
+      "label": "Mouse diagrams and Name this button",
+      "detail": "Three mouse models have distinct artwork and numbered callouts. Hover highlights both marker 2 and Back button. An unknown button sits under Outside the diagram and can become Spare button."
+    },
+    {
+      "id": 3,
+      "label": "Compact button mappings",
+      "detail": "Compact rows keep numbered badges, keycaps and Edit buttons aligned. The offline list explains when saved changes apply."
+    },
+    {
+      "id": 4,
+      "label": "Back button action categories",
+      "detail": "The selected button has a close-up image beside a fixed editor. Category changes preserve the editor position; current actions have checkmarks."
+    },
+    {
+      "id": 5,
+      "label": "Search actions and No matching actions",
+      "detail": "Copy yields one result with Ctrl and C keycaps. Empty search offers Clear search and Record a keyboard shortcut."
+    },
+    {
+      "id": 6,
+      "label": "Wheel mode and pointer speed action",
+      "detail": "Wheel controls show a numbered close-up, two mouse actions and a separate list of other actions. The DPI editor displays current and next-press values beside two sliders."
+    },
+    {
+      "id": 7,
+      "label": "Record and save keyboard shortcut",
+      "detail": "Record key becomes Stop recording in the same place. Draft M survives switching tabs and resizing. Save changes the assignment to K and reopening shows Saved. The compact four-modifier chord fits. Three native tab cycles preserve editor bounds, and the restarted view still displays K."
+    },
+    {
+      "id": 8,
+      "label": "Scroll and SmartShift",
+      "detail": "Three wheel-mode cards make the selection explicit. Sliders display level and notch values, while unavailable controls retain their positions with explanatory text. Compact mode stacks the three mode cards and provides a visible scrollbar."
+    },
+    {
+      "id": 9,
+      "label": "Gestures and swipe distance",
+      "detail": "Five rows pair tap or direction icons with keycaps and assigned actions. The distance slider translates 60 counts into about 1.5 mm at 1000 DPI. All five gesture rows and the distance control fit the compact native capture."
+    },
+    {
+      "id": 10,
+      "label": "Profiles and Pick a window",
+      "detail": "Numbered profile cards expose Move up and Move down. Inline renaming preserves card height. Window capture replaces the helper line with a countdown and Add 6 seconds. Native capture shows python.exe added with a confirmation, and a third profile named Trial tools. Long profile names wrap the move and delete controls onto a second line without cutting them off."
+    },
+    {
+      "id": 11,
+      "label": "Device and connection states",
+      "detail": "Connected state separates Bluetooth, firmware, battery and DPI. Disconnected and No device screens give direct Edit button mappings actions."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "The feature list uses aligned names and monospaced IDs, with copy controls and an unnamed-feature section."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused and error feedback",
+      "detail": "Paused status stays in the titlebar, conflict warnings use a bottom banner, and failed assignment saves retain the named unsaved action with retry and editing controls."
+    },
+    {
+      "id": 14,
+      "label": "Windows tray menu",
+      "detail": "The native menu separates Open mouse settings, Pause or Resume remapping, checked Start with Windows and Quit Mushak."
+    }
+  ]
+}
