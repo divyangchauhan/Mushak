@@ -2122,21 +2122,22 @@ fn assignment_footer(
     if app.wheel_switch.is_some() {
         ui.element()
             .width(grow!())
-            .height(fixed!(40.0))
+            .height(fit!())
+            .border(|b| b.top(1).color(pal.line))
             .layout(|l| {
                 l.direction(LeftToRight)
                     .align(Left, CenterY)
                     .gap(6)
-                    .padding((0, 12, 0, 12))
+                    .padding((6, 12, 0, 12))
             })
             .children(|ui| {
-                ui.text("Discard edits?", |t| {
+                ui.text("Wheel edits", |t| {
                     t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.text)
                 });
                 if super::scroll::choice(ui, &pal, "keep_wheel".into(), "Keep editing", true) {
                     app.wheel_switch = None;
                 }
-                if super::scroll::choice(ui, &pal, "discard_wheel".into(), "Discard", false) {
+                if super::scroll::choice(ui, &pal, "discard_wheel".into(), "Discard edits", false) {
                     if let Some((target, anchor)) = app.wheel_switch.take() {
                         app.open_button_popover(target, anchor);
                     }

@@ -53,6 +53,11 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         assert_eq!(app.wheel_draft.as_ref().unwrap().invert_scroll, initial);
         click(ply, app, ("mode", 0)).await;
         review_frame(&dir, "B2");
+        click(ply, app, ("wheel_switch_marker", 1u32)).await;
+        assert!(app.wheel_switch.is_some());
+        review_frame(&dir, "B5");
+        click(ply, app, "keep_wheel").await;
+        assert!(app.wheel_switch.is_none() && app.scrolling_tab);
         let original = Config::load_strict().unwrap();
         let save = ply.bounding_box("save_wheel").unwrap();
         for _ in 0..3 {
