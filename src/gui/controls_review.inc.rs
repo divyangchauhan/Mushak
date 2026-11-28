@@ -1,7 +1,7 @@
-fn review_frame(dir:&std::path::Path, name:&str) {
+fn review_frame(dir: &std::path::Path, name: &str) {
     use std::io::Write;
-    let image=get_screen_data();
-    let mut f=std::fs::File::create(dir.join(format!("{name}.rgba"))).unwrap();
+    let image = get_screen_data();
+    let mut f = std::fs::File::create(dir.join(format!("{name}.rgba"))).unwrap();
     f.write_all(&image.width.to_le_bytes()).unwrap();
     f.write_all(&image.height.to_le_bytes()).unwrap();
     f.write_all(&image.bytes).unwrap();
@@ -46,6 +46,11 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         click(ply, app, "wheel_hit").await;
         assert!(app.scrolling_tab);
         review_frame(&dir, "B1");
+        let initial = app.wheel_draft.as_ref().unwrap().invert_scroll;
+        click(ply, app, ("sw_invert", 1u32)).await;
+        assert_ne!(app.wheel_draft.as_ref().unwrap().invert_scroll, initial);
+        click(ply, app, "sw_invert").await;
+        assert_eq!(app.wheel_draft.as_ref().unwrap().invert_scroll, initial);
         click(ply, app, ("mode", 0)).await;
         review_frame(&dir, "B2");
         let original = Config::load_strict().unwrap();

@@ -114,21 +114,37 @@ pub(super) fn form(ui: &mut Ui2, app: &mut App) {
                             ),
                         ] {
                             if supported {
+                                let hit: Id = (id, 1u32).into();
+                                let hovered = ui.pointer_over(hit.clone()) || ui.pointer_over(id);
                                 ui.element()
+                                    .corner_radius(6.0)
+                                    .background_color(if hovered {
+                                        pal.s2
+                                    } else {
+                                        super::theme::TRANSPARENT
+                                    })
                                     .width(grow!())
                                     .height(fixed!(34.0))
                                     .layout(|l| {
                                         l.direction(LeftToRight).align(Left, CenterY).gap(8)
                                     })
                                     .children(|ui| {
-                                        ui.element().width(grow!()).height(fit!()).children(|ui| {
-                                            ui.text(title, |t| {
-                                                t.font(&fonts::SANS_SEMIBOLD)
-                                                    .font_size(14)
-                                                    .color(pal.text)
+                                        let mut label_pressed = false;
+                                        ui.element()
+                                            .id(hit)
+                                            .width(grow!())
+                                            .height(grow!())
+                                            .layout(|l| l.align(Left, CenterY))
+                                            .accessibility(|a| a.button(title))
+                                            .children(|ui| {
+                                                label_pressed = ui.just_pressed();
+                                                ui.text(title, |t| {
+                                                    t.font(&fonts::SANS_SEMIBOLD)
+                                                        .font_size(14)
+                                                        .color(pal.text)
+                                                });
                                             });
-                                        });
-                                        if widgets::toggle(ui, &pal, id, *value) {
+                                        if widgets::toggle(ui, &pal, id, *value) || label_pressed {
                                             *value = !*value
                                         }
                                     });
