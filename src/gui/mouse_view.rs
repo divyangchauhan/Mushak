@@ -515,7 +515,12 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     continue;
                 };
                 let wheel = target.opens_scroll(&app.device_view.device);
-                let label = if wheel { "Scroll wheel" } else { part.label };
+                let label = if wheel || (part.slot == "middle" && !app.device_view.device.connected)
+                {
+                    "Scroll wheel"
+                } else {
+                    part.label
+                };
                 let action = actions::assignment(app, &target);
                 let action_label = if action.label.is_empty() {
                     action.keys.join(" + ")
@@ -524,6 +529,8 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 };
                 let action_label = if wheel && !target.available(&app.device_view.device) {
                     "Scrolling settings".to_owned()
+                } else if wheel && matches!(action.kind, actions::Kind::PassThrough) {
+                    "Standard middle click".to_owned()
                 } else if wheel {
                     format!("Middle click: {action_label}")
                 } else {

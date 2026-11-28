@@ -379,7 +379,12 @@ pub fn nav_item(ui: &mut Ui2, pal: &Palette, section: Section, active: bool, sho
                 19.0,
                 if active { pal.accent } else { fg },
             );
-            ui.text(section.label(), |t| t.font(font).font_size(15).color(fg));
+            let nav_label = if screen_width() < 840.0 && section == Section::Buttons {
+                "Controls"
+            } else {
+                section.label()
+            };
+            ui.text(nav_label, |t| t.font(font).font_size(15).color(fg));
         });
     clicked
 }

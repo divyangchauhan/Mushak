@@ -301,14 +301,18 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         let glyph = row_icon(&slot);
         let target = PickerTarget::Button(slot.clone());
         let mut action = actions::assignment(app, &target);
-        if target.opens_scroll(device) {
+        if slot == "middle" && (target.opens_scroll(device) || !device.connected) {
             name = "Scroll wheel".into();
             let binding = if action.label.is_empty() {
                 action.keys.join(" + ")
             } else {
                 action.label
             };
-            action.label = format!("Middle click: {binding}");
+            action.label = if matches!(action.kind, actions::Kind::PassThrough) {
+                "Standard middle click".into()
+            } else {
+                format!("Middle click: {binding}")
+            };
             action.keys.clear();
         }
         rows.push(MappingRow {
