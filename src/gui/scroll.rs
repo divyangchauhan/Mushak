@@ -16,6 +16,10 @@ pub(super) fn form(ui: &mut Ui2, app: &mut App) {
     let Some(draft) = app.wheel_draft.as_mut() else {
         return;
     };
+    let side_by_side = screen_height() < 430.0
+        && ui
+            .bounding_box("picker_panel")
+            .is_some_and(|r| r.width >= 590.0);
     ui.element()
         .id("wheel_form")
         .width(grow!())
@@ -24,120 +28,146 @@ pub(super) fn form(ui: &mut Ui2, app: &mut App) {
             o.scroll_y()
                 .scrollbar(|s| s.width(5.0).thumb_color(pal.track))
         })
-        .layout(|l| l.direction(TopToBottom).gap(6).padding((10, 16, 12, 16)))
+        .layout(|l| {
+            l.direction(if side_by_side {
+                LeftToRight
+            } else {
+                TopToBottom
+            })
+            .gap(if side_by_side { 20 } else { 6 })
+            .padding((10, 16, 12, 16))
+        })
         .children(|ui| {
             if caps.smartshift {
-                widgets::eyebrow(ui, &pal, "Wheel mode");
                 ui.element()
                     .width(grow!())
                     .height(fit!())
-                    .layout(|l| l.direction(LeftToRight).gap(4))
+                    .layout(|l| l.direction(TopToBottom).gap(6))
                     .children(|ui| {
-                        for (i, (mode, label)) in [
-                            (SmartShiftMode::AlwaysRatchet, "Ratchet"),
-                            (SmartShiftMode::AlwaysFreespin, "Free-spin"),
-                            (SmartShiftMode::SmartShift, "SmartShift"),
-                        ]
-                        .into_iter()
-                        .enumerate()
-                        {
-                            if choice(
-                                ui,
-                                &pal,
-                                ("mode", i as u32).into(),
-                                label,
-                                draft.smartshift == mode,
-                            ) {
-                                draft.smartshift = mode;
+                        widgets::eyebrow(ui, &pal, "Wheel mode");
+                        ui.element()
+                            .width(grow!())
+                            .height(fit!())
+                            .layout(|l| l.direction(LeftToRight).gap(4))
+                            .children(|ui| {
+                                for (i, (mode, label)) in [
+                                    (SmartShiftMode::AlwaysRatchet, "Ratchet"),
+                                    (SmartShiftMode::AlwaysFreespin, "Free-spin"),
+                                    (SmartShiftMode::SmartShift, "SmartShift"),
+                                ]
+                                .into_iter()
+                                .enumerate()
+                                {
+                                    if choice(
+                                        ui,
+                                        &pal,
+                                        ("mode", i as u32).into(),
+                                        label,
+                                        draft.smartshift == mode,
+                                    ) {
+                                        draft.smartshift = mode;
+                                    }
+                                }
+                            });
+                        let enabled = draft.smartshift == SmartShiftMode::SmartShift;
+                        let max = caps.smartshift_max_threshold.max(1);
+                        let label = format!("{} / {max}", draft.smartshift_threshold.min(max));
+                        if let Some(v) = range(
+                            ui,
+                            &pal,
+                            "flick",
+                            ("Flick sensitivity", &label),
+                            1..=i64::from(max),
+                            draft.smartshift_threshold,
+                            enabled,
+                        ) {
+                            draft.smartshift_threshold = v;
+                        }
+                        let hint = if enabled {
+                            "Lower for a gentler flick."
+                        } else {
+                            "Select SmartShift to adjust sensitivity."
+                        };
+                        ui.text(hint, |t| {
+                            t.font(&fonts::SANS).font_size(12).color(pal.muted)
+                        });
+                    });
+            }
+            if caps.hires_scroll || caps.invert_scroll {
+                ui.element()
+                    .width(grow!())
+                    .height(fit!())
+                    .layout(|l| l.direction(TopToBottom).gap(6))
+                    .children(|ui| {
+                        for (supported, id, title, value) in [
+                            (
+                                caps.invert_scroll,
+                                "sw_invert",
+                                "Invert scroll direction",
+                                &mut draft.invert_scroll,
+                            ),
+                            (
+                                caps.hires_scroll,
+                                "sw_hires",
+                                "High-resolution scrolling",
+                                &mut draft.hires_scroll,
+                            ),
+                        ] {
+                            if supported {
+                                ui.element()
+                                    .width(grow!())
+                                    .height(fixed!(34.0))
+                                    .layout(|l| {
+                                        l.direction(LeftToRight).align(Left, CenterY).gap(8)
+                                    })
+                                    .children(|ui| {
+                                        ui.element().width(grow!()).height(fit!()).children(|ui| {
+                                            ui.text(title, |t| {
+                                                t.font(&fonts::SANS_SEMIBOLD)
+                                                    .font_size(14)
+                                                    .color(pal.text)
+                                            });
+                                        });
+                                        if widgets::toggle(ui, &pal, id, *value) {
+                                            *value = !*value
+                                        }
+                                    });
                             }
                         }
-                    });
-                let enabled = draft.smartshift == SmartShiftMode::SmartShift;
-                let max = caps.smartshift_max_threshold.max(1);
-                let label = format!("{} / {max}", draft.smartshift_threshold.min(max));
-                if let Some(v) = range(
-                    ui,
-                    &pal,
-                    "flick",
-                    ("Flick sensitivity", &label),
-                    1..=i64::from(max),
-                    draft.smartshift_threshold,
-                    enabled,
-                ) {
-                    draft.smartshift_threshold = v;
-                }
-                let hint = if enabled {
-                    "Lower for a gentler flick."
-                } else {
-                    "Select SmartShift to adjust sensitivity."
-                };
-                ui.text(hint, |t| {
-                    t.font(&fonts::SANS).font_size(12).color(pal.muted)
-                });
-            }
-            for (supported, id, title, value) in [
-                (
-                    caps.invert_scroll,
-                    "sw_invert",
-                    "Invert scroll direction",
-                    &mut draft.invert_scroll,
-                ),
-                (
-                    caps.hires_scroll,
-                    "sw_hires",
-                    "High-resolution scrolling",
-                    &mut draft.hires_scroll,
-                ),
-            ] {
-                if supported {
-                    ui.element()
-                        .width(grow!())
-                        .height(fixed!(34.0))
-                        .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(8))
-                        .children(|ui| {
-                            ui.element().width(grow!()).height(fit!()).children(|ui| {
-                                ui.text(title, |t| {
-                                    t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                                });
-                            });
-                            if widgets::toggle(ui, &pal, id, *value) {
-                                *value = !*value
+                        if caps.hires_scroll {
+                            let max = caps.wheel_multiplier.unwrap_or(1).max(1);
+                            let value = draft.scroll_deadzone.min(max);
+                            let label = if value == 0 {
+                                "Off".into()
+                            } else if caps.wheel_multiplier.is_some_and(|m| m > 0) {
+                                format!(
+                                    "{:.0}% of a notch",
+                                    f32::from(value) * 100.0 / f32::from(max)
+                                )
+                            } else {
+                                format!("{value} step")
+                            };
+                            if let Some(v) = range(
+                                ui,
+                                &pal,
+                                "deadzone",
+                                ("Ignore accidental nudges", &label),
+                                0..=i64::from(max),
+                                value,
+                                draft.hires_scroll,
+                            ) {
+                                draft.scroll_deadzone = v;
                             }
-                        });
-                }
-            }
-            if caps.hires_scroll {
-                let max = caps.wheel_multiplier.unwrap_or(1).max(1);
-                let value = draft.scroll_deadzone.min(max);
-                let label = if value == 0 {
-                    "Off".into()
-                } else if caps.wheel_multiplier.is_some_and(|m| m > 0) {
-                    format!(
-                        "{:.0}% of a notch",
-                        f32::from(value) * 100.0 / f32::from(max)
-                    )
-                } else {
-                    format!("{value} step")
-                };
-                if let Some(v) = range(
-                    ui,
-                    &pal,
-                    "deadzone",
-                    ("Ignore accidental nudges", &label),
-                    0..=i64::from(max),
-                    value,
-                    draft.hires_scroll,
-                ) {
-                    draft.scroll_deadzone = v;
-                }
-                let hint = if draft.hires_scroll {
-                    "Ignore wheel movement below this threshold."
-                } else {
-                    "Enable high-resolution scrolling to adjust."
-                };
-                ui.text(hint, |t| {
-                    t.font(&fonts::SANS).font_size(12).color(pal.muted)
-                });
+                            let hint = if draft.hires_scroll {
+                                "Ignore wheel movement below this threshold."
+                            } else {
+                                "Enable high-resolution scrolling to adjust."
+                            };
+                            ui.text(hint, |t| {
+                                t.font(&fonts::SANS).font_size(12).color(pal.muted)
+                            });
+                        }
+                    });
             }
         });
 }
