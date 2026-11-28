@@ -344,6 +344,8 @@ async fn check_wheel(ply: &mut Ply<()>, app: &mut App, output: &std::path::Path)
     settle(ply, app).await;
 }
 
+include!("controls_review.inc.rs");
+
 async fn check(output: PathBuf) {
     // Use explicit input while retaining Ply's normal layout and GPU renderer.
     let mut ply = Ply::<()>::new_headless((968.0, 668.0).into());
@@ -403,6 +405,10 @@ async fn check(output: PathBuf) {
         std::process::exit(0);
     }
 
+    if std::env::args().any(|a| a == "--controls-review") {
+        controls_review(&mut ply, &mut app, &output).await;
+        std::process::exit(0);
+    }
     check_wheel(&mut ply, &mut app, &output).await;
     check_editor_sizing(&mut ply, &mut app, &output).await;
 
