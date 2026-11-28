@@ -124,8 +124,8 @@ pub(super) fn profile_heading(ui: &mut Ui2, app: &mut App, title: &str, subtitle
             ui.text(title, |t| {
                 t.font(&fonts::DISPLAY_BOLD).font_size(30).color(pal.text)
             });
-            if screen_width() >= 840.0 {
-                ui.element().width(grow!()).height(fixed!(1.0)).empty();
+            if screen_width() >= 840.0 || app.section == super::Section::Buttons {
+                ui.element().width(grow!(0.0)).height(fixed!(1.0)).empty();
             }
             // Profile picker.
             let names = app.profile_names();
@@ -141,7 +141,13 @@ pub(super) fn profile_heading(ui: &mut Ui2, app: &mut App, title: &str, subtitle
                     let hovered = ui.pointer_over("profile_btn");
                     ui.element()
                         .id("profile_btn")
-                        .width(fixed!(212.0))
+                        .width(fixed!(if app.section == super::Section::Buttons
+                            && screen_width() < 840.0
+                        {
+                            184.0
+                        } else {
+                            212.0
+                        }))
                         .height(fixed!(38.0))
                         .corner_radius(10.0)
                         .background_color(pal.surface)
@@ -159,9 +165,14 @@ pub(super) fn profile_heading(ui: &mut Ui2, app: &mut App, title: &str, subtitle
                             if ui.just_pressed() {
                                 toggle_menu = true;
                             }
-                            ui.text("Edit profile", |t| {
-                                t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
-                            });
+                            ui.text(
+                                if app.section == super::Section::Buttons {
+                                    "Profile"
+                                } else {
+                                    "Edit profile"
+                                },
+                                |t| t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted),
+                            );
                             ui.element().width(grow!()).height(fit!()).children(|ui| {
                                 ui.text(&current, |t| {
                                     t.font(&fonts::SANS_SEMIBOLD)
@@ -499,7 +510,13 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
     let wide = screen_width() >= 840.0;
     ui.element()
         .id("profile_menu")
-        .width(fixed!(212.0))
+        .width(fixed!(
+            if app.section == super::Section::Buttons && screen_width() < 840.0 {
+                184.0
+            } else {
+                212.0
+            }
+        ))
         .height(fit!(0.0, (screen_height() - 170.0).clamp(52.0, 298.0)))
         .overflow(|o| {
             o.scroll_y()
