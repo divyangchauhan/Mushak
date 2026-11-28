@@ -69,6 +69,10 @@ pub(super) fn form(ui: &mut Ui2, app: &mut App) {
                                     }
                                 }
                             });
+                        ui.element()
+                            .width(grow!())
+                            .height(fixed!(if side_by_side { 3.0 } else { 6.0 }))
+                            .empty();
                         let enabled = draft.smartshift == SmartShiftMode::SmartShift;
                         let max = caps.smartshift_max_threshold.max(1);
                         let label = format!("{} / {max}", draft.smartshift_threshold.min(max));
@@ -84,7 +88,7 @@ pub(super) fn form(ui: &mut Ui2, app: &mut App) {
                             draft.smartshift_threshold = v;
                         }
                         let hint = if enabled {
-                            "Lower for a gentler flick."
+                            "Lower values switch to free-spin with a gentler flick."
                         } else {
                             "Select SmartShift to adjust sensitivity."
                         };
