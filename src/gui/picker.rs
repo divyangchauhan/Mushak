@@ -1880,9 +1880,10 @@ fn shortcut_editor(
                         });
                     }
                 });
-            ui.text("Modifiers: hold while recording or select below", |t| {
-                t.font(&fonts::SANS_BOLD).font_size(13).color(pal.faint)
-            });
+            ui.text(
+                "Hold modifiers while recording, or choose them here.",
+                |t| t.font(&fonts::SANS_BOLD).font_size(13).color(pal.faint),
+            );
             ui.element()
                 .width(grow!())
                 .height(fit!())
@@ -1965,9 +1966,9 @@ fn shortcut_editor(
                             let label = if capturing {
                                 "Press a key"
                             } else if unchanged {
-                                "Recorded key"
+                                "Saved shortcut"
                             } else {
-                                "New shortcut"
+                                "Unsaved shortcut"
                             };
                             ui.text(label, |t| {
                                 t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
@@ -2021,7 +2022,7 @@ fn shortcut_editor(
                             let label = if capturing {
                                 "Stop recording".to_string()
                             } else {
-                                key.map(|_| "Change key".to_owned())
+                                key.map(|_| "Record again".to_owned())
                                     .unwrap_or_else(|| "Record key".into())
                             };
                             ui.text(&label, |t| {
