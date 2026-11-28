@@ -1,0 +1,20 @@
+{
+  "packet": "maple",
+  "source": "d5655c86e6f6aef9e9377912a9d09e248fc7400a",
+  "hostScale": 200,
+  "device": "Simulated MX Master 2S from recorded Bluetooth report. A4 disconnected.",
+  "window": {
+    "A3 A4": [
+      720,
+      540
+    ],
+    "B4 C4 D2": [
+      720,
+      360
+    ],
+    "other": [
+      968,
+      668
+    ]
+  }
+}

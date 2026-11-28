@@ -1,0 +1,13 @@
+{
+  "processes": [
+    58996,
+    49216
+  ],
+  "scale": 2.0,
+  "wheel_mode": "SmartShift",
+  "middle_click": "Ctrl+C",
+  "back_button": "K",
+  "tab_cycles": 3,
+  "canceled_shortcut": "M",
+  "config_exact_match": true
+}

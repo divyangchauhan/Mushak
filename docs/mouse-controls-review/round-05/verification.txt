@@ -1,0 +1,1 @@
+Both themes passed profile selection, wheel cycling, resize, cancel, shortcut capture, save and reopen.

@@ -1,0 +1,36 @@
+{
+  "source": "79226ba3ab09a84f25c25ed808082fb51909df1f",
+  "build": "cargo build --release --locked --target-dir target/native",
+  "release_sha256": "30a7fdc4f96579d04b18ddcb8c10974837eb536f127a3c31fd61173b85331fa4",
+  "tests": "cargo test --locked",
+  "unit_tests_passed": 62,
+  "focused_renderer": "passed at baseline and in all 30 rounds, both themes",
+  "general_ui_smoke": "passed",
+  "full_review_gallery": "passed after the debug-only bounds expectation was updated",
+  "native_restart": {
+    "processes": [
+      58996,
+      49216
+    ],
+    "scale": 2.0,
+    "wheel_mode": "SmartShift",
+    "middle_click": "Ctrl+C",
+    "back_button": "K",
+    "tab_cycles": 3,
+    "canceled_shortcut": "M",
+    "config_exact_match": true
+  },
+  "windows_monitors": [
+    {
+      "width": 3000,
+      "height": 1876,
+      "dpi": 192
+    }
+  ],
+  "council": {
+    "model_contexts": 93,
+    "group_ballots": 372,
+    "ordered_frames": 906,
+    "final_frames": 38
+  }
+}

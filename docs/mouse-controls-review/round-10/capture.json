@@ -1,0 +1,20 @@
+{
+  "packet": "opal",
+  "source": "49eec3e56d472b8eee1c571e912abc9cfc2101f4",
+  "hostScale": 200,
+  "device": "Simulated MX Master 2S from recorded Bluetooth report. A4 disconnected.",
+  "window": {
+    "A3 A4": [
+      720,
+      540
+    ],
+    "B4 C4 D2": [
+      720,
+      360
+    ],
+    "other": [
+      968,
+      668
+    ]
+  }
+}
