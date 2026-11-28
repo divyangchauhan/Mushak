@@ -2164,6 +2164,10 @@ fn assignment_footer(
                 ui.text("Applies after resume", |t| {
                     t.font(&fonts::SANS_MEDIUM).font_size(12).color(pal.muted)
                 });
+            } else if app.wheel_draft.is_some() && state == SaveState::Ready {
+                ui.text("Unsaved changes", |t| {
+                    t.font(&fonts::SANS_MEDIUM).font_size(12).color(pal.muted)
+                });
             }
             if state != SaveState::Ready {
                 ui.element()
