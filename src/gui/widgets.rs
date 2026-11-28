@@ -361,8 +361,13 @@ pub fn nav_item(ui: &mut Ui2, pal: &Palette, section: Section, active: bool, sho
         .layout(|l| {
             l.direction(LeftToRight)
                 .align(Left, CenterY)
-                .gap(11)
-                .padding((padding_y, 12, padding_y, 12))
+                .gap(if screen_width() < 840.0 { 7 } else { 11 })
+                .padding((
+                    padding_y,
+                    if screen_width() < 840.0 { 6 } else { 12 },
+                    padding_y,
+                    if screen_width() < 840.0 { 8 } else { 12 },
+                ))
         })
         .children(|ui| {
             if ui.just_pressed() {
@@ -442,7 +447,7 @@ pub fn status_card(ui: &mut Ui2, app: &mut App, short: bool) {
                         t.font(&fonts::SANS_SEMIBOLD).font_size(12).color(pal.text)
                     });
                 });
-            if !d.capabilities.battery {
+            if !awake || !d.capabilities.battery {
                 return;
             }
             ui.element()
