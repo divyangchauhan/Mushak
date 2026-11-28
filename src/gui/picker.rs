@@ -1314,6 +1314,14 @@ type ActionChoice = (
 );
 type ActionGroup = (String, Vec<ActionChoice>);
 
+fn shortcut_hint(ui: &mut Ui2, pal: &Palette, keys: &[&str]) {
+    if !keys.is_empty() {
+        ui.text(&keys.join(" + "), |t| {
+            t.font(&fonts::MONO_BOLD).font_size(12).color(pal.muted)
+        });
+    }
+}
+
 fn browse_categories(
     ui: &mut Ui2,
     app: &mut App,
@@ -1493,13 +1501,7 @@ fn browse_categories(
                                                     });
                                                 },
                                             );
-                                            if !keys.is_empty() {
-                                                ui.text(&keys.join(" + "), |t| {
-                                                    t.font(&fonts::SANS_MEDIUM)
-                                                        .font_size(14)
-                                                        .color(pal.muted)
-                                                });
-                                            }
+                                            shortcut_hint(ui, &pal, keys);
                                             if active && app.pending_action.is_some() {
                                                 ui.text("Draft", |t| {
                                                     t.font(&fonts::SANS_SEMIBOLD)
@@ -1800,9 +1802,7 @@ fn results(
                                         });
                                     }
                                 });
-                            for k in keys {
-                                widgets::keycap(ui, &pal, k);
-                            }
+                            shortcut_hint(ui, &pal, keys);
                             if !is_current {
                                 ui.text("Select", |t| {
                                     t.font(&fonts::SANS_SEMIBOLD)
