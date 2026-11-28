@@ -478,18 +478,7 @@ fn mapping_row(ui: &mut Ui2, pal: &super::theme::Palette, row: &MappingRow) -> b
                             }
                         });
                 });
-            ui.element()
-                .width(fixed!(52.0))
-                .height(fixed!(28.0))
-                .corner_radius(6.0)
-                .border(|b| b.all(1).color(pal.line_strong))
-                .layout(|l| l.direction(LeftToRight).align(CenterX, CenterY).gap(4))
-                .children(|ui| {
-                    widgets::icon(ui, &icons::CAT_EDIT, 14.0, pal.muted);
-                    ui.text("Edit", |t| {
-                        t.font(&fonts::SANS_MEDIUM).font_size(12).color(pal.text)
-                    });
-                });
+            widgets::icon(ui, &icons::CHEVRON_RIGHT, 15.0, pal.muted);
         });
     clicked
 }

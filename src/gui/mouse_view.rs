@@ -829,7 +829,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             });
                         widgets::icon(
                             ui,
-                            &icons::CAT_EDIT,
+                            &icons::CHEVRON_RIGHT,
                             18.0,
                             if hovered { pal.accent } else { pal.muted },
                         );
