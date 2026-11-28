@@ -1009,7 +1009,16 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
         .layout(|l| l.direction(TopToBottom).gap(6).padding((8, 16, 8, 16)))
         .children(|ui| {
             if editing {
-                let steps = format!("{} supported DPI values", choices.len());
+                let steps = if choices.len() <= 6 {
+                    format!("{} supported DPI values", choices.len())
+                } else {
+                    format!(
+                        "{} steps · {} to {} DPI",
+                        choices.len(),
+                        choices.iter().min().unwrap(),
+                        choices.iter().max().unwrap()
+                    )
+                };
                 if !side_by_side {
                     ui.text("Switch between two pointer speeds", |t| {
                         t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
@@ -1843,16 +1852,25 @@ fn results(
                                 });
                             shortcut_hint(ui, &pal, keys);
                             if !is_current {
-                                ui.text("Select", |t| {
-                                    t.font(&fonts::SANS_SEMIBOLD)
-                                        .font_size(13)
-                                        .color(pal.accent)
-                                });
+                                ui.element()
+                                    .height(fixed!(26.0))
+                                    .corner_radius(6.0)
+                                    .border(|b| b.all(1).color(pal.line_strong))
+                                    .background_color(pal.s2)
+                                    .layout(|l| l.align(CenterX, CenterY).padding((0, 9, 0, 9)))
+                                    .children(|ui| {
+                                        ui.text("Select", |t| {
+                                            t.font(&fonts::SANS_SEMIBOLD)
+                                                .font_size(13)
+                                                .color(pal.text)
+                                        });
+                                    });
                             }
                             if is_current && app.pending_action.is_some() {
-                                ui.text("Draft", |t| {
+                                widgets::icon(ui, &icons::CHECK, 14.0, pal.accent);
+                                ui.text("Unsaved", |t| {
                                     t.font(&fonts::SANS_SEMIBOLD)
-                                        .font_size(12)
+                                        .font_size(13)
                                         .color(pal.accent)
                                 });
                             } else if is_current {

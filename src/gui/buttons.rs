@@ -209,6 +209,30 @@ pub(super) fn profile_heading(ui: &mut Ui2, app: &mut App, title: &str, subtitle
         .height(fit!())
         .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(8))
         .children(|ui| {
+            if offer_diagram {
+                let label = if app.compact_diagram {
+                    "Button list"
+                } else {
+                    "Show diagram"
+                };
+                ui.element()
+                    .id("compact_diagram_toggle")
+                    .height(fixed!(26.0))
+                    .width(fixed!(112.0))
+                    .corner_radius(6.0)
+                    .background_color(pal.surface)
+                    .border(|b| b.all(1).color(pal.line_strong))
+                    .accessibility(|a| a.button(label))
+                    .layout(|l| l.align(CenterX, CenterY))
+                    .children(|ui| {
+                        ui.text(label, |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
+                        });
+                        if ui.just_pressed() {
+                            app.compact_diagram = !app.compact_diagram;
+                        }
+                    });
+            }
             ui.element()
                 .id("profile_caption")
                 .width(if offer_diagram { grow!(0.0) } else { fit!() })
@@ -254,30 +278,6 @@ pub(super) fn profile_heading(ui: &mut Ui2, app: &mut App, title: &str, subtitle
                             });
                     }
                 });
-            if offer_diagram {
-                let label = if app.compact_diagram {
-                    "Button list"
-                } else {
-                    "Show diagram"
-                };
-                ui.element()
-                    .id("compact_diagram_toggle")
-                    .height(fixed!(26.0))
-                    .width(fixed!(112.0))
-                    .corner_radius(6.0)
-                    .background_color(pal.surface)
-                    .border(|b| b.all(1).color(pal.line_strong))
-                    .accessibility(|a| a.button(label))
-                    .layout(|l| l.align(CenterX, CenterY))
-                    .children(|ui| {
-                        ui.text(label, |t| {
-                            t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
-                        });
-                        if ui.just_pressed() {
-                            app.compact_diagram = !app.compact_diagram;
-                        }
-                    });
-            }
         });
 
     if toggle_menu {

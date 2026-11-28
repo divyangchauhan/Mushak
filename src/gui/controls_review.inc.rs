@@ -1,3 +1,22 @@
+fn review_bounds(ply: &Ply<()>, dir: &std::path::Path, frame: &str, ids: &[&'static str]) {
+    use std::io::Write;
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(dir.join("bounds.csv"))
+        .unwrap();
+    for id in ids {
+        if let Some(b) = ply.bounding_box(*id) {
+            writeln!(
+                file,
+                "{frame},{id},{:.2},{:.2},{:.2},{:.2}",
+                b.x, b.y, b.width, b.height
+            )
+            .unwrap();
+        }
+    }
+}
+
 fn review_frame(dir: &std::path::Path, name: &str) {
     use std::io::Write;
     let image = get_screen_data();
@@ -17,6 +36,7 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
     for theme in [Theme::Dark, Theme::Light] {
         let dir = output.join(format!("{theme:?}"));
         std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("bounds.csv"), "frame,id,x,y,width,height\n").unwrap();
         app.draft = sample.clone();
         assert!(app.commit_config());
         app.prefs.theme = theme;
@@ -41,6 +61,8 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         let trigger = ply.bounding_box("profile_btn").unwrap();
         let menu = ply.bounding_box("profile_menu").unwrap();
         assert!((menu.y - trigger.y - trigger.height).abs() < 6.0);
+        let diagram = ply.bounding_box("compact_diagram_toggle").unwrap();
+        assert!(diagram.x + diagram.width < menu.x);
         review_frame(&dir, "A5");
         click(ply, app, ("profile_opt", 1)).await;
         app.device_view.device.connected = false;
@@ -66,12 +88,36 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         assert!(app.wheel_switch.is_none() && app.scrolling_tab);
         let original = Config::load_strict().unwrap();
         let save = ply.bounding_box("save_wheel").unwrap();
-        for _ in 0..3 {
+        for cycle in 0..3 {
             click(ply, app, "middle_click_tab").await;
             assert!(!app.scrolling_tab);
+            review_bounds(
+                ply,
+                &dir,
+                &format!("middle-{cycle}"),
+                &[
+                    "mouse_middle",
+                    "picker_panel",
+                    "middle_click_tab",
+                    "save_action",
+                    "cancel_action",
+                ],
+            );
             let other = ply.bounding_box("save_action").unwrap();
             assert!((other.y - save.y).abs() < 1.1);
             click(ply, app, "scrolling_tab").await;
+            review_bounds(
+                ply,
+                &dir,
+                &format!("scrolling-{cycle}"),
+                &[
+                    "mouse_middle",
+                    "picker_panel",
+                    "scrolling_tab",
+                    "save_wheel",
+                    "cancel_wheel",
+                ],
+            );
         }
         click(ply, app, "middle_click_tab").await;
         review_frame(&dir, "B3");
@@ -79,6 +125,19 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         settle(ply, app).await;
         click(ply, app, "scrolling_tab").await;
         review_frame(&dir, "B4");
+        review_bounds(
+            ply,
+            &dir,
+            "B4",
+            &[
+                "wheel_form",
+                "sw_hires",
+                "sw_invert",
+                "deadzone",
+                "cancel_wheel",
+                "save_wheel",
+            ],
+        );
         let save = ply.bounding_box("save_wheel").unwrap();
         assert!(save.y + save.height <= screen_height());
         click(ply, app, "cancel_wheel").await;
@@ -94,9 +153,27 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         click(ply, app, "picker_close").await;
         click(ply, app, "mouse_back").await;
         review_frame(&dir, "C1");
+        review_bounds(
+            ply,
+            &dir,
+            "C1",
+            &[
+                "picker_panel",
+                "preset_tab",
+                "shortcut_tab",
+                "save_action",
+                "cancel_action",
+            ],
+        );
         ply.set_text_value("picker_search", "Copy");
         settle(ply, app).await;
         review_frame(&dir, "C2");
+        click(ply, app, ("pk", 0)).await;
+        assert!(app.pending_action.is_some());
+        assert_eq!(Config::load_strict().unwrap(), original);
+        review_frame(&dir, "C6");
+        click(ply, app, "cancel_action").await;
+        click(ply, app, "mouse_back").await;
         click(ply, app, "shortcut_tab").await;
         click(ply, app, "capture").await;
         assert!(app.capturing_key);
@@ -112,6 +189,18 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         settle(ply, app).await;
         assert_eq!(app.custom_key, Some(75));
         review_frame(&dir, "C3");
+        review_bounds(
+            ply,
+            &dir,
+            "C3",
+            &[
+                "picker_panel",
+                "preset_tab",
+                "shortcut_tab",
+                "assign",
+                "cancel_shortcut",
+            ],
+        );
         click(ply, app, ("mod", 0u32)).await;
         assert!(app.custom_mods.contains(&crate::config::Modifier::Ctrl));
         review_frame(&dir, "C5");
@@ -120,6 +209,18 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         chrome::make_frameless(720.0, 360.0);
         settle(ply, app).await;
         review_frame(&dir, "C4");
+        review_bounds(
+            ply,
+            &dir,
+            "C4",
+            &[
+                "picker_panel",
+                "preset_tab",
+                "shortcut_tab",
+                "assign",
+                "cancel_shortcut",
+            ],
+        );
         click(ply, app, "assign").await;
         let mut expected = original.clone();
         expected.profiles[0].buttons.back = Action::key(&[], 75);
