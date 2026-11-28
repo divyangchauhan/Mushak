@@ -1197,8 +1197,15 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                 ui.element()
                     .id("dpi_outlook")
                     .width(grow!())
-                    .height(fixed!(24.0))
-                    .layout(|l| l.align(Left, CenterY))
+                    .height(fixed!(30.0))
+                    .corner_radius(6.0)
+                    .background_color(pal.s2)
+                    .layout(|l| {
+                        l.direction(LeftToRight)
+                            .align(Left, CenterY)
+                            .gap(8)
+                            .padding((0, 8, 0, 8))
+                    })
                     .children(|ui| {
                         if let Some(current) = current_dpi.filter(|_| distinct) {
                             let Ok(next) = crate::hidpp::features::dpi::toggle_target(
@@ -1209,27 +1216,36 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                             ) else {
                                 return;
                             };
+                            ui.text(&format!("Current  {current} DPI"), |t| {
+                                t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
+                            });
+                            widgets::icon(ui, &icons::CHEVRON_RIGHT, 13.0, pal.muted);
+                            ui.text(&format!("Next press  {next} DPI"), |t| {
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                            });
+                        } else if !distinct {
                             ui.text(
-                                &format!("Current: {current} DPI     Next press: {next} DPI"),
-                                |t| t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text),
+                                if valid {
+                                    "Choose two different speeds"
+                                } else {
+                                    "Enter a DPI value reported by this mouse"
+                                },
+                                |t| {
+                                    t.font(&fonts::SANS_SEMIBOLD)
+                                        .font_size(13)
+                                        .color(pal.danger)
+                                },
                             );
+                        } else {
+                            ui.text("Each press switches between these speeds", |t| {
+                                t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
+                            });
                         }
                     });
                 if distinct {
                     *chosen = Some(Action::ChangePointerSpeed {
                         first: app.picker_dpi[0],
                         second: app.picker_dpi[1],
-                    });
-                } else {
-                    let reason = if valid {
-                        "Choose two different speeds"
-                    } else {
-                        "Enter a DPI value reported by this mouse"
-                    };
-                    ui.text(reason, |t| {
-                        t.font(&fonts::SANS_SEMIBOLD)
-                            .font_size(14)
-                            .color(pal.danger)
                     });
                 }
             }
