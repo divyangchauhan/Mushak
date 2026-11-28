@@ -85,6 +85,13 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         assert_eq!(Config::load_strict().unwrap(), original);
         chrome::make_frameless(DESIGN_W, DESIGN_H);
         settle(ply, app).await;
+        click(ply, app, "wheel_hit").await;
+        click(ply, app, ("mode", 0)).await;
+        click(ply, app, ("wheel_switch_marker", 1u32)).await;
+        click(ply, app, "discard_wheel").await;
+        assert!(app.wheel_draft.is_none());
+        assert_eq!(Config::load_strict().unwrap(), original);
+        click(ply, app, "picker_close").await;
         click(ply, app, "mouse_back").await;
         review_frame(&dir, "C1");
         ply.set_text_value("picker_search", "Copy");

@@ -213,16 +213,28 @@ pub(super) fn profile_heading(ui: &mut Ui2, app: &mut App, title: &str, subtitle
                 .id("profile_caption")
                 .width(if offer_diagram { grow!(0.0) } else { fit!() })
                 .height(fit!())
+                .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(6))
                 .children(|ui| {
                     // The caption sets the row height even when an offline hint wraps.
+                    let offline =
+                        app.section == super::Section::Buttons && !app.device_view.device.connected;
+                    if offline && notice.is_none() {
+                        widgets::icon(ui, &icons::ASLEEP, 14.0, pal.muted);
+                    }
                     ui.text(subtitle, |t| {
-                        t.font(&fonts::SANS)
-                            .font_size(14)
-                            .color(if notice.is_some() {
-                                super::theme::TRANSPARENT
-                            } else {
-                                pal.muted
-                            })
+                        t.font(if offline {
+                            &fonts::SANS_MEDIUM
+                        } else {
+                            &fonts::SANS
+                        })
+                        .font_size(14)
+                        .color(if notice.is_some() {
+                            super::theme::TRANSPARENT
+                        } else if offline {
+                            pal.text
+                        } else {
+                            pal.muted
+                        })
                     });
                     if let Some(message) = notice {
                         ui.element()

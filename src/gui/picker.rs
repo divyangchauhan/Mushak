@@ -2121,23 +2121,50 @@ fn assignment_footer(
             .height(fit!())
             .border(|b| b.top(1).color(pal.line))
             .layout(|l| {
-                l.direction(LeftToRight)
+                l.direction(TopToBottom)
                     .align(Left, CenterY)
                     .gap(6)
                     .padding((6, 12, 0, 12))
             })
             .children(|ui| {
-                ui.text("Wheel edits", |t| {
+                ui.text("Discard wheel changes and switch controls?", |t| {
                     t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.text)
                 });
-                if super::scroll::choice(ui, &pal, "keep_wheel".into(), "Keep editing", true) {
-                    app.wheel_switch = None;
-                }
-                if super::scroll::choice(ui, &pal, "discard_wheel".into(), "Discard edits", false) {
-                    if let Some((target, anchor)) = app.wheel_switch.take() {
-                        app.open_button_popover(target, anchor);
-                    }
-                }
+                ui.element()
+                    .width(grow!())
+                    .height(fit!())
+                    .layout(|l| l.direction(LeftToRight).gap(7))
+                    .children(|ui| {
+                        for (id, label, keep) in [
+                            ("keep_wheel", "Keep editing", true),
+                            ("discard_wheel", "Discard and switch", false),
+                        ] {
+                            ui.element()
+                                .id(id)
+                                .width(grow!())
+                                .height(fixed!(30.0))
+                                .corner_radius(6.0)
+                                .background_color(if keep { pal.s2 } else { pal.win })
+                                .border(|b| {
+                                    b.all(1)
+                                        .color(if keep { pal.accent } else { pal.line_strong })
+                                })
+                                .layout(|l| l.align(CenterX, CenterY))
+                                .accessibility(|a| a.button(label))
+                                .children(|ui| {
+                                    ui.text(label, |t| {
+                                        t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
+                                    });
+                                    if ui.just_pressed() {
+                                        if let Some((target, anchor)) = app.wheel_switch.take() {
+                                            if !keep {
+                                                app.open_button_popover(target, anchor);
+                                            }
+                                        }
+                                    }
+                                });
+                        }
+                    });
             });
         return false;
     }
