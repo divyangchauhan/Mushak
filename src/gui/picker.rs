@@ -1447,13 +1447,14 @@ fn browse_categories(
                 .children(|ui| {
                     if !wheel || draft_replacement_hint(app, current).is_some() {
                         ui.element()
-                            .height(fixed!(28.0))
+                            .height(fixed!(24.0))
                             .layout(|l| l.align(Left, CenterY))
                             .children(|ui| {
                                 let hint = draft_replacement_hint(app, current);
-                                ui.text(hint.as_deref().unwrap_or("Select an action"), |t| {
-                                    t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                                });
+                                ui.text(
+                                    hint.as_deref().unwrap_or(&groups[app.picker_category].0),
+                                    |t| t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text),
+                                );
                             });
                     }
                     for (line, pair) in choices.chunks(columns).enumerate() {
@@ -1488,7 +1489,7 @@ fn browse_categories(
                                         } else if screen_width() < 840.0 {
                                             42.0
                                         } else {
-                                            34.0
+                                            31.0
                                         }))
                                         .corner_radius(6.0)
                                         .background_color(if active || hover {
