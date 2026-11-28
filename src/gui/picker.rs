@@ -1314,7 +1314,7 @@ type ActionChoice = (
 );
 type ActionGroup = (String, Vec<ActionChoice>);
 
-fn shortcut_hint(ui: &mut Ui2, pal: &Palette, keys: &[&str]) {
+fn shortcut_hint(ui: &mut Ui2, pal: &super::theme::Palette, keys: &[String]) {
     if !keys.is_empty() {
         ui.text(&keys.join(" + "), |t| {
             t.font(&fonts::MONO_BOLD).font_size(12).color(pal.muted)
