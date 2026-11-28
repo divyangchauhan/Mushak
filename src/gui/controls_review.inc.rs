@@ -37,6 +37,12 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         chrome::make_frameless(720.0, 540.0);
         settle(ply, app).await;
         review_frame(&dir, "A3");
+        click(ply, app, "profile_btn").await;
+        let trigger = ply.bounding_box("profile_btn").unwrap();
+        let menu = ply.bounding_box("profile_menu").unwrap();
+        assert!((menu.y - trigger.y - trigger.height).abs() < 6.0);
+        review_frame(&dir, "A5");
+        click(ply, app, ("profile_opt", 1)).await;
         app.device_view.device.connected = false;
         settle(ply, app).await;
         review_frame(&dir, "A4");

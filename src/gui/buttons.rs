@@ -507,7 +507,7 @@ fn mapping_row(ui: &mut Ui2, pal: &super::theme::Palette, row: &MappingRow) -> b
 fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usize>) {
     let pal = app.pal;
     let selected = app.selected_profile;
-    let wide = screen_width() >= 840.0;
+    let compact_other_screen = screen_width() < 840.0 && app.section != super::Section::Buttons;
     ui.element()
         .id("profile_menu")
         .width(fixed!(
@@ -525,7 +525,7 @@ fn profile_menu(ui: &mut Ui2, app: &App, names: &[String], pick: &mut Option<usi
         .floating(|f| {
             f.attach_id("profile_btn")
                 .anchor((Right, Top), (Right, Top))
-                .offset((0.0, if wide { 41.0 } else { 65.0 }))
+                .offset((0.0, if compact_other_screen { 65.0 } else { 41.0 }))
                 .z_index(50)
         })
         .corner_radius(11.0)
