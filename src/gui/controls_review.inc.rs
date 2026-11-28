@@ -1,3 +1,12 @@
+fn review_frame(dir:&std::path::Path, name:&str) {
+    use std::io::Write;
+    let image=get_screen_data();
+    let mut f=std::fs::File::create(dir.join(format!("{name}.rgba"))).unwrap();
+    f.write_all(&image.width.to_le_bytes()).unwrap();
+    f.write_all(&image.height.to_le_bytes()).unwrap();
+    f.write_all(&image.bytes).unwrap();
+}
+
 async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::Path) {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../../docs/validation/mx-master-2s-bluetooth.json"
@@ -21,24 +30,24 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         app.section = Section::Buttons;
         chrome::make_frameless(DESIGN_W, DESIGN_H);
         settle(ply, app).await;
-        snapshot(&dir, "A1");
+        review_frame(&dir, "A1");
         click(ply, app, "profile_btn").await;
-        snapshot(&dir, "A2");
+        review_frame(&dir, "A2");
         click(ply, app, ("profile_opt", 1)).await;
         chrome::make_frameless(720.0, 540.0);
         settle(ply, app).await;
-        snapshot(&dir, "A3");
+        review_frame(&dir, "A3");
         app.device_view.device.connected = false;
         settle(ply, app).await;
-        snapshot(&dir, "A4");
+        review_frame(&dir, "A4");
         app.device_view.device.connected = true;
         chrome::make_frameless(DESIGN_W, DESIGN_H);
         settle(ply, app).await;
         click(ply, app, "wheel_hit").await;
         assert!(app.scrolling_tab);
-        snapshot(&dir, "B1");
+        review_frame(&dir, "B1");
         click(ply, app, ("mode", 0)).await;
-        snapshot(&dir, "B2");
+        review_frame(&dir, "B2");
         let original = Config::load_strict().unwrap();
         let save = ply.bounding_box("save_wheel").unwrap();
         for _ in 0..3 {
@@ -49,11 +58,11 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
             click(ply, app, "scrolling_tab").await;
         }
         click(ply, app, "middle_click_tab").await;
-        snapshot(&dir, "B3");
+        review_frame(&dir, "B3");
         chrome::make_frameless(720.0, 360.0);
         settle(ply, app).await;
         click(ply, app, "scrolling_tab").await;
-        snapshot(&dir, "B4");
+        review_frame(&dir, "B4");
         let save = ply.bounding_box("save_wheel").unwrap();
         assert!(save.y + save.height <= screen_height());
         click(ply, app, "cancel_wheel").await;
@@ -61,10 +70,10 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         chrome::make_frameless(DESIGN_W, DESIGN_H);
         settle(ply, app).await;
         click(ply, app, "mouse_back").await;
-        snapshot(&dir, "C1");
+        review_frame(&dir, "C1");
         ply.set_text_value("picker_search", "Copy");
         settle(ply, app).await;
-        snapshot(&dir, "C2");
+        review_frame(&dir, "C2");
         click(ply, app, "shortcut_tab").await;
         click(ply, app, "capture").await;
         assert!(app.capturing_key);
@@ -79,10 +88,10 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         }
         settle(ply, app).await;
         assert_eq!(app.custom_key, Some(75));
-        snapshot(&dir, "C3");
+        review_frame(&dir, "C3");
         chrome::make_frameless(720.0, 360.0);
         settle(ply, app).await;
-        snapshot(&dir, "C4");
+        review_frame(&dir, "C4");
         click(ply, app, "assign").await;
         let mut expected = original.clone();
         expected.profiles[0].buttons.back = Action::key(&[], 75);
@@ -93,11 +102,11 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         assert_eq!(app.custom_key, Some(75));
         click(ply, app, "picker_close").await;
         click(ply, app, "mouse_mode").await;
-        snapshot(&dir, "D1");
+        review_frame(&dir, "D1");
         click(ply, app, "picker_speed_setup").await;
         chrome::make_frameless(720.0, 360.0);
         settle(ply, app).await;
-        snapshot(&dir, "D2");
+        review_frame(&dir, "D2");
         click(ply, app, "cancel_action").await;
     }
     std::fs::write(output.join("verified.txt"),"Both themes passed profile selection, wheel cycling, resize, cancel, shortcut capture, save and reopen.").unwrap();
