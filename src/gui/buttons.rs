@@ -71,6 +71,14 @@ pub(super) fn control_id(key: &str) -> Option<u16> {
     .filter(|cid| !matches!(cid, 0 | 0x0050..=0x0056))
 }
 
+pub(super) fn wheel_summary(device: &crate::hidpp::device::DeviceStatus, click: String) -> String {
+    if super::scroll::available(device) {
+        format!("Scrolling · {click}")
+    } else {
+        click
+    }
+}
+
 fn row_icon(slot: &str) -> &'static GraphicAsset {
     match slot {
         "back" => &icons::BTN_BACK,
@@ -317,6 +325,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
             } else {
                 format!("Middle click: {binding}")
             };
+            action.label = wheel_summary(device, action.label);
             action.keys.clear();
         }
         rows.push(MappingRow {

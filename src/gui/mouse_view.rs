@@ -538,6 +538,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 } else {
                     action_label
                 };
+                let action_label = if wheel && target.available(&app.device_view.device) {
+                    super::buttons::wheel_summary(&app.device_view.device, action_label)
+                } else {
+                    action_label
+                };
                 let active =
                     app.picker.as_ref() == Some(&target) && app.picker_anchor == Some(part.id);
                 // Only the active marker has a corresponding control while the editor is open.
