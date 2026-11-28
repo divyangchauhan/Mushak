@@ -268,7 +268,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
             "Select a control on the mouse or in the list."
         }
     } else {
-        "Choose an assignment to edit. Offline changes apply when your mouse connects."
+        "Offline edits apply when your mouse reconnects."
     };
     profile_heading(ui, app, "Mouse controls", subtitle);
     ui.element()
