@@ -1138,7 +1138,28 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                                                 t.font(&fonts::SANS).font_size(13).color(pal.muted)
                                             });
                                         });
-                                    if let Some(v) = widgets::slider(
+                                    if choices.len() <= 6 {
+                                        ui.element()
+                                            .width(grow!())
+                                            .height(fit!())
+                                            .layout(|l| l.direction(LeftToRight).gap(3))
+                                            .children(|ui| {
+                                                for (j, step) in choices.iter().enumerate() {
+                                                    if super::scroll::choice(
+                                                        ui,
+                                                        &pal,
+                                                        (*slider_id, j as u32).into(),
+                                                        &step.to_string(),
+                                                        selected == j,
+                                                    ) {
+                                                        ui.set_text_value(
+                                                            field.clone(),
+                                                            &step.to_string(),
+                                                        );
+                                                    }
+                                                }
+                                            });
+                                    } else if let Some(v) = widgets::slider(
                                         ui,
                                         &pal,
                                         *slider_id,
@@ -1151,33 +1172,6 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                                             field.clone(),
                                             &choices[v as usize].to_string(),
                                         );
-                                    }
-                                    if choices.len() <= 6 {
-                                        ui.element()
-                                            .width(grow!())
-                                            .height(fit!())
-                                            .layout(|l| {
-                                                l.direction(LeftToRight).align(Left, CenterY)
-                                            })
-                                            .children(|ui| {
-                                                for (j, step) in choices.iter().enumerate() {
-                                                    if j > 0 {
-                                                        ui.element()
-                                                            .width(grow!())
-                                                            .height(fixed!(1.0))
-                                                            .empty();
-                                                    }
-                                                    ui.text(&step.to_string(), |t| {
-                                                        t.font(&fonts::MONO_MEDIUM)
-                                                            .font_size(11)
-                                                            .color(if *step == app.picker_dpi[i] {
-                                                                pal.text
-                                                            } else {
-                                                                pal.muted
-                                                            })
-                                                    });
-                                                }
-                                            });
                                     }
                                     let value = ui
                                         .get_text_value(field)

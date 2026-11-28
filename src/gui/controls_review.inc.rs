@@ -128,6 +128,12 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         chrome::make_frameless(720.0, 360.0);
         settle(ply, app).await;
         review_frame(&dir, "D2");
+        click(ply, app, ("picker_dpi_first", 0u32)).await;
+        assert_eq!(app.picker_dpi[0], 400);
+        app.device_view.device.dpi_list = (1..=32).map(|v| v * 100).collect();
+        settle(ply, app).await;
+        assert!(ply.bounding_box("picker_dpi_first").is_some());
+        review_frame(&dir, "D3");
         click(ply, app, "cancel_action").await;
     }
     std::fs::write(output.join("verified.txt"),"Both themes passed profile selection, wheel cycling, resize, cancel, shortcut capture, save and reopen.").unwrap();
