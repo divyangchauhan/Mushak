@@ -1336,7 +1336,7 @@ fn browse_categories(
             .is_some_and(|r| r.width >= 600.0);
     let columns = if wide_short { 2 } else { 1 };
     let wheel = app.wheel_draft.is_some();
-    let rail_width = if wheel { 106.0 } else { 136.0 };
+    let rail_width = if wheel { 124.0 } else { 136.0 };
     ui.element()
         .width(grow!())
         .height(grow!(0.0))
