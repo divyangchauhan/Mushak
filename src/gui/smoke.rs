@@ -101,7 +101,11 @@ fn assert_panel_fits(ply: &Ply<()>, app: &App) {
     if app.shortcut_editor {
         controls.extend(["assign", "cancel_shortcut", "capture"]);
     } else {
-        controls.push("picker_search");
+        if app.picker_speed_editor {
+            controls.push("dpi_outlook");
+        } else {
+            controls.push("picker_search");
+        }
         controls.extend(["save_action", "cancel_action"]);
     }
     for id in controls {
