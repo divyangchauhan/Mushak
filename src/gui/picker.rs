@@ -1089,42 +1089,55 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                                 .unwrap_or(0);
                             ui.element()
                                 .width(grow!())
-                                .height(fixed!(32.0))
-                                .layout(|l| l.direction(LeftToRight).gap(8).align(Left, CenterY))
+                                .height(fit!())
+                                .layout(|l| l.direction(TopToBottom).gap(3))
                                 .children(|ui| {
-                                    ui.text(&format!("Speed {}", i + 1), |t| {
-                                        t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                                    });
-                                    let focused = ui.focused_element() == Some(field.clone());
                                     ui.element()
-                                        .width(fixed!(64.0))
-                                        .height(fixed!(30.0))
-                                        .corner_radius(5.0)
-                                        .background_color(pal.win)
-                                        .border(|b| {
-                                            b.all(1).color(if focused {
-                                                pal.accent
-                                            } else {
-                                                pal.line_strong
-                                            })
+                                        .width(grow!())
+                                        .height(fixed!(32.0))
+                                        .layout(|l| {
+                                            l.direction(LeftToRight).align(Left, CenterY).gap(8)
                                         })
-                                        .layout(|l| l.align(Left, CenterY).padding((0, 6, 0, 6)))
                                         .children(|ui| {
+                                            ui.text(&format!("Speed {}", i + 1), |t| {
+                                                t.font(&fonts::SANS_SEMIBOLD)
+                                                    .font_size(14)
+                                                    .color(pal.text)
+                                            });
+                                            let focused =
+                                                ui.focused_element() == Some(field.clone());
                                             ui.element()
-                                                .id(field.clone())
-                                                .width(grow!())
-                                                .height(fixed!(24.0))
-                                                .text_input(|t| {
-                                                    t.font(&fonts::MONO_MEDIUM)
-                                                        .font_size(14)
-                                                        .text_color(pal.text)
-                                                        .cursor_color(pal.accent)
+                                                .width(fixed!(64.0))
+                                                .height(fixed!(30.0))
+                                                .corner_radius(5.0)
+                                                .background_color(pal.win)
+                                                .border(|b| {
+                                                    b.all(1).color(if focused {
+                                                        pal.accent
+                                                    } else {
+                                                        pal.line_strong
+                                                    })
                                                 })
-                                                .empty();
+                                                .layout(|l| {
+                                                    l.align(Left, CenterY).padding((0, 6, 0, 6))
+                                                })
+                                                .children(|ui| {
+                                                    ui.element()
+                                                        .id(field.clone())
+                                                        .width(grow!())
+                                                        .height(fixed!(24.0))
+                                                        .text_input(|t| {
+                                                            t.font(&fonts::MONO_MEDIUM)
+                                                                .font_size(14)
+                                                                .text_color(pal.text)
+                                                                .cursor_color(pal.accent)
+                                                        })
+                                                        .empty();
+                                                });
+                                            ui.text("DPI", |t| {
+                                                t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                                            });
                                         });
-                                    ui.text("DPI", |t| {
-                                        t.font(&fonts::SANS).font_size(13).color(pal.muted)
-                                    });
                                     if let Some(v) = widgets::slider(
                                         ui,
                                         &pal,
