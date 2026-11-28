@@ -1001,23 +1001,25 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
         .layout(|l| l.direction(TopToBottom).gap(6).padding((8, 16, 8, 16)))
         .children(|ui| {
             if editing {
-                let range = format!(
-                    "{} to {} DPI",
-                    choices.iter().min().unwrap(),
-                    choices.iter().max().unwrap()
-                );
-                if side_by_side {
-                    ui.text(&format!("Two pointer speeds · {range}"), |t| {
-                        t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
-                    });
+                let steps = if choices.len() <= 6 {
+                    let values: Vec<_> = choices.iter().map(u16::to_string).collect();
+                    format!("DPI steps   {}", values.join("   ·   "))
                 } else {
+                    format!(
+                        "{} supported steps   ·   {} to {} DPI",
+                        choices.len(),
+                        choices.iter().min().unwrap(),
+                        choices.iter().max().unwrap()
+                    )
+                };
+                if !side_by_side {
                     ui.text("Switch between two pointer speeds", |t| {
                         t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
                     });
-                    ui.text(&format!("Supported range: {range}"), |t| {
-                        t.font(&fonts::SANS).font_size(14).color(pal.muted)
-                    });
                 }
+                ui.text(&steps, |t| {
+                    t.font(&fonts::SANS_MEDIUM).font_size(13).color(pal.muted)
+                });
             }
             ui.element()
                 .width(grow!())
