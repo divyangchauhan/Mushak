@@ -683,14 +683,14 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 row += 1;
                 ui.element()
                     .id(part.id)
-                    .width(fixed!(20.0 * scale))
-                    .height(fixed!(20.0 * scale))
+                    .width(fixed!(24.0 * scale))
+                    .height(fixed!(24.0 * scale))
                     .floating(|f| {
                         f.attach_id("mouse_stage")
                             .clip_by_parent()
                             .offset((
-                                x * art_scale + (horizontal - 10.0) * scale,
-                                y * art_scale + art_y + (leader - 10.0) * scale,
+                                x * art_scale + (horizontal - 12.0) * scale,
+                                y * art_scale + art_y + (leader - 12.0) * scale,
                             ))
                             .z_index(2)
                     })
