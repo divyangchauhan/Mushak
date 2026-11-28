@@ -460,6 +460,8 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
         .iter()
         .filter(|p| p.target(&app.device_view.device).is_some())
         .count();
+    let list_left = if reserve_editor_space { 324.0 } else { 379.0 };
+    let list_width = STAGE_WIDTH - list_left - 4.0;
     let row_pitch = if model == Model::Master4 { 48.0 } else { 55.0 };
     let extra_heading = if extras.is_empty() { 0.0 } else { 21.0 };
     let list_height = (count + extras.len()) as f32 * row_pitch + extra_heading;
@@ -676,7 +678,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             }
                         });
                 }
-                let lx = 379.0;
+                let lx = list_left;
                 let ly = list_top + row as f32 * row_pitch;
                 row += 1;
                 ui.element()
@@ -754,7 +756,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                 }
                 ui.element()
                     .id(label_id)
-                    .width(fixed!(217.0 * scale))
+                    .width(fixed!(list_width * scale))
                     .height(fixed!((row_pitch - 4.0) * scale))
                     .floating(|f| {
                         f.attach_id("mouse_stage")
@@ -834,10 +836,10 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     });
             }
             if !editing && !extras.is_empty() {
-                let x = 379.0 * scale;
+                let x = list_left * scale;
                 let y = list_top + count as f32 * row_pitch;
                 ui.element()
-                    .width(fixed!(217.0 * scale))
+                    .width(fixed!(list_width * scale))
                     .height(fixed!(extra_heading * scale))
                     .floating(|f| {
                         f.attach_id("mouse_stage")
@@ -874,7 +876,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     let hover = ui.pointer_over(id.clone());
                     ui.element()
                         .id(id)
-                        .width(fixed!(217.0 * scale))
+                        .width(fixed!(list_width * scale))
                         .height(fixed!((row_pitch - 4.0) * scale))
                         .floating(|f| {
                             f.attach_id("mouse_stage")

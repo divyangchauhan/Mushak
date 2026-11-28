@@ -262,7 +262,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
     let mut open_picker = None;
     let subtitle = if app.mouse_awake() {
-        "Select a control on the mouse or in the list."
+        if screen_width() < 840.0 && !app.compact_diagram {
+            "Choose a control to edit."
+        } else {
+            "Select a control on the mouse or in the list."
+        }
     } else {
         "Choose an assignment to edit. Offline changes apply when your mouse connects."
     };
