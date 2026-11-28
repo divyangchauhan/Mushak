@@ -58,6 +58,12 @@ const ALL: [&FontAsset; 8] = [
 /// Loading everything up front means every measurement, including the first,
 /// uses the font the text is actually drawn in.
 pub async fn preload() {
+    // Layout runs before the renderer can reload a font. Keep these eight embedded
+    // faces resident so revisiting a section measures its labels with the right face.
+    ply_engine::renderer::FONT_MANAGER
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .max_frames_not_used = usize::MAX;
     for f in ALL {
         ply_engine::renderer::FontManager::ensure(f).await;
     }

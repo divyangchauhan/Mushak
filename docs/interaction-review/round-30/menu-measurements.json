@@ -1,0 +1,58 @@
+{
+  "round-29": {
+    "Dark": {
+      "first_mapping_sample_xyxy": [
+        680,
+        179,
+        930,
+        231
+      ],
+      "pixels_changed_on_open": 3166
+    },
+    "Light": {
+      "first_mapping_sample_xyxy": [
+        680,
+        179,
+        930,
+        231
+      ],
+      "pixels_changed_on_open": 7871
+    },
+    "tray-active": [
+      505,
+      202
+    ],
+    "tray-paused": [
+      577,
+      202
+    ]
+  },
+  "round-30": {
+    "Dark": {
+      "first_mapping_sample_xyxy": [
+        680,
+        179,
+        930,
+        231
+      ],
+      "pixels_changed_on_open": 0
+    },
+    "Light": {
+      "first_mapping_sample_xyxy": [
+        680,
+        179,
+        930,
+        231
+      ],
+      "pixels_changed_on_open": 0
+    },
+    "tray-active": [
+      383,
+      202
+    ],
+    "tray-paused": [
+      383,
+      202
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "packet": "denim",
+  "source": "ba27717c0715b2ea0a66dd483473dc4ef799a48f",
+  "hostScale": 200,
+  "device": "Simulated MX Master 2S from recorded Bluetooth report. A4 disconnected.",
+  "window": {
+    "A3 A4": [
+      720,
+      540
+    ],
+    "B4 C4 D2": [
+      720,
+      360
+    ],
+    "other": [
+      968,
+      668
+    ]
+  }
+}

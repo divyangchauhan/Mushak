@@ -15,6 +15,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
 
 static CONFIG: OnceLock<ArcSwap<Config>> = OnceLock::new();
+static ACTIVE_GESTURES: OnceLock<ArcSwap<crate::config::GestureConfig>> = OnceLock::new();
+static ACTIVE_PROFILE_NAME: OnceLock<ArcSwap<String>> = OnceLock::new();
 static ACTIVE_MAP: OnceLock<ArcSwap<ButtonMap>> = OnceLock::new();
 static PAUSED: AtomicBool = AtomicBool::new(false);
 static FOREGROUND_REQUIRES_NATIVE_WHEEL: AtomicBool = AtomicBool::new(false);
@@ -51,6 +53,12 @@ pub fn set_config(config: Config) {
     reevaluate_active_profile();
 }
 
+pub fn active_profile_name() -> Option<String> {
+    ACTIVE_PROFILE_NAME
+        .get()
+        .map(|name| (**name.load()).clone())
+}
+
 /// The mapping the hook is currently enforcing.
 pub fn active_map() -> Arc<ButtonMap> {
     active_cell().load_full()
@@ -66,7 +74,12 @@ pub fn set_active_map(map: ButtonMap) {
 pub fn reevaluate_active_profile() {
     let cfg = config();
     let process = profiles::foreground_process_name();
-    let map = profiles::resolve_button_map(&cfg, process.as_deref());
+    let profile = cfg.profile_for(process.as_deref());
+    let map = profile.buttons.clone();
+    let name = ACTIVE_PROFILE_NAME.get_or_init(|| ArcSwap::from_pointee(profile.name.clone()));
+    if **name.load() != profile.name {
+        name.store(Arc::new(profile.name.clone()));
+    }
     if process.is_some() {
         tracing::debug!(
             "active profile for {:?}: {:?}",
@@ -74,6 +87,12 @@ pub fn reevaluate_active_profile() {
             map
         );
     }
+    let gestures = cfg.gestures_for(process.as_deref()).clone();
+    let cell = ACTIVE_GESTURES.get_or_init(|| ArcSwap::from_pointee(Default::default()));
+    if **cell.load() != gestures {
+        crate::gestures::cancel();
+    }
+    cell.store(Arc::new(gestures));
     set_active_map(map);
 
     // High-resolution wheel reports are normally diverted to HID++ and then
@@ -138,8 +157,17 @@ pub fn set_inject_tx(tx: Sender<Action>) {
     let _ = INJECT_TX.set(tx);
 }
 
-/// Queue an action for the injector thread. Never blocks the hook callback.
+/// Queue an action for the keyboard injector or device worker without blocking.
 pub fn inject(action: Action) {
+    if matches!(
+        action,
+        Action::ShiftWheelMode | Action::ChangePointerSpeed { .. }
+    ) {
+        if device_status().connected && !is_paused() {
+            device_command(DeviceCommand::PerformAction(action));
+        }
+        return;
+    }
     if let Some(tx) = INJECT_TX.get() {
         if tx.try_send(action).is_err() {
             tracing::warn!("injector queue full/closed; dropped action");
@@ -190,4 +218,10 @@ mod tests {
         assert!(needs_native_wheel_fallback(false, true));
         assert!(!needs_native_wheel_fallback(false, false));
     }
+}
+
+pub fn active_gestures() -> Arc<crate::config::GestureConfig> {
+    ACTIVE_GESTURES
+        .get_or_init(|| ArcSwap::from_pointee(Default::default()))
+        .load_full()
 }

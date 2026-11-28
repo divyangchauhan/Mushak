@@ -1,0 +1,218 @@
+{
+  "sol": [
+    {
+      "id": "01",
+      "label": "Edit profile",
+      "detail": "Frame 03 shows Default checked above Preview app."
+    },
+    {
+      "id": "02",
+      "label": "Outside the diagram",
+      "detail": "In frame 11, hovering over marker 2 lights up the Back button card and displays its name on the photo."
+    },
+    {
+      "id": "03",
+      "label": "Gesture button tap",
+      "detail": "Frame 06 puts separate Win and Tab keycaps before Task View, with an Edit button at the right."
+    },
+    {
+      "id": "04",
+      "label": "Choose an action to assign now",
+      "detail": "Frame 12 puts a numbered thumb-panel close-up beside the Haptic Sense Panel editor."
+    },
+    {
+      "id": "05",
+      "label": "No matching actions",
+      "detail": "Frame 04 pairs Clear search with Record a keyboard shortcut below the empty-state message."
+    },
+    {
+      "id": "06",
+      "label": "Switch between two pointer speeds",
+      "detail": "Frame 03 shows 800 and 1600 DPI alongside sliders, with Current: 1000 DPI and Next press: 800 DPI below."
+    },
+    {
+      "id": "07",
+      "label": "Save shortcut",
+      "detail": "Frame 24 shows all four checked modifiers and the full Ctrl + Win + Alt + Shift + Space draft at compact height."
+    },
+    {
+      "id": "08",
+      "label": "Ignore accidental nudges",
+      "detail": "Frame 05 retains the saved 50% threshold in the helper text when high-resolution scrolling is off."
+    },
+    {
+      "id": "09",
+      "label": "Minimum swipe distance",
+      "detail": "Frame 08 shows 60 counts and translates it to about 1.5 mm at 1000 DPI."
+    },
+    {
+      "id": "10",
+      "label": "Pick a window",
+      "detail": "Frame 11 shows python.exe as a removable chip and confirms it was added to Preview app."
+    },
+    {
+      "id": "11",
+      "label": "Edit button mappings",
+      "detail": "Frame 04 offers this action directly below a Disconnected card that explains saved mappings are still editable."
+    },
+    {
+      "id": "12",
+      "label": "HID++ features",
+      "detail": "Frame 02 pairs 0x2201 with Adjustable DPI and gives the 18 unnamed IDs a dedicated copy button."
+    },
+    {
+      "id": "13",
+      "label": "Remapping paused",
+      "detail": "Frame 18 places Applies after resume alongside Save shortcut inside the compact editor."
+    },
+    {
+      "id": "14",
+      "label": "Resume remapping \u00b7 Currently paused",
+      "detail": "Frame 02 puts a check beside Start with Windows and retains separators above the pause command and Quit Mushak."
+    }
+  ],
+  "terra": [
+    {
+      "id": "01",
+      "label": "Edit profile",
+      "detail": "The Default selector opens a two-item menu above the numbered mouse diagram."
+    },
+    {
+      "id": "02",
+      "label": "Outside the diagram",
+      "detail": "Button 0x01FF appears in its own row below the six numbered controls."
+    },
+    {
+      "id": "03",
+      "label": "Gesture button tap",
+      "detail": "Compact rows show keyboard keycaps, an action name, and an Edit button."
+    },
+    {
+      "id": "04",
+      "label": "Choose an action to assign now",
+      "detail": "A thumb-button close-up sits beside the category list and action rows."
+    },
+    {
+      "id": "05",
+      "label": "No matching actions",
+      "detail": "The empty state offers Clear search and Record a keyboard shortcut."
+    },
+    {
+      "id": "06",
+      "label": "Switch pointer speed",
+      "detail": "Two numeric DPI inputs and sliders appear above current and next-press values."
+    },
+    {
+      "id": "07",
+      "label": "Record key",
+      "detail": "The recording panel changes to Press a key and shows Esc cancels recording."
+    },
+    {
+      "id": "08",
+      "label": "Ignore accidental nudges",
+      "detail": "The threshold slider shows 50% of a notch with off and 100% endpoints."
+    },
+    {
+      "id": "09",
+      "label": "Minimum swipe distance",
+      "detail": "Five gesture rows pair orange direction arrows with action chips and edit pencils."
+    },
+    {
+      "id": "10",
+      "label": "Pick a window",
+      "detail": "The capture state displays Capturing in 6s next to a six-second extension and Cancel."
+    },
+    {
+      "id": "11",
+      "label": "Disconnected",
+      "detail": "The disconnected card says saved button mappings remain editable and provides an edit button."
+    },
+    {
+      "id": "12",
+      "label": "HID++ features",
+      "detail": "Named hexadecimal IDs appear in two columns, followed by 18 unnamed feature chips."
+    },
+    {
+      "id": "13",
+      "label": "Remapping paused",
+      "detail": "A title-bar status includes Resume, while a banner explains a conflicting app and offers a quit action."
+    },
+    {
+      "id": "14",
+      "label": "Resume remapping",
+      "detail": "The paused tray menu says Currently paused and shows a check beside Start with Windows."
+    }
+  ],
+  "astra": [
+    {
+      "id": "01",
+      "label": "Edit profile",
+      "detail": "Frames 01-04 place the profile selector above the numbered mapping cards; the open menu marks Default with a check."
+    },
+    {
+      "id": "02",
+      "label": "Outside the diagram",
+      "detail": "Frames 11-12 highlight marker 2 and its Back button card together. Frames 15-18 let Button 0x01FF become Spare button."
+    },
+    {
+      "id": "03",
+      "label": "Configure swipes",
+      "detail": "Frames 01-02 show Ctrl and W keycaps beside Close tab, with a labeled Edit button on every row; the compact native frames preserve this layout."
+    },
+    {
+      "id": "04",
+      "label": "Choose an action to assign now",
+      "detail": "Frames 03-06 pair a left category column with right-aligned shortcut hints. The left artwork crop labels the location Behind the thumb wheel."
+    },
+    {
+      "id": "05",
+      "label": "No matching actions",
+      "detail": "Frames 03-04 show both Clear search and Record a keyboard shortcut beneath the empty search state."
+    },
+    {
+      "id": "06",
+      "label": "Save pointer speed action",
+      "detail": "Frames 03-04 show Speed 1 at 800 DPI, Speed 2 at 1600 DPI and Current: 1000 DPI beside Next press: 800 DPI."
+    },
+    {
+      "id": "07",
+      "label": "Keyboard shortcut",
+      "detail": "Frames 09-12 preserve draft M across tabs and explicitly warn that choosing an action discards it. Frames 23-24 fit Ctrl + Win + Alt + Shift + Space in the compact editor."
+    },
+    {
+      "id": "08",
+      "label": "Ignore accidental nudges",
+      "detail": "Frames 01-04 show SmartShift selected, Flick sensitivity 10 and a nudge threshold of 50% of a notch. Frames 07-08 stack wheel modes in the narrow window."
+    },
+    {
+      "id": "09",
+      "label": "Minimum swipe distance",
+      "detail": "Frames 05-06 keep saved gesture actions editable while the toggle is off and explain that they require gestures to be turned on."
+    },
+    {
+      "id": "10",
+      "label": "Pick a window",
+      "detail": "Frames 07-08 show Capturing in 6s with + 6 seconds and Cancel. Frames 15-16 wrap order controls under Photo editing and color correction without truncating its name."
+    },
+    {
+      "id": "11",
+      "label": "Reapply mouse settings",
+      "detail": "Frames 01-02 show Bluetooth, firmware MPM 12.01.B0006, battery 50% and pointer speed 1000. Disconnected frames offer Edit button mappings."
+    },
+    {
+      "id": "12",
+      "label": "Copy device report",
+      "detail": "Frames 01-04 split named feature IDs into two columns and show 18 unnamed features as monospace chips with a separate Copy unnamed IDs button."
+    },
+    {
+      "id": "13",
+      "label": "Settings couldn't confirm that remapping resumed",
+      "detail": "Frames 09-10 pair a Retry control with explicit Windows tray instructions. Frames 25-26 say Copy is still unsaved and the previous assignment is still active."
+    },
+    {
+      "id": "14",
+      "label": "Resume remapping",
+      "detail": "Frame 02 reads Resume remapping followed by Currently paused, while Start with Windows has a checkmark. Frame 01 instead offers Pause remapping and Currently on."
+    }
+  ]
+}

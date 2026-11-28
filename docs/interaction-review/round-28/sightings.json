@@ -1,0 +1,218 @@
+{
+  "sol": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "The Buttons title anchors the page, and the compact selector places the value Default beside its label. The open menu marks Default with both a tinted row and a check."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "The MX Master 4 photo uses white leader lines to separate three nearby controls. The unplaced control gets its own row, which changes to Spare button after naming."
+    },
+    {
+      "id": 3,
+      "label": "Configure swipes",
+      "detail": "At 720 pixels wide, the five mapping rows preserve their hierarchy. The Back button shows Ctrl and W as separate keycaps, followed by Close tab and a labeled Edit button."
+    },
+    {
+      "id": 4,
+      "label": "Choose an action to assign now",
+      "detail": "The thumb wheel close-up links badge 2 to the Back button header. The category column and right-aligned shortcut text keep Copy and Paste easy to scan."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "The empty search state offers Clear search and Record a keyboard shortcut. A match keeps the Copy result and its Ctrl and C keycaps in one readable row."
+    },
+    {
+      "id": 6,
+      "label": "Save pointer speed action",
+      "detail": "The two speed rows align their DPI fields and sliders. The footer previews the current 1000 DPI and the first press at 800 DPI, then gives saving its own full-width button."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut",
+      "detail": "Press a key changes the recording card's fill and shows Stop recording. In the compact modal, four checked modifiers and the complete Ctrl + Win + Alt + Shift + Space preview still fit."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "SmartShift is recognizable by its filled radio dot and outline. The nudge slider pairs 50% of a notch with an explanation of when the threshold applies, and the compact layout stacks the wheel modes cleanly."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "Direction arrows and row labels make gestures easy to scan. The 60 counts setting includes an approximate physical distance and explains what happens to shorter movements."
+    },
+    {
+      "id": 10,
+      "label": "Capturing in 6s",
+      "detail": "The capture row places the amber countdown beside + 6 seconds and Cancel. Numbered profile cards explain the first-match rule by showing the order directly."
+    },
+    {
+      "id": 11,
+      "label": "Disconnected",
+      "detail": "The crossed-out mouse and the Disconnected heading work together. Edit button mappings gives the offline state a concrete next action. The connected panel keeps firmware and battery readable in the compact view."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "Named feature IDs use amber monospace next to readable names. The 18 unnamed IDs wrap below and have their own copy action and a reason to use them."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused",
+      "detail": "The title-bar pill persists across settings pages. The Logi Options+ warning gives way to a red access-denied banner, and the shortcut save state says Applies after resume next to Save shortcut."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "The menu pairs each remapping action with its current state, and the check by Start with Windows plus the separators make the other controls easy to understand."
+    }
+  ],
+  "terra": [
+    {
+      "id": 1,
+      "label": "Buttons",
+      "detail": "The Default profile selector opens a two-item menu over the mouse illustration."
+    },
+    {
+      "id": 2,
+      "label": "Haptic Sense Panel",
+      "detail": "MX Master 4 artwork has six numbered markers, with an extra control listed under Outside the diagram."
+    },
+    {
+      "id": 3,
+      "label": "Button mapping list",
+      "detail": "Compact view presents five numbered rows, keyboard chips, and Edit buttons."
+    },
+    {
+      "id": 4,
+      "label": "Back button",
+      "detail": "The action picker pairs a thumb-button crop with categories and action rows."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "The empty search state offers Clear search and Record a keyboard shortcut."
+    },
+    {
+      "id": 6,
+      "label": "Switch pointer speed",
+      "detail": "Two DPI inputs and sliders show 800 and 1600 with the first press value underneath."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut",
+      "detail": "Recording changes the panel to Press a key, then shows a draft and an enabled Save shortcut button."
+    },
+    {
+      "id": 8,
+      "label": "Scroll",
+      "detail": "SmartShift is selected above flick sensitivity, high-resolution scrolling, and the nudge threshold."
+    },
+    {
+      "id": 9,
+      "label": "Gestures",
+      "detail": "Five directional rows pair arrow icons with assignments, and a slider shows 60 counts."
+    },
+    {
+      "id": 10,
+      "label": "Profiles",
+      "detail": "Numbered profile cards show app executables, ordering controls, and a window picker."
+    },
+    {
+      "id": 11,
+      "label": "Device",
+      "detail": "Connection and firmware cards sit above a 50% battery bar and DPI slider."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "Named feature IDs appear in two columns, followed by 18 unnamed feature chips and copy controls."
+    },
+    {
+      "id": 13,
+      "label": "Remapping paused",
+      "detail": "A status chip and retry action appear above a banner with tray recovery instructions."
+    },
+    {
+      "id": 14,
+      "label": "Pause remapping",
+      "detail": "The native tray menu shows the current state beside the pause or resume command and a checked startup item."
+    }
+  ],
+  "astra": [
+    {
+      "id": 1,
+      "label": "Edit profile",
+      "detail": "The Default selector sits beside Buttons. Its open menu has a check at the right of Default and Preview app below. Amber navigation and a bottom-left connection card keep the shell legible in both themes."
+    },
+    {
+      "id": 2,
+      "label": "Outside the diagram",
+      "detail": "MX Master 4 has six numbered markers, including Haptic Sense Panel. Hovering Back button makes marker 2 amber and outlines its matching row. The unlocated control appears below Outside the diagram and can become Spare button."
+    },
+    {
+      "id": 3,
+      "label": "Configure swipes",
+      "detail": "The compact list shows numbered circles, explicit Edit buttons and Ctrl/W keycaps beside Close tab. All five rows and Configure swipes fit within the 720 by 540 frames."
+    },
+    {
+      "id": 4,
+      "label": "Choose an action to assign now",
+      "detail": "Back button appears beside a close-up labeled Thumb buttons and Behind the thumb wheel. Category selection uses an amber edge, while the selected Native action has a right-aligned check. Compact mode retains the category/action split."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "Copy search shows one full-width result with Ctrl and C keycaps. An unmatched query shows a magnifier, No matching actions, Clear search and Record a keyboard shortcut."
+    },
+    {
+      "id": 6,
+      "label": "Switch between two pointer speeds",
+      "detail": "The speed editor presents Speed 1 at 800 and Speed 2 at 1600 with numeric fields and sliders. Mouse: 1000 DPI and First press after saving: 800 DPI appear directly above Save pointer speed action."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut \u00b7 Draft",
+      "detail": "Recording changes New shortcut to Press a key and outlines the recording area in amber. The draft M survives a return to Actions and a resize. Saving K produces a toast, and reopening shows Assigned now K and a green Saved indicator."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "SmartShift has a radio dot and amber border. Flick sensitivity shows 10, while the nudge slider shows 50% of a notch. Compact frames stack the three wheel-mode cards vertically."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "Five rows pair tap or directional arrows with editable keycap chips. The lower card relates 60 counts to about 1.5 mm at 1000 DPI. With gestures off, Saved gesture actions remains readable and a sentence explains when they apply."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "Profiles show executable chips below each name, numbered priority badges and Move up or Move down controls. Capture shows Capturing in 6s beside + 6 seconds. A long Photo editing and color correction name remains intact after controls wrap to a second row."
+    },
+    {
+      "id": 11,
+      "label": "Reapply settings",
+      "detail": "The connected Device view uses two top cards for Bluetooth and firmware, a green 50% battery bar and a 1000 DPI slider. Disconnected and No device states each offer Edit button mappings."
+    },
+    {
+      "id": 12,
+      "label": "Copy unnamed IDs",
+      "detail": "HID++ features lists named hexadecimal feature IDs in two columns, with 18 unnamed features below as compact monospaced chips. Copy device report and Copy unnamed IDs are visibly separate actions."
+    },
+    {
+      "id": 13,
+      "label": "Settings couldn't confirm that remapping resumed",
+      "detail": "Paused state persists in the title bar. Quit failure gives Retry quit and Dismiss. Resume failure expands tray instructions, while the saved shortcut dialog says Applies after resume. The save failure names Copy as unsaved and offers Try again or Back to editing. Separate delivery of image 28 shows Remapping resumed above Profiles, with the Default card and All other apps badge in the lower third. Image 38 shows Remapping resumed above Buttons, with Wheel mode button and Configure gestures in the lower third. Both full frames are readable."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping \u00b7 Currently paused",
+      "detail": "The native tray menu has four entries with separators after Open mouse settings and Start with Windows. The startup entry has a checkmark. The middle action changes from Pause remapping \u00b7 Currently on to Resume remapping \u00b7 Currently paused."
+    }
+  ]
+}

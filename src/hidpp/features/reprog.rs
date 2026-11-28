@@ -39,6 +39,51 @@ pub struct ButtonInfo {
     pub cid: u16,
     pub slot: String,
     pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_task_id: Option<u16>,
+}
+
+impl ButtonInfo {
+    /// Factory task IDs are separate from physical control IDs.
+    /// Names are from Solaar's logitech_receiver.special_keys.Task.
+    pub fn default_task(&self) -> Option<String> {
+        let tid = self.default_task_id?;
+        let name = match tid {
+            0x0001 => "Volume up",
+            0x0002 => "Volume down",
+            0x0003 | 0x004c => "Mute",
+            0x0004 => "Play or pause",
+            0x0038 => "Left click",
+            0x0039 => "Right click",
+            0x003a => "Middle click",
+            0x003b | 0x003c => "Back",
+            0x003d | 0x003e => "Forward",
+            0x003f => "Scroll left",
+            0x0040 => "Scroll right",
+            0x0042 => "Battery status",
+            0x0043 => "Show desktop",
+            0x009c => "Gesture",
+            0x009d => "SmartShift",
+            _ => return Some(format!("Task 0x{tid:04X}")),
+        };
+        Some(name.to_owned())
+    }
+}
+
+/// Physical control names from Logitech's HID++ control IDs.
+/// https://github.com/pwr-Solaar/Solaar/blob/master/lib/logitech_receiver/special_keys.py
+pub(crate) fn control_name(cid: u16) -> String {
+    match cid {
+        0x0052 => "Middle click".to_owned(),
+        0x0053 | 0x0054 => "Back button".to_owned(),
+        0x0055 | 0x0056 => "Forward button".to_owned(),
+        0x00C3 | 0x00D0 => "Gesture button".to_owned(),
+        0x00C4 => "Wheel mode button".to_owned(),
+        0x00ED => "DPI change button".to_owned(),
+        0x00FD => "DPI switch button".to_owned(),
+        0x01A0 => "Haptic panel".to_owned(),
+        _ => format!("Button {cid:#06x}"),
+    }
 }
 
 pub(crate) fn gesture_control(controls: &[ControlInfo]) -> Option<u16> {
@@ -62,18 +107,13 @@ pub(crate) fn button_choices(controls: &[ControlInfo], gesture: Option<u16>) -> 
                 0x0053 | 0x0054 => ("back".to_owned(), "Back button".to_owned()),
                 0x0055 | 0x0056 => ("forward".to_owned(), "Forward button".to_owned()),
                 _ if c.divertable() && !matches!(c.cid, 0x0050 | 0x0051) => {
-                    let name = match c.cid {
-                        0x00C3 | 0x00D0 => "Gesture button".to_owned(),
-                        0x00C4 => "Wheel mode button".to_owned(),
-                        0x00ED => "DPI button".to_owned(),
-                        0x01A0 => "Haptic panel".to_owned(),
-                        _ => format!("Button {:#06x}", c.cid),
-                    };
+                    let name = control_name(c.cid);
                     (format!("control_{:04x}", c.cid), name)
                 }
                 _ => return None,
             };
             Some(ButtonInfo {
+                default_task_id: (c.tid != 0).then_some(c.tid),
                 cid: c.cid,
                 slot,
                 name,
@@ -228,14 +268,19 @@ impl Device {
             if ci.virtual_control() || !ci.divertable() {
                 continue;
             }
-            let gesture = Some(ci.cid) == self.capabilities.gesture_control && gestures_enabled;
+            let gesture = Some(ci.cid) == self.active_gesture_control() && gestures_enabled;
             let mapped = self
                 .capabilities
                 .buttons
                 .iter()
                 .any(|button| button.cid == ci.cid && button.slot.starts_with("control_"))
                 && mappings_enabled
-                && buttons.control_action(ci.cid).intercepts();
+                && buttons.control_action(ci.cid).intercepts()
+                && crate::hidpp::device::action_supported(
+                    &buttons.control_action(ci.cid),
+                    &self.capabilities,
+                    &self.dpi_values,
+                );
             let want = gesture || mapped;
             match self.set_divert(ci, want, gesture) {
                 Ok(()) => {
@@ -275,7 +320,23 @@ mod tests {
         let choices = button_choices(&controls, None);
         assert_eq!(choices.len(), 4);
         assert_eq!(choices[3].slot, "control_00ed");
-        assert_eq!(choices[3].name, "DPI button");
+        assert_eq!(choices[3].name, "DPI change button");
+    }
+    #[test]
+    fn unknown_physical_control_keeps_its_reported_factory_task() {
+        let mut extra = control(0x01ff, false);
+        extra.tid = 0x0003;
+        let button = button_choices(&[extra], None).pop().unwrap();
+        assert_eq!(button.name, "Button 0x01ff");
+        assert_eq!(button.default_task().as_deref(), Some("Mute"));
+        extra.tid = 0xf213;
+        assert_eq!(
+            button_choices(&[extra], None)[0].default_task().as_deref(),
+            Some("Task 0xF213")
+        );
+        let legacy: ButtonInfo =
+            serde_json::from_str(r#"{"cid":511,"slot":"control_01ff","name":"Extra"}"#).unwrap();
+        assert!(legacy.default_task().is_none());
     }
     #[test]
     fn raw_xy_capabilities_choose_gestures_and_leave_extra_buttons_remappable() {
@@ -289,5 +350,56 @@ mod tests {
         assert_eq!(choices.len(), 2);
         let haptic = [control(0x01A0, true)];
         assert_eq!(gesture_control(&haptic), Some(0x01A0));
+    }
+
+    #[test]
+    fn dpi_controls_are_named_and_require_physical_diversion_support() {
+        let mut unsupported = control(0x00ED, true);
+        unsupported.flags = 0;
+        let mut virtual_button = control(0x00FD, true);
+        virtual_button.flags |= KEY_VIRTUAL;
+        assert!(button_choices(&[unsupported, virtual_button], None).is_empty());
+        let controls = [control(0x00ED, true), control(0x00FD, true)];
+        assert_eq!(gesture_control(&controls), None);
+        let buttons = button_choices(&controls, None);
+        assert_eq!(buttons[0].name, "DPI change button");
+        assert_eq!(buttons[1].name, "DPI switch button");
+    }
+}
+
+pub(crate) fn selected_gesture_control(
+    controls: &[ControlInfo],
+    preferred: Option<u16>,
+) -> Option<u16> {
+    match preferred {
+        Some(cid) => controls
+            .iter()
+            .find(|c| c.cid == cid && c.supports_gestures() && !matches!(cid, 0x0050 | 0x0051))
+            .map(|c| c.cid),
+        None => gesture_control(controls),
+    }
+}
+
+#[cfg(test)]
+mod selection_tests {
+    use super::*;
+    #[test]
+    fn selection_requires_physical_raw_motion_and_never_captures_primary_clicks() {
+        let controls = [0x0050, 0x0052, 0x00c3].map(|cid| ControlInfo {
+            cid,
+            tid: 0,
+            flags: KEY_DIVERTABLE,
+            additional_flags: KEY_RAW_XY,
+        });
+        assert_eq!(selected_gesture_control(&controls, None), Some(0x00c3));
+        assert_eq!(
+            selected_gesture_control(&controls, Some(0x0052)),
+            Some(0x0052)
+        );
+        assert_eq!(selected_gesture_control(&controls, Some(0x0050)), None);
+        assert_eq!(selected_gesture_control(&controls, Some(0x00ed)), None);
+        let mut ordinary = controls[1];
+        ordinary.additional_flags = 0;
+        assert_eq!(selected_gesture_control(&[ordinary], Some(0x0052)), None);
     }
 }

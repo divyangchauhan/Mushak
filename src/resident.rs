@@ -44,9 +44,15 @@ pub fn run() {
     hook::spawn();
     let (device_tx, device_thread) = hidpp::device::spawn();
     state::set_device_tx(device_tx);
+    let resume_event = crate::single_instance::ResumeEvent::create()
+        .map_err(|error| tracing::warn!("resume command unavailable: {error}"))
+        .ok();
+    let resume_pid = resume_event.as_ref().map(|_| std::process::id());
     statusfile::write(&SharedStatus {
         device: (*state::device_status()).clone(),
         paused: state::is_paused(),
+        active_profile: state::active_profile_name(),
+        resume_pid,
     });
 
     let tray = Tray::build(state::config().start_with_windows).expect("build tray icon");
@@ -86,12 +92,19 @@ pub fn run() {
             open_settings(&exe, &mut settings_child);
         }
 
+        if resume_event.as_ref().is_some_and(|event| event.take()) && state::is_paused() {
+            state::set_paused(false);
+            tray.set_paused(false);
+            last_status = Instant::now() - Duration::from_secs(1);
+        }
         update_tray_battery(&tray);
 
         if last_status.elapsed() >= Duration::from_secs(1) {
             statusfile::write(&SharedStatus {
                 device: (*state::device_status()).clone(),
                 paused: state::is_paused(),
+                active_profile: state::active_profile_name(),
+                resume_pid,
             });
             last_status = Instant::now();
         }
@@ -106,8 +119,11 @@ pub fn run() {
                         Ok(new_cfg) => {
                             config_mtime = m;
                             tray.set_startup(new_cfg.start_with_windows);
+                            let device_changed = state::config().device != new_cfg.device;
                             state::set_config(new_cfg);
-                            state::device_command(DeviceCommand::ApplyDeviceConfig);
+                            if device_changed {
+                                state::device_command(DeviceCommand::ApplyDeviceConfig);
+                            }
                             state::device_command(DeviceCommand::ApplyControlDiverts);
                             tracing::info!("reloaded config after external edit");
                         }

@@ -1,6 +1,5 @@
 //! Foreground-application detection and per-app profile resolution.
 
-use crate::config::{ButtonMap, Config};
 use windows::core::PWSTR;
 use windows::Win32::Foundation::{CloseHandle, FALSE, HANDLE, HWND};
 use windows::Win32::Security::{
@@ -134,19 +133,6 @@ fn needs_native_wheel(ours: Option<u32>, target: Option<u32>) -> bool {
 
 fn basename(path: &str) -> String {
     path.rsplit(['\\', '/']).next().unwrap_or(path).to_string()
-}
-
-/// Pick the button mapping for the given foreground process: the first profile
-/// whose `match_processes` contains it, else the default profile.
-pub fn resolve_button_map(cfg: &Config, process: Option<&str>) -> ButtonMap {
-    if let Some(proc) = process {
-        for p in &cfg.profiles {
-            if p.matches(proc) {
-                return p.buttons.clone();
-            }
-        }
-    }
-    cfg.default_profile.buttons.clone()
 }
 
 #[cfg(test)]

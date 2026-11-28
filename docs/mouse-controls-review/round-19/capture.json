@@ -1,0 +1,20 @@
+{
+  "packet": "ochre",
+  "source": "1c1268a6228edb76e0939fe0f27c2b022e1164ce",
+  "hostScale": 200,
+  "device": "Simulated MX Master 2S from recorded Bluetooth report. A4 disconnected.",
+  "window": {
+    "A3 A4": [
+      720,
+      540
+    ],
+    "B4 C4 D2": [
+      720,
+      360
+    ],
+    "other": [
+      968,
+      668
+    ]
+  }
+}

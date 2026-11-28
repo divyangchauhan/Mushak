@@ -11,11 +11,13 @@ use crate::config::app_dir;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-#[derive(Serialize, Deserialize, Default, Clone, Copy)]
+#[derive(Serialize, Deserialize, Default, Clone)]
 #[serde(default)]
 pub struct UiPrefs {
     pub theme: Theme,
     pub accent: Accent,
+    #[serde(skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub button_names: std::collections::BTreeMap<String, String>,
 }
 
 fn path() -> Option<PathBuf> {
@@ -33,15 +35,15 @@ impl UiPrefs {
             .unwrap_or_default()
     }
 
+    pub fn try_save(&self) -> anyhow::Result<()> {
+        let dest = path().ok_or_else(|| anyhow::anyhow!("Could not locate the settings folder"))?;
+        std::fs::write(dest, toml::to_string_pretty(self)?)?;
+        Ok(())
+    }
+
     pub fn save(&self) {
-        let Some(p) = path() else { return };
-        match toml::to_string_pretty(self) {
-            Ok(s) => {
-                if let Err(e) = std::fs::write(p, s) {
-                    tracing::warn!("saving ui prefs failed: {e}");
-                }
-            }
-            Err(e) => tracing::warn!("serialising ui prefs failed: {e}"),
+        if let Err(e) = self.try_save() {
+            tracing::warn!("saving ui prefs failed: {e}");
         }
     }
 }

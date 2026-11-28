@@ -1,0 +1,20 @@
+{
+  "packet": "basalt",
+  "source": "082f9f272879139f1f170118ef8a080eac65d5b1",
+  "hostScale": 200,
+  "device": "Simulated MX Master 2S from recorded Bluetooth report. A4 disconnected.",
+  "window": {
+    "A3 A4 A5": [
+      720,
+      540
+    ],
+    "B4 C4 D2 D3": [
+      720,
+      360
+    ],
+    "other": [
+      968,
+      668
+    ]
+  }
+}

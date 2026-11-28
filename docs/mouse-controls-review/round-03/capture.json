@@ -1,0 +1,20 @@
+{
+  "packet": "larch",
+  "source": "6b04a4f8cb65c777701168f75318eeb6428f5c15",
+  "hostScale": 200,
+  "device": "Simulated MX Master 2S from recorded Bluetooth report. A4 disconnected.",
+  "window": {
+    "A3 A4": [
+      720,
+      540
+    ],
+    "B4 C4 D2": [
+      720,
+      360
+    ],
+    "other": [
+      968,
+      668
+    ]
+  }
+}

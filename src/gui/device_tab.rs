@@ -80,7 +80,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         refresh = true;
                     }
                     widgets::icon(ui, &icons::REFRESH, 15.0, pal.text);
-                    ui.text("Reapply settings", |t| {
+                    ui.text("Reapply mouse settings", |t| {
                         t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
                     });
                 });
@@ -90,11 +90,51 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
 
     if !app.mouse_awake() {
         widgets::asleep_card(ui, &pal, &app.device_view.device);
+        ui.element().height(fixed!(12.0)).empty();
+        ui.element()
+            .id("offline_mappings")
+            .height(fixed!(36.0))
+            .corner_radius(7.0)
+            .background_color(pal.surface)
+            .border(|b| b.all(1).color(pal.line_strong))
+            .accessibility(|a| a.button("Edit button mappings"))
+            .layout(|l| {
+                l.direction(LeftToRight)
+                    .align(Left, CenterY)
+                    .gap(8)
+                    .padding((0, 12, 0, 12))
+            })
+            .children(|ui| {
+                widgets::icon(ui, &icons::NAV_BUTTONS, 15.0, pal.accent);
+                ui.text("Edit button mappings", |t| {
+                    t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                });
+                if ui.just_pressed() {
+                    app.section = super::Section::Buttons;
+                }
+            });
         return;
     }
 
     let d = app.device_view.device.clone();
-    if let Some(reason) = &d.settings_unavailable_reason {
+    if !super::Section::Buttons.available(&d) {
+        widgets::card(ui, &pal)
+            .width(grow!())
+            .height(fit!())
+            .layout(|l| l.direction(TopToBottom).gap(5).padding((10, 14, 10, 14)))
+            .children(|ui| {
+                if let Some(reason) = &d.settings_unavailable_reason {
+                    ui.text(reason, |t| {
+                        t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
+                    });
+                }
+                ui.text(
+                    "Connect a mouse with remappable buttons to edit its mappings.",
+                    |t| t.font(&fonts::SANS_MEDIUM).font_size(14).color(pal.text),
+                );
+            });
+        ui.element().height(fixed!(10.0)).empty();
+    } else if let Some(reason) = &d.settings_unavailable_reason {
         ui.text(reason, |text| {
             text.font(&fonts::SANS).font_size(13).color(pal.muted)
         });
@@ -170,8 +210,11 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     }
                 });
             }
-            if d.capabilities.dpi {
-                stat_tile(ui, app, "Current DPI", |ui| {
+            if d.capabilities.dpi
+                && (d.dpi_list.is_empty()
+                    || d.dpi_current.is_some_and(|v| v != app.draft.device.dpi))
+            {
+                stat_tile(ui, app, "Reported DPI", |ui| {
                     ui.text(
                         &d.dpi_current.map(|v| v.to_string()).unwrap_or("—".into()),
                         |t| t.font(&fonts::MONO_BOLD).font_size(15).color(pal.accent),
@@ -206,12 +249,12 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     .layout(|l| l.direction(LeftToRight).align(Left, CenterY))
                     .children(|ui| {
                         ui.element().width(grow!()).height(fit!()).children(|ui| {
-                            ui.text("Pointer speed (DPI)", |t| {
+                            ui.text("Pointer speed in DPI", |t| {
                                 t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
                             });
                         });
                         ui.text(&dpi.to_string(), |t| {
-                            t.font(&fonts::MONO_BOLD).font_size(13).color(pal.accent)
+                            t.font(&fonts::MONO_BOLD).font_size(15).color(pal.accent)
                         });
                     });
                 ui.element()
@@ -220,7 +263,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                     .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
                     .children(|ui| {
                         ui.text(&min.to_string(), |t| {
-                            t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
+                            t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted)
                         });
                         if choices.len() > 1 {
                             if let Some(v) = widgets::slider(
@@ -236,7 +279,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                             }
                         }
                         ui.text(&max.to_string(), |t| {
-                            t.font(&fonts::MONO_MEDIUM).font_size(11).color(pal.faint)
+                            t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.muted)
                         });
                     });
             });
@@ -267,7 +310,7 @@ pub fn section(ui: &mut Ui2, app: &mut App) {
                         }
                         widgets::icon(ui, &icons::CHEVRON_RIGHT, 14.0, pal.muted);
                         ui.element().width(grow!()).height(fit!()).children(|ui| {
-                            ui.text("HID++ features", |t| {
+                            ui.text("Reported mouse features", |t| {
                                 t.font(&fonts::SANS_SEMIBOLD)
                                     .font_size(widgets::px(13.5))
                                     .color(pal.text)
@@ -318,71 +361,129 @@ fn feature_details(ui: &mut Ui2, app: &mut App) {
                 t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
             });
         });
+    let mut named = Vec::new();
+    let mut other = Vec::new();
+    for (id, _) in &d.features {
+        let name = feature_name(*id);
+        if name == "Unidentified feature" {
+            other.push(format!("{id:#06x}"));
+        } else {
+            named.push((*id, name));
+        }
+    }
     ui.element().height(fixed!(12.0)).empty();
     widgets::heading(
         ui,
         &pal,
         "HID++ features",
         &format!(
-            "{} features reported by {}.",
+            "{} hardware feature IDs reported by {}.",
             d.features.len(),
             d.display_name()
         ),
     );
-    ui.element().height(fixed!(16.0)).empty();
-    let mut other = Vec::new();
-    widgets::card(ui, &pal)
-        .layout(|l| l.direction(TopToBottom).padding((7, 16, 7, 16)))
+    ui.element()
+        .width(grow!())
+        .height(fit!())
+        .layout(|l| l.direction(LeftToRight).gap(8).padding((12, 0, 16, 0)))
         .children(|ui| {
-            for (id, _) in &d.features {
-                let name = feature_name(*id);
-                if name == "Unidentified feature" {
-                    other.push(format!("{id:#06x}"));
+            for (id, label) in [
+                ("copy_device_report", "Copy device report"),
+                ("copy_feature_ids", "Copy unnamed IDs"),
+            ] {
+                if id == "copy_feature_ids" && other.is_empty() {
                     continue;
                 }
                 ui.element()
-                    .width(grow!())
-                    .height(fixed!(25.0))
-                    .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(12))
+                    .id(id)
+                    .height(fixed!(34.0))
+                    .corner_radius(7.0)
+                    .background_color(pal.surface)
+                    .border(|b| b.all(1).color(pal.line_strong))
+                    .accessibility(|a| a.button(label))
+                    .layout(|l| {
+                        l.direction(LeftToRight)
+                            .align(Left, CenterY)
+                            .gap(6)
+                            .padding((0, 12, 0, 12))
+                    })
                     .children(|ui| {
-                        ui.text(&format!("{id:#06x}"), |t| {
-                            t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.accent)
+                        widgets::icon(ui, &icons::EDIT_COPY, 15.0, pal.muted);
+                        ui.text(label, |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
                         });
-                        ui.text(name, |t| {
-                            t.font(&fonts::SANS_MEDIUM).font_size(14).color(pal.text)
-                        });
+                        if ui.just_pressed() {
+                            let text = if id == "copy_device_report" {
+                                device_report(d)
+                            } else {
+                                other.join(", ")
+                            };
+                            miniquad::window::clipboard_set(&text);
+                        }
                     });
             }
         });
+    if !named.is_empty() {
+        let available = screen_width() - super::rail_width() - 56.0;
+        let columns = if available >= 464.0 { 2 } else { 1 };
+        widgets::card(ui, &pal)
+            .layout(|l| l.direction(TopToBottom).padding((4, 14, 4, 14)))
+            .children(|ui| {
+                for (index, row) in named.chunks(columns).enumerate() {
+                    ui.element()
+                        .width(grow!())
+                        .height(fit!())
+                        .border(|b| b.top(if index == 0 { 0 } else { 1 }).color(pal.line))
+                        .layout(|l| l.direction(LeftToRight).gap(18).padding((7, 0, 7, 0)))
+                        .children(|ui| {
+                            for (id, name) in row {
+                                ui.element()
+                                    .width(grow!(0.0))
+                                    .height(fit!())
+                                    .layout(|l| l.direction(TopToBottom).gap(2))
+                                    .children(|ui| {
+                                        ui.text(name, |t| {
+                                            t.font(&fonts::SANS_MEDIUM)
+                                                .font_size(15)
+                                                .color(pal.text)
+                                        });
+                                        ui.text(&format!("{id:#06x}"), |t| {
+                                            t.font(&fonts::MONO_MEDIUM)
+                                                .font_size(13)
+                                                .color(pal.muted)
+                                        });
+                                    });
+                            }
+                            if row.len() < columns {
+                                ui.element().width(grow!(0.0)).height(fixed!(1.0)).empty();
+                            }
+                        });
+                }
+            });
+    }
     if !other.is_empty() {
         ui.element().height(fixed!(16.0)).empty();
-        widgets::eyebrow(ui, &pal, "Features without a known name");
+        ui.text(&format!("{} unnamed features", other.len()), |t| {
+            t.font(&fonts::SANS_SEMIBOLD).font_size(16).color(pal.text)
+        });
+        ui.element().height(fixed!(6.0)).empty();
         ui.text(
             "Use these IDs when reporting a device compatibility issue.",
             |t| t.font(&fonts::SANS).font_size(13).color(pal.muted),
         );
-        let per_line = ((screen_width() - 260.0).clamp(70.0, 700.0) / 70.0) as usize;
-        for row in other.chunks(per_line) {
-            ui.element().height(fixed!(6.0)).empty();
-            ui.element()
-                .width(grow!())
-                .height(fit!())
-                .layout(|l| l.direction(LeftToRight).gap(6))
-                .children(|ui| {
-                    for id in row {
-                        ui.element()
-                            .height(fixed!(26.0))
-                            .corner_radius(5.0)
-                            .background_color(pal.s2)
-                            .layout(|l| l.align(CenterX, CenterY).padding((0, 8, 0, 8)))
-                            .children(|ui| {
-                                ui.text(id, |t| {
-                                    t.font(&fonts::MONO_MEDIUM).font_size(12).color(pal.text)
-                                });
-                            });
-                    }
-                });
-        }
+        let content_width = (screen_width() - super::rail_width() - 56.0).min(768.0);
+        let per_line = (content_width / 76.0).floor().max(1.0) as usize;
+        ui.element()
+            .width(grow!())
+            .height(fit!())
+            .layout(|l| l.direction(TopToBottom).gap(7).padding((8, 0, 0, 0)))
+            .children(|ui| {
+                for line in other.chunks(per_line) {
+                    ui.text(&line.join("  "), |t| {
+                        t.font(&fonts::MONO_MEDIUM).font_size(14).color(pal.text)
+                    });
+                }
+            });
     }
 }
 
@@ -408,4 +509,31 @@ fn stat_tile(ui: &mut Ui2, app: &App, label: &str, body: impl FnOnce(&mut Ui2)) 
                 .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(8))
                 .children(body);
         });
+}
+
+fn device_report(d: &crate::hidpp::device::DeviceStatus) -> String {
+    use std::fmt::Write;
+    let mut report = format!(
+        "{}\nHID++ features ({})\n",
+        d.display_name(),
+        d.features.len()
+    );
+    for &(id, _) in &d.features {
+        writeln!(report, "{id:#06x}  {}", feature_name(id)).unwrap();
+    }
+    report
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn report_contains_the_model_and_all_reported_features() {
+        let device = crate::hidpp::device::DeviceStatus {
+            name: Some("Test mouse".into()),
+            features: vec![(0x2201, 1), (0x9abc, 5)],
+            ..Default::default()
+        };
+        assert_eq!(device_report(&device), "Test mouse\nHID++ features (2)\n0x2201  Adjustable DPI\n0x9abc  Unidentified feature\n");
+    }
 }

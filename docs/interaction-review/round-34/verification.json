@@ -1,0 +1,29 @@
+{
+  "commit": "9e01ee748491d1cec9b18a116cf59d446f476dfd",
+  "release_sha256": "d88d5b44a6f924800634a12c11b2feb2972d17f1bf301f38b6c877e2bf783874",
+  "tests_passed": 62,
+  "review_input_frames": 180,
+  "themes": [
+    "Dark",
+    "Light"
+  ],
+  "host_display_scale_percent": 200,
+  "native_restart": {
+    "display_scale": 2.0,
+    "resume_command_received_by_test_process": true,
+    "process_ids": [
+      7340,
+      40208
+    ],
+    "sample_profile": "Preview app",
+    "cancel_preserved_sample_config": true,
+    "save_changed_only": "profiles[0].buttons.back",
+    "reopened_binding": {
+      "kind": "Key",
+      "mods": [],
+      "vk": 75
+    },
+    "draft_m_survived_tab_switch": true
+  },
+  "native_resume_retry": "Two light-theme runs timed out. The failure capture showed that the test input had opened Wheel mode instead. Keeping the message cursor on the requested control until the next render passed the stale endpoint and tray fallback checks."
+}

@@ -1,0 +1,20 @@
+{
+  "packet": "amber",
+  "source": "e806d648452088515ae15e50955a0f4479027a48",
+  "hostScale": 200,
+  "device": "Simulated MX Master 2S from recorded Bluetooth report. A4 disconnected.",
+  "window": {
+    "A3 A4": [
+      720,
+      540
+    ],
+    "B4 C4 D2": [
+      720,
+      360
+    ],
+    "other": [
+      968,
+      668
+    ]
+  }
+}

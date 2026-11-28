@@ -1,0 +1,126 @@
+{
+  "Shell and profile switcher": [
+    "Dark/diagram.webp",
+    "Light/diagram.webp",
+    "Dark/menu.webp",
+    "Light/menu.webp"
+  ],
+  "Button artwork and reported controls": [
+    "Dark/diagram.webp",
+    "Light/diagram.webp",
+    "Dark/master-3.webp",
+    "Light/master-3.webp",
+    "Dark/master-4.webp",
+    "Light/master-4.webp",
+    "Dark/extra-button.webp",
+    "Light/extra-button.webp",
+    "Dark/offline-diagram.webp",
+    "Light/offline-diagram.webp"
+  ],
+  "Button mapping list": [
+    "Dark/compact.webp",
+    "Light/compact.webp",
+    "Dark/button-list.webp",
+    "Light/button-list.webp"
+  ],
+  "Action editor and categories": [
+    "Dark/popover.webp",
+    "Light/popover.webp",
+    "Dark/category-menu.webp",
+    "Light/category-menu.webp",
+    "Dark/category-edit.webp",
+    "Light/category-edit.webp",
+    "Dark/dialog.webp",
+    "Light/dialog.webp",
+    "Dark/compact-picker.webp",
+    "Light/compact-picker.webp",
+    "Dark/haptic.webp",
+    "Light/haptic.webp"
+  ],
+  "Action search": [
+    "Dark/search-results.webp",
+    "Light/search-results.webp",
+    "Dark/no-results.webp",
+    "Light/no-results.webp"
+  ],
+  "Wheel button actions": [
+    "Dark/wheel-actions.webp",
+    "Light/wheel-actions.webp",
+    "Dark/dpi-editor.webp",
+    "Light/dpi-editor.webp",
+    "Dark/wheel-presets.webp",
+    "Light/wheel-presets.webp"
+  ],
+  "Shortcut interaction": [
+    "Dark/seq-01-actions.webp",
+    "Light/seq-01-actions.webp",
+    "Dark/seq-02-shortcut.webp",
+    "Light/seq-02-shortcut.webp",
+    "Dark/seq-03-record.webp",
+    "Light/seq-03-record.webp",
+    "Dark/seq-04-draft.webp",
+    "Light/seq-04-draft.webp",
+    "Dark/seq-05-resize.webp",
+    "Light/seq-05-resize.webp",
+    "Dark/seq-06-cancel.webp",
+    "Light/seq-06-cancel.webp",
+    "Dark/seq-07-ready.webp",
+    "Light/seq-07-ready.webp",
+    "Dark/seq-08-save.webp",
+    "Light/seq-08-save.webp",
+    "Dark/seq-09-reopen.webp",
+    "Light/seq-09-reopen.webp"
+  ],
+  "Wheel settings": [
+    "Dark/scroll.webp",
+    "Light/scroll.webp",
+    "Dark/scroll-lower.webp",
+    "Light/scroll-lower.webp",
+    "Dark/scroll-limited.webp",
+    "Light/scroll-limited.webp"
+  ],
+  "Gestures": [
+    "Dark/gestures.webp",
+    "Light/gestures.webp",
+    "Dark/gestures-lower.webp",
+    "Light/gestures-lower.webp",
+    "Dark/gestures-off.webp",
+    "Light/gestures-off.webp"
+  ],
+  "Profiles and window capture": [
+    "Dark/profiles.webp",
+    "Light/profiles.webp",
+    "Dark/profile-order.webp",
+    "Light/profile-order.webp",
+    "Dark/default-only.webp",
+    "Light/default-only.webp",
+    "Dark/window-pick.webp",
+    "Light/window-pick.webp"
+  ],
+  "Device status": [
+    "Dark/device.webp",
+    "Light/device.webp",
+    "Dark/disconnected.webp",
+    "Light/disconnected.webp",
+    "Dark/empty.webp",
+    "Light/empty.webp",
+    "Dark/standard-mouse.webp",
+    "Light/standard-mouse.webp"
+  ],
+  "Device diagnostics": [
+    "Dark/diagnostics.webp",
+    "Light/diagnostics.webp"
+  ],
+  "Conflict and feedback": [
+    "Dark/alert.webp",
+    "Light/alert.webp",
+    "Dark/conflict-error.webp",
+    "Light/conflict-error.webp",
+    "Dark/save-error.webp",
+    "Light/save-error.webp"
+  ],
+  "Tray menu": [
+    "Windows/tray-active.webp",
+    "Windows/tray-paused.webp"
+  ]
+}

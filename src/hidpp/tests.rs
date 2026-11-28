@@ -236,7 +236,7 @@ fn mx_family_discovers_by_capability_across_connections_and_skips_receiver_keybo
         let (mut mouse, writes) = simulated_mouse(input);
         mouse.discover().unwrap();
         assert_eq!(mouse.device_name_on(mouse.index).unwrap(), name);
-        assert_eq!(mouse.capabilities.gestures, !vertical && !original);
+        assert_eq!(mouse.capabilities.gestures, !original);
         assert_eq!(mouse.capabilities.smartshift, !vertical);
         assert_eq!(mouse.capabilities.hires_scroll, !vertical);
         assert_eq!(
@@ -349,6 +349,69 @@ fn extra_button_diversion_is_temporary_and_restored_on_pause_or_exit() {
 }
 
 #[test]
+fn dpi_and_mode_buttons_restore_native_behavior_for_default_and_profile_switches() {
+    for cid in [0x00c4u16, 0x00ed, 0x00fd] {
+        let mut input = fixture(
+            "Configurable mouse",
+            ConnectionKind::Bluetooth,
+            FEAT_BATTERY_STATUS,
+            false,
+            true,
+        );
+        input.controls = vec![(cid, true)];
+        let (mut mouse, writes) = simulated_mouse(input);
+        mouse.discover().unwrap();
+        assert_eq!(mouse.capabilities.buttons[0].cid, cid);
+        assert!(mouse.capabilities.gestures);
+        assert!(mouse.capabilities.gesture_control.is_none());
+        let mut mapped = crate::config::ButtonMap::default();
+        mapped
+            .controls
+            .insert(format!("{cid:04x}"), crate::config::Action::key(&[], 0x41));
+        let native = crate::config::ButtonMap::default();
+        let last_flags = || {
+            let trace = writes.lock().unwrap();
+            trace
+                .iter()
+                .rev()
+                .find(|r| {
+                    r[2] == mouse.features.reprog.unwrap()
+                        && r[3] >> 4 == 3
+                        && r[4..6] == cid.to_be_bytes()
+                })
+                .unwrap()[6]
+        };
+        mouse.apply_control_diverts_with_map(false, true, &mapped);
+        assert_eq!(
+            last_flags(),
+            0x23,
+            "{cid:04x}: temporary button diversion without raw XY"
+        );
+        mouse.apply_control_diverts_with_map(false, true, &native);
+        assert_eq!(
+            last_flags(),
+            0x22,
+            "{cid:04x}: Default or unmapped profile restores native behavior"
+        );
+        mouse.apply_control_diverts_with_map(false, true, &mapped);
+        assert_eq!(last_flags(), 0x23);
+        mouse.apply_control_diverts_with_map(false, false, &mapped);
+        assert_eq!(
+            last_flags(),
+            0x22,
+            "{cid:04x}: pause restores native behavior"
+        );
+        mouse.apply_control_diverts_with_map(false, true, &mapped);
+        mouse.restore_diverts();
+        assert_eq!(
+            last_flags(),
+            0x22,
+            "{cid:04x}: exit restores native behavior"
+        );
+    }
+}
+
+#[test]
 fn invalid_dpi_choices_hide_the_setting_and_prevent_writes() {
     let mut input = fixture(
         "Unavailable DPI Mouse",
@@ -362,7 +425,8 @@ fn invalid_dpi_choices_hide_the_setting_and_prevent_writes() {
     mouse.discover().unwrap();
     assert!(!mouse.capabilities.dpi);
     assert!(!mouse.capabilities.has_scroll_settings());
-    assert!(!mouse.capabilities.gestures);
+    assert!(mouse.capabilities.gestures);
+    assert!(mouse.capabilities.gesture_control.is_none());
     mouse.apply_dpi(1000).unwrap();
     assert!(!writes
         .lock()
@@ -393,4 +457,95 @@ fn extended_dpi_reads_every_page_of_discrete_choices() {
         [400, 500, 600, 700, 800, 900, 1000, 1200, 1400, 1600]
     );
     assert!(mouse.capabilities.dpi);
+}
+
+#[test]
+fn device_actions_write_validated_dpi_and_preserve_wheel_default_or_torque() {
+    use crate::config::Action;
+    for enhanced in [false, true] {
+        let (mut dev, writes) = simulated_mouse(fixture(
+            "Action test mouse",
+            ConnectionKind::Bluetooth,
+            FEAT_BATTERY_STATUS,
+            enhanced,
+            false,
+        ));
+        dev.discover().unwrap();
+        writes.lock().unwrap().clear();
+        dev.perform_action(&Action::ShiftWheelMode).unwrap();
+        let wheel = if enhanced {
+            dev.features.smartshift_enhanced.unwrap()
+        } else {
+            dev.features.smartshift.unwrap()
+        };
+        assert!(writes.lock().unwrap().iter().any(|r| r[2] == wheel
+            && r[3] >> 4 == if enhanced { 2 } else { 1 }
+            && r[4..7] == [1, 1, if enhanced { 60 } else { 20 }]));
+        dev.perform_action(&Action::ChangePointerSpeed {
+            first: 1000,
+            second: 1600,
+        })
+        .unwrap();
+        let dpi = dev.features.dpi.unwrap();
+        assert!(writes
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|r| r[2] == dpi && r[3] >> 4 == 3 && r[4..7] == [0, 6, 64]));
+        writes.lock().unwrap().clear();
+        assert!(dev
+            .perform_action(&Action::ChangePointerSpeed {
+                first: 1000,
+                second: 1650
+            })
+            .is_err());
+        assert!(!writes
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|r| r[2] == dpi && r[3] >> 4 == 3));
+        // Periodic reapplication retains temporary values.
+        dev.apply_device_config();
+        assert!(writes
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|r| r[2] == dpi && r[3] >> 4 == 3 && r[4..7] == [0, 6, 64]));
+    }
+}
+
+#[test]
+fn unsupported_wheel_action_does_not_write_to_vertical_mouse() {
+    let (mut dev, writes) = simulated_mouse(fixture(
+        "MX Vertical",
+        ConnectionKind::Usb,
+        FEAT_BATTERY_STATUS,
+        false,
+        true,
+    ));
+    dev.discover().unwrap();
+    writes.lock().unwrap().clear();
+    assert!(dev
+        .perform_action(&crate::config::Action::ShiftWheelMode)
+        .is_err());
+    assert!(writes.lock().unwrap().is_empty());
+}
+
+#[test]
+fn saved_device_actions_require_current_capabilities_and_dpi_values() {
+    use super::device::{action_supported, DeviceCapabilities};
+    use crate::config::Action;
+    let mut caps = DeviceCapabilities::default();
+    assert!(!action_supported(&Action::ShiftWheelMode, &caps, &[]));
+    caps.smartshift = true;
+    assert!(action_supported(&Action::ShiftWheelMode, &caps, &[]));
+    let speed = Action::ChangePointerSpeed {
+        first: 800,
+        second: 1600,
+    };
+    assert!(!action_supported(&speed, &caps, &[800, 1600]));
+    caps.dpi = true;
+    assert!(action_supported(&speed, &caps, &[800, 1600]));
+    assert!(!action_supported(&speed, &caps, &[800, 1200]));
+    assert!(action_supported(&Action::PassThrough, &caps, &[]));
 }

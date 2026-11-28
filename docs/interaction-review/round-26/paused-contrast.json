@@ -1,0 +1,178 @@
+[
+  {
+    "theme": "Dark",
+    "frame": "paused-quit-error",
+    "source": "logical gallery image",
+    "rect": [
+      258,
+      16,
+      446,
+      30
+    ],
+    "background": [
+      56,
+      39,
+      42
+    ],
+    "highest_contrast_ink": [
+      255,
+      255,
+      255
+    ],
+    "maximum_pixel_contrast": 14.08
+  },
+  {
+    "theme": "Dark",
+    "frame": "paused-quit-error",
+    "source": "full-resolution GPU capture",
+    "rect": [
+      516,
+      32,
+      892,
+      60
+    ],
+    "background": [
+      56,
+      39,
+      42
+    ],
+    "highest_contrast_ink": [
+      238,
+      241,
+      245
+    ],
+    "maximum_pixel_contrast": 12.43
+  },
+  {
+    "theme": "Dark",
+    "frame": "paused-dismissed",
+    "source": "logical gallery image",
+    "rect": [
+      258,
+      16,
+      446,
+      30
+    ],
+    "background": [
+      56,
+      39,
+      42
+    ],
+    "highest_contrast_ink": [
+      255,
+      255,
+      255
+    ],
+    "maximum_pixel_contrast": 14.08
+  },
+  {
+    "theme": "Dark",
+    "frame": "paused-dismissed",
+    "source": "full-resolution GPU capture",
+    "rect": [
+      516,
+      32,
+      892,
+      60
+    ],
+    "background": [
+      56,
+      39,
+      42
+    ],
+    "highest_contrast_ink": [
+      238,
+      241,
+      245
+    ],
+    "maximum_pixel_contrast": 12.43
+  },
+  {
+    "theme": "Light",
+    "frame": "paused-quit-error",
+    "source": "logical gallery image",
+    "rect": [
+      258,
+      16,
+      446,
+      30
+    ],
+    "background": [
+      239,
+      220,
+      211
+    ],
+    "highest_contrast_ink": [
+      9,
+      5,
+      0
+    ],
+    "maximum_pixel_contrast": 15.34
+  },
+  {
+    "theme": "Light",
+    "frame": "paused-quit-error",
+    "source": "full-resolution GPU capture",
+    "rect": [
+      516,
+      32,
+      892,
+      60
+    ],
+    "background": [
+      239,
+      220,
+      211
+    ],
+    "highest_contrast_ink": [
+      34,
+      30,
+      22
+    ],
+    "maximum_pixel_contrast": 12.53
+  },
+  {
+    "theme": "Light",
+    "frame": "paused-dismissed",
+    "source": "logical gallery image",
+    "rect": [
+      258,
+      16,
+      446,
+      30
+    ],
+    "background": [
+      239,
+      220,
+      211
+    ],
+    "highest_contrast_ink": [
+      9,
+      5,
+      0
+    ],
+    "maximum_pixel_contrast": 15.34
+  },
+  {
+    "theme": "Light",
+    "frame": "paused-dismissed",
+    "source": "full-resolution GPU capture",
+    "rect": [
+      516,
+      32,
+      892,
+      60
+    ],
+    "background": [
+      239,
+      220,
+      211
+    ],
+    "highest_contrast_ink": [
+      34,
+      30,
+      22
+    ],
+    "maximum_pixel_contrast": 12.53
+  }
+]

@@ -1,0 +1,93 @@
+start_with_windows = false
+
+[default_profile]
+name = "Default"
+match_processes = []
+
+[default_profile.buttons.back]
+kind = "Key"
+mods = ["Ctrl"]
+vk = 87
+
+[default_profile.buttons.forward]
+kind = "Key"
+mods = ["Ctrl"]
+vk = 84
+
+[default_profile.buttons.middle]
+kind = "PassThrough"
+
+[default_profile.buttons.controls]
+
+[[profiles]]
+name = "Preview app"
+match_processes = ["preview.exe"]
+
+[profiles.buttons.back]
+kind = "PassThrough"
+
+[profiles.buttons.forward]
+kind = "PassThrough"
+
+[profiles.buttons.middle]
+kind = "PassThrough"
+
+[profiles.buttons.controls]
+
+[[profiles]]
+name = "Photo editor"
+match_processes = ["photo.exe"]
+
+[profiles.buttons.back]
+kind = "PassThrough"
+
+[profiles.buttons.forward]
+kind = "PassThrough"
+
+[profiles.buttons.middle]
+kind = "PassThrough"
+
+[profiles.buttons.controls]
+
+[device]
+smartshift = "AlwaysRatchet"
+smartshift_threshold = 10
+hires_scroll = false
+invert_scroll = false
+dpi = 1000
+scroll_deadzone = 4
+
+[gestures]
+enabled = true
+tap_threshold = 60
+
+[gestures.tap]
+kind = "Key"
+mods = ["Win"]
+vk = 9
+
+[gestures.up]
+kind = "Key"
+mods = []
+vk = 175
+
+[gestures.down]
+kind = "Key"
+mods = []
+vk = 174
+
+[gestures.left]
+kind = "Key"
+mods = [
+    "Win",
+    "Ctrl",
+]
+vk = 37
+
+[gestures.right]
+kind = "Key"
+mods = [
+    "Win",
+    "Ctrl",
+]
+vk = 39

@@ -1,0 +1,20 @@
+{
+  "packet": "fern",
+  "source": "bdb849837aa4a2653ce7400606e2f6ff860ab3d6",
+  "hostScale": 200,
+  "device": "Simulated MX Master 2S from recorded Bluetooth report. A4 disconnected.",
+  "window": {
+    "A3 A4 A5": [
+      720,
+      540
+    ],
+    "B4 C4 D2 D3": [
+      720,
+      360
+    ],
+    "other": [
+      968,
+      668
+    ]
+  }
+}

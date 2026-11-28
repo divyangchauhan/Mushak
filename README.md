@@ -27,6 +27,12 @@ button mappings appear only when the mouse reports the required capability.
 Software movement gestures require a gesture control that supports raw XY.
 An older gesture button without raw XY can still be mapped as a button.
 
+The Buttons page also remaps DPI Change and DPI Switch buttons when the mouse
+reports them as configurable. On MX Master models, use the Wheel mode button
+marker for the top button behind the scroll wheel. These mappings use the selected
+profile. Choose Pass through to restore the button's native action. The Master's
+top-button mapping and saved extra-button mappings remain editable offline.
+
 When a mouse disconnects, Mushak remembers its name across app restarts and shows
 it as disconnected. Before the first mouse connects, it shows "No device".
 Built-in touchpads and receivers without a responding mouse do not count as
@@ -116,24 +122,28 @@ code-signing certificate is required.
 ## Settings
 
 The original MX Master, MX Master 2S, 3, 3S, and 4 have a fixed-angle mouse
-illustration in the Buttons tab, including their Mac and Business variants.
+illustration in Mouse controls, including their Mac and Business variants.
 Click a button marker or its action label to open a configuration popover.
 Back, Forward, Middle, and extra button mappings use the selected profile.
-Gesture actions apply to every profile. The MX Master 4 has a separate
+Profiles inherit gesture actions until you customize them. The MX Master 4 has a separate
 Haptic Sense Panel marker when the device reports a configurable control.
 Any reported controls without a marker remain available below the diagram.
 Other mice and windows narrower than 840 logical pixels use the button list.
-A remembered, disconnected MX Master still lets you edit the saved Back,
-Forward, and Middle mappings. See [preview notes](docs/mx-master-2s-preview.md)
+A disconnected mouse still lets you edit saved Back, Forward, Middle, and
+gesture actions. Gesture tap is also available in the button list for any
+connected mouse that reports gesture support. Saved tap and swipe actions
+remain editable while gesture input is turned off. See [preview notes](docs/mx-master-2s-preview.md)
 for shared artwork and validation details.
 
-The window has five tabs:
+Settings has four sections.
 
-- **Buttons** — remap Back / Forward / Middle per profile. Each can be a preset
-  shortcut, a media key, *Pass through*, or *Disabled*, or a custom modifier+key
-  chord.
-- **Scroll** — SmartShift mode (Always ratchet / Always freespin / SmartShift
-  with a flick-sensitivity slider), high-resolution scrolling, invert direction.
+- **Mouse controls** lets you assign a preset, media key or custom shortcut to a button
+  in the selected profile. You can also pass the button through or disable it.
+  Click the scroll wheel on the diagram or choose it from the list to open its editor.
+  **Scrolling** has the settings the connected mouse reports, including wheel mode,
+  flick sensitivity, direction, high-resolution scrolling and the accidental-nudge threshold.
+  These apply across profiles. **Middle click** sets what pressing the wheel does for the
+  selected profile. Save applies edits from both tabs together.
 - **Gestures** — actions for tap / swipe up / down / left / right of the thumb
   button, plus the tap-vs-swipe threshold. Defaults mirror Options+ (tap = Task
   View, left/right = switch virtual desktop, up/down = volume).

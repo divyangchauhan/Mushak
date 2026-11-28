@@ -11,6 +11,10 @@ use std::path::PathBuf;
 pub struct SharedStatus {
     pub device: DeviceStatus,
     pub paused: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resume_pid: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub active_profile: Option<String>,
 }
 
 fn path() -> Option<PathBuf> {
@@ -25,11 +29,12 @@ pub fn write(status: &SharedStatus) {
 }
 
 pub fn read() -> SharedStatus {
-    let Some(p) = path() else {
-        return SharedStatus::default();
-    };
-    std::fs::read_to_string(p)
-        .ok()
-        .and_then(|s| serde_json::from_str(&s).ok())
-        .unwrap_or_default()
+    read_update().unwrap_or_default()
+}
+
+/// A partially written status must not look like a disconnected mouse or a confirmed resume.
+pub fn read_update() -> Option<SharedStatus> {
+    let p = path()?;
+    let data = std::fs::read_to_string(p).ok()?;
+    serde_json::from_str(&data).ok()
 }

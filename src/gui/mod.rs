@@ -21,7 +21,7 @@ mod theme;
 mod uiprefs;
 mod widgets;
 
-use crate::config::{Config, Modifier};
+use crate::config::{Action, Config, Modifier};
 use crate::statusfile::{self, SharedStatus};
 use crate::{conflicts, state};
 use conflicts::KillOutcome;
@@ -39,7 +39,6 @@ pub fn run_ui_smoke() {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Section {
     Buttons,
-    Scroll,
     Gestures,
     Profiles,
     Device,
@@ -48,23 +47,26 @@ pub enum Section {
 impl Section {
     fn available(self, device: &crate::hidpp::device::DeviceStatus) -> bool {
         match self {
-            Self::Scroll => device.connected && device.capabilities.has_scroll_settings(),
-            Self::Gestures => device.connected && device.capabilities.gestures,
-            Self::Buttons => !device.connected || !device.capabilities.buttons.is_empty(),
+            // Gesture actions are saved software mappings and can be edited offline.
+            Self::Gestures => !device.connected || device.capabilities.gestures,
+            Self::Buttons => {
+                !device.connected
+                    || scroll::available(device)
+                    || !device.capabilities.buttons.is_empty()
+                    || device.capabilities.gestures
+            }
             _ => true,
         }
     }
-    const ALL: [Section; 5] = [
-        Section::Buttons,
-        Section::Scroll,
-        Section::Gestures,
-        Section::Profiles,
+    const ALL: [Section; 4] = [
         Section::Device,
+        Section::Profiles,
+        Section::Buttons,
+        Section::Gestures,
     ];
     fn label(self) -> &'static str {
         match self {
-            Section::Buttons => "Buttons",
-            Section::Scroll => "Scroll",
+            Section::Buttons => "Mouse controls",
             Section::Gestures => "Gestures",
             Section::Profiles => "Profiles",
             Section::Device => "Device",
@@ -73,7 +75,6 @@ impl Section {
     fn icon(self) -> &'static ply_engine::prelude::GraphicAsset {
         match self {
             Section::Buttons => &icons::NAV_BUTTONS,
-            Section::Scroll => &icons::NAV_SCROLL,
             Section::Gestures => &icons::NAV_GESTURES,
             Section::Profiles => &icons::NAV_PROFILES,
             Section::Device => &icons::NAV_DEVICE,
@@ -82,12 +83,19 @@ impl Section {
     fn id(self) -> &'static str {
         match self {
             Section::Buttons => "nav_buttons",
-            Section::Scroll => "nav_scroll",
             Section::Gestures => "nav_gestures",
             Section::Profiles => "nav_profiles",
             Section::Device => "nav_device",
         }
     }
+}
+
+#[derive(Clone, Copy)]
+enum ResumeState {
+    Idle,
+    Requested { pid: u32, at: Instant },
+    Failed,
+    Confirmed(Instant),
 }
 
 pub struct App {
@@ -111,6 +119,9 @@ pub struct App {
     /// Live device status read from the resident process.
     pub device_view: SharedStatus,
     status_next_check: Instant,
+    resume: ResumeState,
+    show_resume_steps: Option<bool>,
+    compact_diagram: bool,
     /// The OS title bar is stripped after the first frame, once the window exists.
     framed: bool,
     /// Buttons section: is the profile dropdown open?
@@ -121,11 +132,25 @@ pub struct App {
     pub picker: Option<PickerTarget>,
     /// A mouse marker to attach the action picker to. List pickers stay centered.
     pub picker_anchor: Option<&'static str>,
+    pub picker_row_label: Option<String>,
+    pub naming_button: bool,
+    renaming_profile: Option<usize>,
+    profile_name_error: Option<&'static str>,
+    pub name_save_failed: bool,
     shortcut_editor: bool,
     picker_fresh: bool,
     pub picker_query: String,
     picker_category: usize,
-    picker_categories_open: bool,
+    picker_dpi: [u16; 2],
+    picker_speed_editor: bool,
+    wheel_presets: bool,
+    wheel_draft: Option<crate::config::DeviceConfig>,
+    scrolling_tab: bool,
+    wheel_switch: Option<(PickerTarget, &'static str)>,
+    saved_notice: Option<(String, Section, usize, Instant)>,
+    failed_assignment: Option<(crate::config::Action, &'static str)>,
+    picker_feedback: Option<Instant>,
+    pending_action: Option<crate::config::Action>,
     pub custom_mods: Vec<Modifier>,
     pub custom_key: Option<u16>,
     pub capturing_key: bool,
@@ -134,22 +159,36 @@ pub struct App {
 /// What the action picker is currently editing.
 #[derive(Clone, PartialEq, Eq)]
 pub enum PickerTarget {
-    /// Slot name: back / forward / middle.
+    /// Slot name: back / forward / middle / control_<four-digit HID++ ID>.
     Button(String),
     /// Slot name: tap / up / down / left / right.
     Gesture(String),
 }
 
 impl PickerTarget {
+    fn opens_scroll(&self, device: &crate::hidpp::device::DeviceStatus) -> bool {
+        matches!(self, Self::Button(slot) if slot == "middle") && scroll::available(device)
+    }
+
+    fn can_open(&self, device: &crate::hidpp::device::DeviceStatus) -> bool {
+        self.available(device) || self.opens_scroll(device)
+    }
+
     fn available(&self, device: &crate::hidpp::device::DeviceStatus) -> bool {
         match self {
-            Self::Gesture(_) => device.connected && device.capabilities.gestures,
+            Self::Gesture(_) => Section::Gestures.available(device),
             Self::Button(slot) if device.connected => device
                 .capabilities
                 .buttons
                 .iter()
                 .any(|button| button.slot == *slot),
-            Self::Button(slot) => matches!(slot.as_str(), "back" | "forward" | "middle"),
+            Self::Button(slot) => {
+                matches!(slot.as_str(), "back" | "forward" | "middle")
+                    || slot
+                        .strip_prefix("control_")
+                        .and_then(buttons::control_id)
+                        .is_some()
+            }
         }
     }
 }
@@ -164,8 +203,8 @@ impl App {
         App {
             section: Section::Buttons,
             draft: (*state::config()).clone(),
-            prefs,
             pal: Palette::resolve(prefs.theme, prefs.accent),
+            prefs,
             selected_profile: 0,
             pick_deadline: None,
             pick_target: 0,
@@ -175,17 +214,34 @@ impl App {
             kill_outcome: None,
             conflict_next_check: Instant::now() + Duration::from_secs(3),
             device_view: statusfile::read(),
+            resume: ResumeState::Idle,
+            show_resume_steps: None,
+            compact_diagram: false,
             status_next_check: Instant::now() + Duration::from_millis(500),
             framed: false,
             profile_menu_open: false,
             hidpp_expanded: false,
             picker: None,
             picker_anchor: None,
+            picker_row_label: None,
+            naming_button: false,
+            renaming_profile: None,
+            profile_name_error: None,
+            name_save_failed: false,
             shortcut_editor: false,
             picker_fresh: false,
             picker_query: String::new(),
             picker_category: 0,
-            picker_categories_open: false,
+            picker_dpi: [800, 1600],
+            picker_speed_editor: false,
+            wheel_presets: false,
+            wheel_draft: None,
+            scrolling_tab: false,
+            wheel_switch: None,
+            saved_notice: None,
+            failed_assignment: None,
+            picker_feedback: None,
+            pending_action: None,
             custom_mods: Vec::new(),
             custom_key: None,
             capturing_key: false,
@@ -228,11 +284,26 @@ impl App {
             }
         }
         self.shortcut_editor = self.custom_key.is_some();
+        self.picker_feedback = None;
+        self.pending_action = None;
+        self.saved_notice = None;
+        self.wheel_presets = false;
+        self.picker_speed_editor = false;
+        self.picker_dpi = match current {
+            Action::ChangePointerSpeed { first, second } => [first, second],
+            _ => [800, 1600],
+        };
+        self.failed_assignment = None;
+        self.wheel_switch = None;
+        self.scrolling_tab = target.opens_scroll(&self.device_view.device);
+        self.wheel_draft = self.scrolling_tab.then(|| self.draft.device.clone());
         self.picker = Some(target);
         self.picker_anchor = None;
+        self.picker_row_label = None;
+        self.naming_button = false;
+        self.name_save_failed = false;
         self.picker_fresh = true;
         self.picker_query.clear();
-        self.picker_categories_open = false;
         self.picker_category = actions::presets()
             .iter()
             .find(|p| (p.action)() == current)
@@ -247,8 +318,16 @@ impl App {
     }
 
     pub fn close_picker(&mut self) {
+        self.wheel_switch = None;
+        self.wheel_draft = None;
+        self.scrolling_tab = false;
+        self.pending_action = None;
+        self.failed_assignment = None;
         self.picker = None;
         self.picker_anchor = None;
+        self.picker_row_label = None;
+        self.naming_button = false;
+        self.name_save_failed = false;
         self.capturing_key = false;
     }
 
@@ -274,7 +353,7 @@ impl App {
                 })
                 .unwrap_or_default(),
             PickerTarget::Gesture(slot) => {
-                let g = &self.draft.gestures;
+                let g = self.selected_gestures();
                 match slot.as_str() {
                     "tap" => g.tap.clone(),
                     "up" => g.up.clone(),
@@ -287,11 +366,18 @@ impl App {
     }
 
     pub fn assign_action(&mut self, target: &PickerTarget, action: crate::config::Action) {
+        let previous = self.draft.clone();
+        let update_binding =
+            self.wheel_draft.is_none() || target.available(&self.device_view.device);
+        let pending = action.clone();
+        if let Some(wheel) = &self.wheel_draft {
+            self.draft.device = wheel.clone();
+        }
         match target {
             PickerTarget::Button(slot) => {
                 let idx = self.selected_profile;
                 let slot = slot.clone();
-                if let Some(p) = self.profile_at_mut(idx) {
+                if let Some(p) = self.profile_at_mut(idx).filter(|_| update_binding) {
                     match slot.as_str() {
                         "back" => p.buttons.back = action,
                         "forward" => p.buttons.forward = action,
@@ -309,7 +395,7 @@ impl App {
                 }
             }
             PickerTarget::Gesture(slot) => {
-                let g = &mut self.draft.gestures;
+                let g = self.selected_gestures_mut();
                 match slot.as_str() {
                     "tap" => g.tap = action,
                     "up" => g.up = action,
@@ -319,7 +405,26 @@ impl App {
                 }
             }
         }
-        self.commit_config();
+        self.failed_assignment = match self.draft.save() {
+            Ok(()) => {
+                state::set_config(self.draft.clone());
+                None
+            }
+            Err(error) => {
+                tracing::error!("saving action failed: {error:#}");
+                self.draft = previous;
+                let cause = error
+                    .downcast_ref::<std::io::Error>()
+                    .and_then(|e| e.raw_os_error());
+                let recovery = match cause {
+                    Some(32 | 33) => "Close any editor using the settings file, then try again. Your previous assignment is still active.",
+                    Some(5) => "Windows denied write access. Check the settings file permissions and try again.",
+                    Some(112) => "The drive is full. Free up space and try again.",
+                    _ => "Check that the settings folder is writable, then try again.",
+                };
+                Some((pending, recovery))
+            }
+        };
     }
 
     /// While the picker is capturing, the next key press becomes the custom key.
@@ -359,11 +464,13 @@ impl App {
 
     /// Persist the draft. The resident process notices the file change and
     /// applies any device-affecting settings.
-    pub fn commit_config(&mut self) {
+    pub fn commit_config(&mut self) -> bool {
         if let Err(e) = self.draft.save() {
             tracing::error!("saving config failed: {e:#}");
+            return false;
         }
         state::set_config(self.draft.clone());
+        true
     }
 
     pub fn toggle_theme(&mut self) {
@@ -372,14 +479,79 @@ impl App {
         self.prefs.save();
     }
 
-    /// True while the mouse is reachable. Scroll / Gestures / Device all read
-    /// live device values, so they dim to an "asleep" card without it.
+    /// True while the mouse is reachable. Hardware settings need a live device;
+    /// saved gesture actions can be edited without one.
     pub fn mouse_awake(&self) -> bool {
         self.device_view.device.connected
     }
 
     pub fn show_conflict(&self) -> bool {
         !self.conflict_names.is_empty() && !self.conflict_dismissed
+    }
+
+    fn resume_steps_visible(&self) -> bool {
+        self.device_view.paused
+            && (matches!(self.resume, ResumeState::Failed) || self.device_view.resume_pid.is_none())
+            && self.show_resume_steps.unwrap_or(false)
+    }
+
+    fn accept_status(&mut self, update: SharedStatus) {
+        if self.wheel_draft.is_some() {
+            let old = &self.device_view.device;
+            let new = &update.device;
+            let a = &old.capabilities;
+            let b = &new.capabilities;
+            if !scroll::available(new)
+                || old.name != new.name
+                || old.connection != new.connection
+                || (
+                    a.smartshift,
+                    a.smartshift_max_threshold,
+                    a.hires_scroll,
+                    a.wheel_multiplier,
+                    a.invert_scroll,
+                ) != (
+                    b.smartshift,
+                    b.smartshift_max_threshold,
+                    b.hires_scroll,
+                    b.wheel_multiplier,
+                    b.invert_scroll,
+                )
+                || self
+                    .picker
+                    .as_ref()
+                    .is_some_and(|p| p.available(old) != p.available(new))
+            {
+                self.close_picker();
+            }
+        }
+        let changed = self.device_view.paused != update.paused
+            || self.device_view.resume_pid != update.resume_pid;
+        if changed {
+            self.show_resume_steps = None;
+            self.resume = match self.resume {
+                ResumeState::Requested { pid, .. }
+                    if !update.paused && update.resume_pid == Some(pid) =>
+                {
+                    ResumeState::Confirmed(Instant::now())
+                }
+                _ => ResumeState::Idle,
+            };
+        }
+        self.device_view = update;
+    }
+
+    fn expire_resume_feedback(&mut self) {
+        match self.resume {
+            ResumeState::Confirmed(at) if at.elapsed() >= Duration::from_secs(3) => {
+                self.resume = ResumeState::Idle
+            }
+            ResumeState::Requested { at, .. } if at.elapsed() >= Duration::from_secs(5) => {
+                self.resume = ResumeState::Failed;
+                self.show_resume_steps = Some(true);
+            }
+            _ => {}
+        }
     }
 
     fn poll_timers(&mut self) {
@@ -395,11 +567,14 @@ impl App {
             self.conflict_next_check = now + Duration::from_secs(3);
         }
         if now >= self.status_next_check {
-            self.device_view = statusfile::read();
+            if let Some(update) = statusfile::read_update() {
+                self.accept_status(update);
+            }
+            self.expire_resume_feedback();
             if self
                 .picker
                 .as_ref()
-                .is_some_and(|target| !target.available(&self.device_view.device))
+                .is_some_and(|target| !target.can_open(&self.device_view.device))
             {
                 self.close_picker();
             }
@@ -427,10 +602,24 @@ impl App {
                 .iter()
                 .any(|p| p.eq_ignore_ascii_case(&proc))
             {
+                let confirmation = format!("Added {proc} to {}", profile.name);
                 profile.match_processes.push(proc);
-                self.commit_config();
+                if self.commit_config() {
+                    self.saved_notice = Some((
+                        confirmation,
+                        Section::Profiles,
+                        self.selected_profile,
+                        Instant::now(),
+                    ));
+                } else if let Some(profile) = self.profile_at_mut(target) {
+                    profile.match_processes.pop();
+                }
             }
         }
+    }
+
+    fn inline_mapping_notice(&self) -> bool {
+        screen_width() < 840.0 && matches!(self.section, Section::Buttons | Section::Gestures)
     }
 
     pub fn profile_at_mut(&mut self, idx: usize) -> Option<&mut crate::config::Profile> {
@@ -574,12 +763,16 @@ async fn frame_loop() {
             // miniquad has created the window by the time the first frame is
             // presented, so the HWND is live now.
             chrome::make_frameless(DESIGN_W, DESIGN_H);
+            chrome::start_status_timer();
             app.framed = true;
         }
 
         // blocking_event_loop parks the loop until input arrives; anything
         // time-driven has to ask for its own frame.
-        if app.pick_deadline.is_some() {
+        if app.pick_deadline.is_some()
+            || app.picker_feedback.is_some()
+            || app.saved_notice.is_some()
+        {
             miniquad::window::schedule_update();
         }
 
@@ -590,6 +783,17 @@ async fn frame_loop() {
 /// The whole window: title bar, optional conflict banner, then rail + content.
 fn window(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
+    if app
+        .saved_notice
+        .as_ref()
+        .is_some_and(|(_, section, profile, when)| {
+            *section != app.section
+                || *profile != app.selected_profile
+                || when.elapsed() >= Duration::from_secs(2)
+        })
+    {
+        app.saved_notice = None;
+    }
     ui.element()
         .width(grow!())
         .height(grow!())
@@ -597,19 +801,54 @@ fn window(ui: &mut Ui2, app: &mut App) {
         .layout(|l| l.direction(TopToBottom))
         .children(|ui| {
             titlebar(ui, app);
-            if app.show_conflict() {
-                widgets::conflict_banner(ui, app);
-            }
             ui.element()
                 .width(grow!())
                 .height(grow!())
                 .layout(|l| l.direction(LeftToRight))
                 .children(|ui| {
                     rail(ui, app);
-                    content(ui, app);
+                    ui.element()
+                        .width(grow!())
+                        .height(grow!())
+                        .layout(|l| l.direction(TopToBottom))
+                        .children(|ui| {
+                            content(ui, app);
+                            if app.show_conflict() {
+                                widgets::conflict_banner(ui, app);
+                            }
+                        });
                 });
             // Last, so it floats over everything.
             picker::overlay(ui, app);
+            if let Some((message, _, _, _)) = &app.saved_notice {
+                if app.picker.is_none() && !app.inline_mapping_notice() {
+                    ui.element()
+                        .height(fixed!(36.0))
+                        .width(fit!())
+                        .corner_radius(8.0)
+                        .floating(|f| {
+                            f.attach_root()
+                                .anchor((Right, Bottom), (Right, Bottom))
+                                .offset((-20.0, -16.0))
+                                .z_index(60)
+                                .passthrough()
+                        })
+                        .background_color(pal.pop)
+                        .border(|b| b.all(1).color(pal.line_strong))
+                        .layout(|l| {
+                            l.direction(LeftToRight)
+                                .gap(8)
+                                .align(CenterX, CenterY)
+                                .padding((0, 14, 0, 14))
+                        })
+                        .children(|ui| {
+                            widgets::icon(ui, &icons::CHECK, 16.0, pal.good);
+                            ui.text(message, |t| {
+                                t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
+                            });
+                        });
+                }
+            }
         });
 }
 
@@ -629,77 +868,142 @@ fn titlebar(ui: &mut Ui2, app: &mut App) {
         })
         .border(|b| b.bottom(1).color(pal.line))
         .children(|ui| {
-            // Dragging the title bar drags the window.
-            if ui.just_pressed() {
-                chrome::begin_drag();
-            }
-            // Brand mark. Full-colour, so it is tinted white (a no-op multiply)
-            // rather than taking a palette colour like the UI glyphs do.
-            widgets::icon(
-                ui,
-                if paused {
-                    &icons::MODAK_PAUSED
-                } else {
-                    &icons::MODAK_ACTIVE
-                },
-                24.0,
-                theme::WHITE,
-            );
-            ui.text("Mushak", |t| {
-                t.font(&fonts::DISPLAY_BOLD).font_size(17).color(pal.text)
-            });
+            // Only the brand and empty space start a native drag. A click on a
+            // child command otherwise posts HTCAPTION and steals the button-up.
             ui.element()
-                .width(fixed!(1.0))
-                .height(fixed!(15.0))
-                .background_color(pal.line_strong)
-                .empty();
-            ui.text("Mouse settings", |t| {
-                t.font(&fonts::SANS).font_size(13).color(pal.muted)
-            });
+                .id("titlebar_brand")
+                .height(grow!())
+                .width(fit!())
+                .layout(|l| l.direction(LeftToRight).align(Left, CenterY).gap(11))
+                .children(|ui| {
+                    if ui.just_pressed() {
+                        chrome::begin_drag();
+                    }
+                    widgets::icon(
+                        ui,
+                        if paused {
+                            &icons::MODAK_PAUSED
+                        } else {
+                            &icons::MODAK_ACTIVE
+                        },
+                        24.0,
+                        theme::WHITE,
+                    );
+                    ui.text("Mushak", |t| {
+                        t.font(&fonts::DISPLAY_BOLD).font_size(17).color(pal.text)
+                    });
+                    if screen_width() >= 840.0 {
+                        ui.element()
+                            .width(fixed!(1.0))
+                            .height(fixed!(15.0))
+                            .background_color(pal.line_strong)
+                            .empty();
+                        ui.text("Mouse settings", |t| {
+                            t.font(&fonts::SANS).font_size(13).color(pal.muted)
+                        });
+                    }
+                });
             if paused {
-                widgets::paused_pill(ui, &pal);
+                widgets::paused_status(ui, app);
+            } else if matches!(app.resume, ResumeState::Confirmed(_)) {
+                ui.element()
+                    .height(fixed!(28.0))
+                    .corner_radius(8.0)
+                    .background_color(Palette::mix(pal.good, 15.0, pal.win))
+                    .layout(|l| {
+                        l.direction(LeftToRight)
+                            .align(Left, CenterY)
+                            .gap(6)
+                            .padding((0, 9, 0, 9))
+                    })
+                    .children(|ui| {
+                        widgets::icon(ui, &icons::CHECK, 14.0, pal.good);
+                        ui.text("Remapping resumed", |t| {
+                            t.font(&fonts::SANS_SEMIBOLD).font_size(13).color(pal.text)
+                        });
+                    });
             }
-            // Push the window controls to the right.
-            ui.element().width(grow!()).height(fixed!(1.0)).empty();
+            ui.element()
+                .id("titlebar_drag_space")
+                .width(grow!())
+                .height(grow!())
+                .children(|ui| {
+                    if ui.just_pressed() {
+                        chrome::begin_drag();
+                    }
+                });
             widgets::titlebar_buttons(ui, app);
         });
+}
+
+fn rail_width() -> f32 {
+    if screen_width() < 840.0 {
+        158.0
+    } else {
+        204.0
+    }
 }
 
 fn rail(ui: &mut Ui2, app: &mut App) {
     let pal = app.pal;
     let current = app.section;
+    let short = screen_height() < 430.0;
     let mut clicked: Option<Section> = None;
     ui.element()
-        .width(fixed!(if screen_width() < 840.0 { 158.0 } else { 204.0 }))
+        .width(fixed!(rail_width()))
         .height(grow!())
         .background_color(pal.rail)
-        .layout(|l| l.direction(TopToBottom).gap(4).padding((20, 12, 12, 12)))
+        .overflow(|o| {
+            if short {
+                o.scroll_y();
+            }
+            o
+        })
+        .layout(|l| {
+            if short {
+                l.direction(TopToBottom).gap(2).padding((6, 10, 6, 10))
+            } else {
+                l.direction(TopToBottom).gap(4).padding((20, 12, 12, 12))
+            }
+        })
         .border(|b| b.right(1).color(pal.line))
         .children(|ui| {
+            // Keep device information and profiles in reach as hardware comes and goes.
             for s in Section::ALL {
                 if !s.available(&app.device_view.device) {
                     continue;
                 }
-                if widgets::nav_item(ui, &pal, s, s == current) {
+                if widgets::nav_item(ui, &pal, s, s == current, short) {
                     clicked = Some(s);
                 }
             }
             // Status card sits at the bottom of the rail.
             ui.element().width(grow!()).height(grow!()).empty();
-            widgets::status_card(ui, app);
+            widgets::status_card(ui, app, short);
         });
     if let Some(s) = clicked {
+        app.profile_menu_open = false;
         app.section = s;
+        app.show_resume_steps = Some(false);
     }
 }
 
 fn content(ui: &mut Ui2, app: &mut App) {
+    if app.section != Section::Profiles {
+        app.renaming_profile = None;
+        app.profile_name_error = None;
+    }
     if !app.section.available(&app.device_view.device) {
         app.section = Section::Device;
     }
     let pal = app.pal;
+    let help = app.resume_steps_visible();
     ui.element()
-        .id("settings_content")
+        .id(if help {
+            "tray_help_content"
+        } else {
+            "settings_content"
+        })
         .width(grow!())
         .height(grow!())
         .overflow(|o| {
@@ -715,12 +1019,17 @@ fn content(ui: &mut Ui2, app: &mut App) {
                 .width(grow!(0.0, 824.0))
                 .height(fit!())
                 .layout(|l| l.direction(TopToBottom).padding((24, 28, 24, 28)))
-                .children(|ui| match app.section {
-                    Section::Buttons => buttons::section(ui, app),
-                    Section::Scroll => scroll::section(ui, app),
-                    Section::Gestures => gestures_tab::section(ui, app),
-                    Section::Profiles => profiles_tab::section(ui, app),
-                    Section::Device => device_tab::section(ui, app),
+                .children(|ui| {
+                    if help {
+                        widgets::resume_help(ui, app);
+                    } else {
+                        match app.section {
+                            Section::Buttons => buttons::section(ui, app),
+                            Section::Gestures => gestures_tab::section(ui, app),
+                            Section::Profiles => profiles_tab::section(ui, app),
+                            Section::Device => device_tab::section(ui, app),
+                        }
+                    }
                 });
         });
 }
@@ -730,20 +1039,64 @@ mod tests {
     use super::*;
     use crate::hidpp::device::DeviceStatus;
     #[test]
+    fn disconnected_mouse_keeps_saved_gesture_configuration_editable() {
+        for name in [
+            "Wireless Mouse MX Master 2S",
+            "MX Master 3S",
+            "MX Master 4",
+            "Other mouse",
+        ] {
+            let device = DeviceStatus {
+                name: Some(name.into()),
+                ..Default::default()
+            };
+            assert!(
+                Section::Gestures.available(&device),
+                "{name}: gesture settings must remain visible offline"
+            );
+            for slot in ["tap", "up", "down", "left", "right"] {
+                assert!(
+                    PickerTarget::Gesture(slot.into()).available(&device),
+                    "{name}: saved {slot} must be configurable offline"
+                );
+            }
+        }
+    }
+
+    #[test]
     fn settings_follow_capabilities_instead_of_connection_alone() {
         let mut device = DeviceStatus {
             connected: true,
             ..Default::default()
         };
-        assert!(!Section::Scroll.available(&device));
+        assert!(!scroll::available(&device));
         assert!(!Section::Gestures.available(&device));
+        assert!(!PickerTarget::Gesture("tap".into()).available(&device));
         device.capabilities.hires_scroll = true;
-        assert!(Section::Scroll.available(&device));
+        assert!(scroll::available(&device));
         assert!(!Section::Gestures.available(&device));
         device.capabilities.gestures = true;
         assert!(Section::Gestures.available(&device));
+        assert!(Section::Buttons.available(&device));
         device.connected = false;
-        assert!(!Section::Scroll.available(&device));
-        assert!(!Section::Gestures.available(&device));
+        assert!(!scroll::available(&device));
+        assert!(Section::Gestures.available(&device));
+    }
+}
+
+impl App {
+    fn selected_gestures(&self) -> &crate::config::GestureConfig {
+        self.profile_at(self.selected_profile)
+            .and_then(|p| p.gestures.as_ref())
+            .unwrap_or(&self.draft.gestures)
+    }
+    fn selected_gestures_mut(&mut self) -> &mut crate::config::GestureConfig {
+        if self.selected_profile == 0 {
+            return &mut self.draft.gestures;
+        }
+        let defaults = self.draft.gestures.clone();
+        self.draft.profiles[self.selected_profile - 1]
+            .gestures
+            .get_or_insert(defaults)
     }
 }

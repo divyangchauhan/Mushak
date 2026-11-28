@@ -43,6 +43,7 @@ pub struct DeviceCapabilities {
     pub battery: bool,
     pub wheel_multiplier: Option<u8>,
     pub gesture_control: Option<u16>,
+    pub gesture_buttons: Vec<super::features::reprog::ButtonInfo>,
     pub smartshift_max_threshold: u8,
     pub buttons: Vec<super::features::reprog::ButtonInfo>,
 }
@@ -50,6 +51,21 @@ pub struct DeviceCapabilities {
 impl DeviceCapabilities {
     pub fn has_scroll_settings(&self) -> bool {
         self.smartshift || self.hires_scroll || self.invert_scroll
+    }
+}
+
+/// Saved mappings can outlive the mouse for which they were created.
+pub(crate) fn action_supported(
+    action: &crate::config::Action,
+    caps: &DeviceCapabilities,
+    dpi: &[u16],
+) -> bool {
+    match action {
+        crate::config::Action::ShiftWheelMode => caps.smartshift,
+        crate::config::Action::ChangePointerSpeed { first, second } => {
+            caps.dpi && first != second && dpi.contains(first) && dpi.contains(second)
+        }
+        _ => true,
     }
 }
 
@@ -120,6 +136,8 @@ pub enum DeviceCommand {
     ApplyWheelMode,
     /// Re-assert every control's divert state per `config.gestures`.
     ApplyControlDiverts,
+    /// Execute a hardware action on this worker.
+    PerformAction(crate::config::Action),
     /// Stop the thread.
     Shutdown,
 }
@@ -146,6 +164,12 @@ fn run(rx: Receiver<DeviceCommand>, mut history: super::history::DeviceHistory) 
     while !SHUTDOWN.load(Ordering::Relaxed) {
         match Device::connect() {
             Ok(dev) => {
+                // Never replay button presses from the previous connection.
+                while let Ok(cmd) = rx.try_recv() {
+                    if matches!(cmd, DeviceCommand::Shutdown) {
+                        return;
+                    }
+                }
                 history.observe((*state::device_status()).clone());
                 dev.apply_device_config();
                 dev.apply_diverts();
@@ -192,6 +216,8 @@ pub struct Device {
     pub(crate) dpi_values: Vec<u16>,
     pub(crate) dpi_sensor: Option<u8>,
     pub(crate) held_controls: std::sync::Mutex<Vec<u16>>,
+    runtime_dpi: std::cell::Cell<Option<u16>>,
+    runtime_wheel: std::cell::Cell<Option<crate::config::SmartShiftMode>>,
     ready: bool,
     needs_reapply: AtomicBool,
 }
@@ -207,6 +233,8 @@ impl Device {
             dpi_values: Vec::new(),
             dpi_sensor: None,
             held_controls: std::sync::Mutex::new(Vec::new()),
+            runtime_dpi: Default::default(),
+            runtime_wheel: Default::default(),
             ready: false,
             needs_reapply: AtomicBool::new(false),
         }
@@ -331,7 +359,18 @@ impl Device {
             }
         }
         self.capabilities.gesture_control = reprog::gesture_control(&self.controls);
-        self.capabilities.gestures = self.capabilities.gesture_control.is_some();
+        self.capabilities.gesture_buttons = self
+            .controls
+            .iter()
+            .filter(|c| c.supports_gestures() && !matches!(c.cid, 0x0050 | 0x0051))
+            .map(|c| reprog::ButtonInfo {
+                default_task_id: (c.tid != 0).then_some(c.tid),
+                cid: c.cid,
+                slot: format!("control_{:04x}", c.cid),
+                name: reprog::control_name(c.cid),
+            })
+            .collect();
+        self.capabilities.gestures = !self.capabilities.gesture_buttons.is_empty();
         self.capabilities.buttons =
             reprog::button_choices(&self.controls, self.capabilities.gesture_control);
         self.dpi_sensor = self.find_dpi_sensor().ok();
@@ -498,7 +537,18 @@ impl Device {
             while let Ok(cmd) = rx.try_recv() {
                 match cmd {
                     DeviceCommand::Shutdown => return,
-                    DeviceCommand::ApplyDeviceConfig => self.apply_device_config(),
+                    DeviceCommand::ApplyDeviceConfig => {
+                        self.runtime_dpi.set(None);
+                        self.runtime_wheel.set(None);
+                        self.apply_device_config();
+                    }
+                    DeviceCommand::PerformAction(action) => {
+                        if !state::is_paused() {
+                            if let Err(e) = self.perform_action(&action) {
+                                tracing::warn!("device action failed: {e:#}");
+                            }
+                        }
+                    }
                     DeviceCommand::ApplyWheelMode => self.apply_wheel_mode(),
                     DeviceCommand::ApplyControlDiverts => self.apply_diverts(),
                 }
@@ -529,19 +579,51 @@ impl Device {
 
     // ---- Orchestration hooks --------------------------------------------------
 
+    /// Actions are temporary and never rewrite the user's saved device defaults.
+    pub(crate) fn perform_action(&self, action: &crate::config::Action) -> Result<()> {
+        use crate::config::{Action, SmartShiftMode};
+        match action {
+            Action::ShiftWheelMode if self.capabilities.smartshift => {
+                let mode = if self.get_smartshift()?.0 == 1 {
+                    SmartShiftMode::AlwaysRatchet
+                } else {
+                    SmartShiftMode::AlwaysFreespin
+                };
+                self.apply_smartshift(mode, 1)?;
+                self.runtime_wheel.set(Some(mode));
+            }
+            Action::ChangePointerSpeed { first, second } if self.capabilities.dpi => {
+                let next = super::features::dpi::toggle_target(
+                    &self.dpi_values,
+                    self.get_dpi()?.0,
+                    *first,
+                    *second,
+                )?;
+                self.apply_dpi(next)?;
+                self.runtime_dpi.set(Some(next));
+            }
+            _ => bail!("action is unavailable on this mouse"),
+        }
+        self.read_device_settings();
+        Ok(())
+    }
+
     /// Apply `config.device` (SmartShift, DPI, hi-res) and refresh the published
     /// settings snapshot.
     pub(crate) fn apply_device_config(&self) {
         let cfg = state::config();
         let d = &cfg.device;
         if self.capabilities.smartshift {
-            if let Err(e) = self.apply_smartshift(d.smartshift, d.smartshift_threshold) {
+            if let Err(e) = self.apply_smartshift(
+                self.runtime_wheel.get().unwrap_or(d.smartshift),
+                d.smartshift_threshold,
+            ) {
                 tracing::warn!("apply smartshift failed: {e:#}");
             }
         }
         self.apply_wheel_mode();
         if self.capabilities.dpi {
-            if let Err(e) = self.apply_dpi(d.dpi) {
+            if let Err(e) = self.apply_dpi(self.runtime_dpi.get().unwrap_or(d.dpi)) {
                 tracing::warn!("apply dpi failed: {e:#}");
             }
         }
@@ -586,13 +668,17 @@ impl Device {
         });
     }
 
+    pub(crate) fn active_gesture_control(&self) -> Option<u16> {
+        reprog::selected_gesture_control(&self.controls, state::active_gestures().trigger)
+    }
+
     /// Re-assert the divert state of every control per config.
     pub(crate) fn apply_diverts(&self) {
         if self.features.reprog.is_none() {
             return;
         }
         let gestures_enabled =
-            state::config().gestures.enabled && self.capabilities.gestures && !state::is_paused();
+            state::active_gestures().enabled && self.capabilities.gestures && !state::is_paused();
         if !gestures_enabled {
             gestures::cancel();
         }
@@ -624,7 +710,7 @@ impl Device {
                 let cid = ((rep.param(i * 2) as u16) << 8) | rep.param(i * 2 + 1) as u16;
                 if cid != 0 {
                     cids.push(cid);
-                    if Some(cid) == self.capabilities.gesture_control {
+                    if Some(cid) == self.active_gesture_control() {
                         gesture_held = true;
                     }
                 }
@@ -639,7 +725,7 @@ impl Device {
             if !state::is_paused() {
                 let map = state::active_map();
                 for cid in pressed {
-                    if Some(cid) == self.capabilities.gesture_control {
+                    if Some(cid) == self.active_gesture_control() {
                         continue;
                     }
                     if self
@@ -655,13 +741,13 @@ impl Device {
                     }
                 }
             }
-            if self.capabilities.gestures && state::config().gestures.enabled && !state::is_paused()
+            if self.capabilities.gestures && state::active_gestures().enabled && !state::is_paused()
             {
                 gestures::handle_buttons(gesture_held);
             }
         } else if rep.function() == 1
             && self.capabilities.gestures
-            && state::config().gestures.enabled
+            && state::active_gestures().enabled
             && !state::is_paused()
         {
             if rep.raw.len() < 8 {

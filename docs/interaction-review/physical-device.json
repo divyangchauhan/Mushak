@@ -1,0 +1,47 @@
+{
+  "observed_at": "2026-11-26T09:08:50.035368+00:00",
+  "method": "Physical mouse, read-only discovery in the worktree release binary",
+  "connected": true,
+  "name": "Wireless Mouse MX Master 2S",
+  "connection": "Bluetooth",
+  "reported_dpi": 1000,
+  "buttons": [
+    {
+      "cid": 82,
+      "slot": "middle",
+      "name": "Middle click"
+    },
+    {
+      "cid": 83,
+      "slot": "back",
+      "name": "Back button"
+    },
+    {
+      "cid": 86,
+      "slot": "forward",
+      "name": "Forward button"
+    },
+    {
+      "cid": 196,
+      "slot": "control_00c4",
+      "name": "Wheel mode button"
+    }
+  ],
+  "capabilities": {
+    "smartshift": true,
+    "hires_scroll": true,
+    "invert_scroll": true,
+    "gestures": true,
+    "dpi": true,
+    "battery": true,
+    "wheel_multiplier": 8
+  },
+  "preceding_observation": {
+    "observed_at": "2026-11-26T09:08:38.035175+00:00",
+    "connected": true,
+    "name": "Wireless Mouse MX Master 2S",
+    "connection": "Bluetooth",
+    "button_count": 4,
+    "dpi_capability": false
+  }
+}

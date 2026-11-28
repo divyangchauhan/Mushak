@@ -1,18 +1,19 @@
 //! System tray icon and menu.
 
 use anyhow::Result;
-use tray_icon::menu::{CheckMenuItem, IconMenuItem, Menu, MenuId, MenuItem, PredefinedMenuItem};
+use tray_icon::menu::{CheckMenuItem, Menu, MenuId, MenuItem, PredefinedMenuItem};
 use tray_icon::{Icon, TrayIcon, TrayIconBuilder};
 
 /// Owns the tray icon (kept alive) and the menu items we update at runtime.
 pub struct Tray {
-    _icon: TrayIcon,
+    icon: TrayIcon,
+    last_status: std::cell::RefCell<String>,
     items: TrayMenu,
 }
 
 struct TrayMenu {
     menu: Menu,
-    open: IconMenuItem,
+    open: MenuItem,
     quit: MenuItem,
     pause: MenuItem,
     startup: CheckMenuItem,
@@ -27,14 +28,9 @@ impl TrayMenu {
         });
     }
 
-    fn set_status(&self, text: &str) {
-        self.open.set_text(format!("Open mouse settings\t{text}"));
-    }
-
     fn new(start_with_windows: bool) -> Result<Self> {
         let menu = Menu::new();
-        let mark = tray_icon::menu::Icon::from_rgba(MODAK_ACTIVE.to_vec(), ICON_PX, ICON_PX)?;
-        let open = IconMenuItem::new("Open mouse settings", true, Some(mark), None);
+        let open = MenuItem::new("Open mouse settings", true, None);
         let pause = MenuItem::new("Pause remapping", true, None);
         let startup = CheckMenuItem::new("Start with Windows", true, start_with_windows, None);
         let quit = MenuItem::new("Quit Mushak", true, None);
@@ -63,7 +59,14 @@ pub fn preview_menu(hwnd: isize, paused: bool) {
     use tray_icon::menu::ContextMenu;
     let items = TrayMenu::new(true).unwrap();
     items.set_paused(paused);
-    items.set_status("Battery: 50%");
+    assert_eq!(
+        items.pause.text(),
+        if paused {
+            "Resume remapping"
+        } else {
+            "Pause remapping"
+        }
+    );
     // The smoke window owns this popup. It has no resident handler.
     unsafe {
         items.menu.show_context_menu_for_hwnd(
@@ -71,6 +74,26 @@ pub fn preview_menu(hwnd: isize, paused: bool) {
             Some(tray_icon::dpi::LogicalPosition::new(30.0, 70.0).into()),
         )
     };
+}
+
+#[cfg(debug_assertions)]
+pub async fn preview_tooltip() {
+    let tray = Tray::build(false).unwrap();
+    tray.set_battery("Battery: 50%");
+    let start = std::time::Instant::now();
+    let mut reported = false;
+    while start.elapsed().as_secs() < 12 {
+        if !reported {
+            if let Some(rect) = tray.icon.rect() {
+                println!(
+                    "ICON {} {} {} {}",
+                    rect.position.x, rect.position.y, rect.size.width, rect.size.height
+                );
+                reported = true;
+            }
+        }
+        ply_engine::prelude::next_frame().await;
+    }
 }
 
 impl Tray {
@@ -83,7 +106,11 @@ impl Tray {
             .with_icon(icon)
             .build()?;
 
-        Ok(Tray { _icon: tray, items })
+        Ok(Tray {
+            icon: tray,
+            last_status: Default::default(),
+            items,
+        })
     }
 
     pub fn open_id(&self) -> &MenuId {
@@ -108,7 +135,7 @@ impl Tray {
         // without opening the menu.
         match icon_for(paused) {
             Ok(icon) => {
-                if let Err(e) = self._icon.set_icon(Some(icon)) {
+                if let Err(e) = self.icon.set_icon(Some(icon)) {
                     tracing::warn!("swapping tray icon failed: {e}");
                 }
             }
@@ -121,7 +148,12 @@ impl Tray {
     }
 
     pub fn set_battery(&self, text: &str) {
-        self.items.set_status(text);
+        if self.last_status.borrow().as_str() != text {
+            let tooltip = format!("Mushak\n{text}");
+            if self.icon.set_tooltip(Some(tooltip)).is_ok() {
+                self.last_status.replace(text.to_string());
+            }
+        }
     }
 }
 

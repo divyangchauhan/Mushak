@@ -1,0 +1,8 @@
+{
+  "theme": "Dark",
+  "width": 720,
+  "height": 360,
+  "displayScale": "200%",
+  "device": "Simulated connected MX Master 2S, paused legacy resident",
+  "action": "Resize Settings while tray instructions are shown. The device card extends below the client area."
+}

@@ -1,0 +1,20 @@
+{
+  "packet": "iris",
+  "source": "05af475b68db193627380cfc9f77d0182233e437",
+  "hostScale": 200,
+  "device": "Simulated MX Master 2S from recorded Bluetooth report. A4 disconnected.",
+  "window": {
+    "A3 A4 A5": [
+      720,
+      540
+    ],
+    "B4 C4 D2 D3": [
+      720,
+      360
+    ],
+    "other": [
+      968,
+      668
+    ]
+  }
+}

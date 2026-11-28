@@ -26,6 +26,8 @@ icon!(NAV_DEVICE, "nav_device");
 icon!(BTN_BACK, "btn_back");
 icon!(BTN_FORWARD, "btn_forward");
 icon!(BTN_MIDDLE, "btn_middle");
+icon!(WHEEL_MODE, "wheel_mode");
+icon!(POINTER_SPEED, "pointer_speed");
 
 // Gesture rows.
 icon!(G_TAP, "g_tap");
@@ -60,10 +62,6 @@ icon!(BOLT, "bolt");
 // Action-picker categories.
 icon!(CAT_EDIT, "cat_edit");
 icon!(EDIT_COPY, "edit_copy");
-icon!(EDIT_PASTE, "edit_paste");
-icon!(EDIT_CUT, "edit_cut");
-icon!(EDIT_UNDO, "edit_undo");
-icon!(EDIT_REDO, "edit_redo");
 icon!(CAT_NAV, "cat_nav");
 icon!(CAT_SYSTEM, "cat_system");
 icon!(CAT_MEDIA, "cat_media");

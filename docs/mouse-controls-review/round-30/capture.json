@@ -1,0 +1,20 @@
+{
+  "packet": "indigo",
+  "source": "79226ba3ab09a84f25c25ed808082fb51909df1f",
+  "hostScale": 200,
+  "device": "Simulated MX Master 2S from recorded Bluetooth report. A4 disconnected.",
+  "window": {
+    "A3 A4 A5": [
+      720,
+      540
+    ],
+    "B4 C4 D2 D3": [
+      720,
+      360
+    ],
+    "other": [
+      968,
+      668
+    ]
+  }
+}

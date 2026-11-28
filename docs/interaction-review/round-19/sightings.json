@@ -1,0 +1,218 @@
+{
+  "sol": [
+    {
+      "id": 1,
+      "label": "Preview app",
+      "detail": "In both themes the switcher sits beside Buttons. The open menu checks Default and lists Preview app directly below it."
+    },
+    {
+      "id": 2,
+      "label": "Haptic Sense Panel",
+      "detail": "The MX Master 4 adds marker 6 on the thumb panel. Marker 2 and its Back button row highlight together. The last pair shows Spare button under Outside the diagram."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "Compact rows keep action names under the button titles, with separate Win and Tab keycaps for Task View and pencils aligned on the right. The no-device list shows the offline edit message."
+    },
+    {
+      "id": 4,
+      "label": "Select an action to assign it now",
+      "detail": "The wide editor pairs a numbered thumb-button close-up with categories and right-aligned shortcuts. The compact picker keeps the tabs and categories in a modal. The Haptic Sense Panel has its own marked crop."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "The Copy query yields one row with Ctrl and C keycaps. The zzzz query gets a centered magnifier and a Record a keyboard shortcut button."
+    },
+    {
+      "id": 6,
+      "label": "Switch pointer speed",
+      "detail": "The wheel close-up points to button 5. The DPI editor shows 800 and 1600 sliders, Mouse now at 1000 DPI, and Next press at 800 DPI above the filled save button."
+    },
+    {
+      "id": 7,
+      "label": "Save shortcut",
+      "detail": "The two themes show Press a key, an M draft held through resize, then Native action after Cancel. The save toast reports K and reopened and restart-labeled screens show Assigned now K and Saved. All three native cycle pairs per theme show the same panel bounds with Actions and Keyboard shortcut alternating. The compact four-modifier Space chord fits on one line."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "SmartShift is selected alongside a 10 flick value and a 50% of a notch slider. The compact ratchet state stacks the radio cards and shows two off switches below them."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "Tap and four amber arrows sit opposite editable shortcut pills. Both themes fit the 60 counts slider in the compact window. The disabled state keeps the saved action rows visible."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "Ranked profile cards place numbered badges beside names and explicit Move up or Move down controls at the right. The capture state shows Capturing in 6s and the native picked frame adds a python.exe chip and toast."
+    },
+    {
+      "id": 11,
+      "label": "Edit button mappings",
+      "detail": "A crossed-out mouse sits beside Disconnected and No device copy. The connected compact state still fits Bluetooth, firmware, a green 50% bar and the 1000 DPI slider. The standard USB case presents one connection card."
+    },
+    {
+      "id": 12,
+      "label": "18 unnamed features",
+      "detail": "The diagnostics card aligns amber monospace IDs with names in two columns. Unnamed IDs wrap into two rows of pills alongside the Copy unnamed IDs button."
+    },
+    {
+      "id": 13,
+      "label": "Couldn't save assignment",
+      "detail": "The save error shows Copy is still unsaved with Try again and Back to editing below it. The two conflict states use a full-width banner with a triangle and distinct amber and red tints."
+    },
+    {
+      "id": 14,
+      "label": "Tray menu",
+      "detail": "In the active state, 'Pause remapping' sits beneath a thin gray divider, with a black check beside 'Start with Windows'. In the paused state, 'Resume remapping' replaces it at the same left edge, and the small amber mouse icon stays aligned beside 'Open mouse settings'."
+    }
+  ],
+  "terra": [
+    {
+      "id": 1,
+      "label": "Profile Default",
+      "detail": "The profile selector sits beside Buttons; its open menu lists Default and Preview app, with a check on Default."
+    },
+    {
+      "id": 2,
+      "label": "Haptic Sense Panel",
+      "detail": "MX Master 4 shows six numbered markers and an extra control under Outside the diagram; hover highlights the matching Back button card."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "Compact rows show icons, assignment names and keycaps, including Win Tab for Task View."
+    },
+    {
+      "id": 4,
+      "label": "Select an action to assign it now",
+      "detail": "The Back button editor pairs a cropped thumb-button photo with categories and actions; compact mode uses a centered dialog."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "Searching Copy displays a single result with Ctrl and C keycaps; an empty search result offers Record a keyboard shortcut."
+    },
+    {
+      "id": 6,
+      "label": "Switch pointer speed",
+      "detail": "Wheel mode actions offer Assign now and Set speeds; the speed editor shows two numeric inputs, sliders and current and next DPI."
+    },
+    {
+      "id": 7,
+      "label": "Record key",
+      "detail": "Recording changes the prompt to Press a key; M survives the compact resize, cancel returns to Native action, and K appears saved and after the frame labeled restarted. Three native tab cycles show both tabs."
+    },
+    {
+      "id": 8,
+      "label": "Flick sensitivity",
+      "detail": "Scroll shows three wheel modes, sensitivity and nudge sliders, plus high-resolution and inversion toggles. Compact mode stacks the wheel modes."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance",
+      "detail": "Five direction rows show arrow icons and editable assigned actions; the off state keeps saved actions visible with an explanation."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "Profile cards show numbered priority, move controls and executable chips. Capture displays a six-second countdown, extend and cancel, and a later frame shows python.exe added."
+    },
+    {
+      "id": 11,
+      "label": "Pointer speed in DPI",
+      "detail": "Device shows Bluetooth, firmware, a 50% battery bar and a 200 to 4000 DPI slider; disconnected and standard mouse states use different content."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "The diagnostics screen lists named hexadecimal IDs in two columns and groups 18 unnamed IDs as copyable-looking chips with a Copy unnamed IDs button."
+    },
+    {
+      "id": 13,
+      "label": "Couldn't save assignment",
+      "detail": "The save error states Copy is unsaved and the previous assignment remains active, with Try again and Back to editing. Conflict banners offer retry and dismissal."
+    },
+    {
+      "id": 14,
+      "label": "Tray menu",
+      "detail": "Active: 'Pause remapping' appears beneath a divider, and a checkmark marks 'Start with Windows'. Paused: the same row reads 'Resume remapping'; its position and the orange mouse icon remain unchanged."
+    }
+  ],
+  "astra": [
+    {
+      "id": 1,
+      "label": "Buttons / Profile Default",
+      "detail": "The profile control sits beside the large Buttons heading. Its open menu shows Default with an amber check and Preview app beneath it. The sidebar keeps the connected MX Master 2S and 50% battery at the bottom in both themes."
+    },
+    {
+      "id": 2,
+      "label": "Additional button 1 / Name this button",
+      "detail": "Numbered markers track each mouse artwork, and hovering Back button colors both marker 2 and its matching row. Extra hardware controls appear under Outside the diagram. The rename sequence changes Additional button 1 to Spare button, while the offline screen explicitly says changes apply when the mouse connects."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap / Set swipes in Gestures.",
+      "detail": "The compact list replaces the mouse illustration with five full-width rows. Back button shows separate Ctrl and W keycaps followed by Close tab. Native compact frames preserve all labels, right-aligned pencils and the note that Windows handles left click and scrolling."
+    },
+    {
+      "id": 4,
+      "label": "Select an action to assign it now",
+      "detail": "The editor pairs a close-up Thumb buttons card with a two-column category and action picker. Edit shows Copy, Paste, Cut, Undo, Redo and Find with shortcuts aligned on the right. The compact modal keeps category labels and its close button visible; the haptic editor identifies Thumb panel and marker 6."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions / Record a keyboard shortcut",
+      "detail": "Searching Copy replaces the category list with a single result under Edit and separate Ctrl and C keycaps. The empty result view centers a magnifier, No matching actions and an outlined shortcut-recording button beneath the search field."
+    },
+    {
+      "id": 6,
+      "label": "Switch between two pointer speeds",
+      "detail": "Wheel mode button first offers Switch wheel mode and Switch pointer speed. The speed editor shows numeric inputs 800 and 1600, matching sliders, the supported 200 to 4000 DPI range, Mouse now: 1000 DPI and Next press: 800 DPI above a full-width save button."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut / Press a key",
+      "detail": "Recording uses an amber panel and says Esc cancels recording. M remains in the draft after resizing to 720 by 360; cancel returns Back button to Native action. Saving K shows a named success toast and reopening shows Assigned now K plus Saved. All three native tab cycles in both themes retain their layout. The restart-labelled frame also visibly shows K and Saved. The compact four-modifier chord fits without clipping."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges / 50% of a notch",
+      "detail": "SmartShift uses an amber outline and filled radio. Flick sensitivity shows 10, while the nudge slider states 50% of a notch and explains the pause-or-reversal trigger. The compact native layout stacks the three wheel modes and keeps both switches fully visible. Limited settings omit the two slider cards."
+    },
+    {
+      "id": 9,
+      "label": "Minimum swipe distance / 60 counts",
+      "detail": "Tap and four swipe rows use matching hand or arrow icons, with shortcut keycaps grouped at the right. When gestures are off, the screen states saved assignments take effect when enabled. The compact native screen fits all five mappings and the distance slider in 540 pixels of height."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window / Capturing in 6s",
+      "detail": "Profiles use numbered cards and Move up or Move down controls above executable chips. Capture displays a countdown, a + 6 seconds control and Cancel. The native captured-window frame adds python.exe to Preview app and shows a matching success toast. Compact frames keep both profile cards and the Default fallback visible."
+    },
+    {
+      "id": 11,
+      "label": "Disconnected / Edit button mappings",
+      "detail": "The connected Device view separates Bluetooth and firmware cards, then a green battery bar, DPI slider and collapsed HID++ features row. Disconnected and No device states give short instructions and an Edit button mappings button. USB mouse shows only its reported standard-button explanation and connection card. Compact connected frames preserve the same hierarchy."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features / Copy unnamed IDs",
+      "detail": "The diagnostics view names 29 reported features, lists named hexadecimal IDs in two columns, and separates 18 unnamed features into monospaced chips. Copy unnamed IDs sits beside that subsection, with a sentence explaining their use in device-compatibility reports."
+    },
+    {
+      "id": 13,
+      "label": "Couldn't save assignment / Copy is still unsaved.",
+      "detail": "The conflict banner names Logi Options+, explains interception and offers Quit or Retry quit with Dismiss. The save-error editor retains Back button context, states the previous assignment is still active, and puts Try again beside Back to editing. Error and warning hues differ in both themes."
+    },
+    {
+      "id": 14,
+      "label": "Tray menu",
+      "detail": "Active state shows 'Pause remapping'; paused state shows 'Resume remapping'. In both images, a small orange mouse sits left of 'Open mouse settings', a black check marks 'Start with Windows', and thin gray separators divide the four large text rows. Both states keep identical row alignment and generous spacing."
+    }
+  ]
+}

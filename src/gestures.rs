@@ -35,7 +35,7 @@ impl GestureDetector {
             None
         } else if !gesture_held && self.active {
             self.active = false;
-            let threshold = state::config().gestures.tap_threshold as i64;
+            let threshold = state::active_gestures().tap_threshold as i64;
             let outcome = classify(self.dx, self.dy, threshold);
             tracing::info!(
                 "gesture end: dx={} dy={} -> {:?}",
@@ -76,8 +76,7 @@ fn classify(dx: i64, dy: i64, threshold: i64) -> Outcome {
 }
 
 fn action_for(outcome: Outcome) -> Action {
-    let cfg = state::config();
-    let g = &cfg.gestures;
+    let g = state::active_gestures();
     match outcome {
         Outcome::Tap => g.tap.clone(),
         Outcome::Up => g.up.clone(),

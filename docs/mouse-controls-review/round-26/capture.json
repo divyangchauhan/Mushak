@@ -1,0 +1,20 @@
+{
+  "packet": "moss",
+  "source": "775a09fe78382e2e7a256cbaeb7a81b5cb9b5346",
+  "hostScale": 200,
+  "device": "Simulated MX Master 2S from recorded Bluetooth report. A4 disconnected.",
+  "window": {
+    "A3 A4 A5": [
+      720,
+      540
+    ],
+    "B4 C4 D2 D3": [
+      720,
+      360
+    ],
+    "other": [
+      968,
+      668
+    ]
+  }
+}

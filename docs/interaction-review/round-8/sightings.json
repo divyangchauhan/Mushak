@@ -1,0 +1,50 @@
+{
+  "sol": {
+    "10": "Switch to the window you want to add appears in a tinted banner with a 4s countdown beside Cancel.",
+    "11": "Pointer speed (DPI) shows 1000 above its slider, with 200 and 4000 marking the ends.",
+    "12": "Unnamed features shows two rows of hex ID chips below the main list, with Copy IDs aligned to the right.",
+    "13": "Couldn't save assignment keeps Copy is still unsaved above an amber Try again button and a neutral Back to editing button.",
+    "14": "Resume remapping replaces Pause remapping in the second row while Start with Windows keeps its checkmark.",
+    "01": "Default is checked in the two-row Profile menu above Preview app, with the battery card pinned to the sidebar footer.",
+    "02": "Haptic Sense Panel is numbered 6 on the MX Master 4 thumb rest. Additional button 1 sits below the diagram with Control ID 0x01FF.",
+    "03": "Close tab shows Ctrl and W as separate keycaps inside the Back button's right-aligned control.",
+    "04": "Common has a checkmark in the open Category menu, which pairs icons with right-aligned action counts.",
+    "05": "No matching actions appears directly beneath the query, followed by Record a keyboard shortcut.",
+    "06": "Switch wheel mode has an amber Assign button. Switch pointer speed has a neutral Set up button and a chevron.",
+    "07": "K saved for Back button appears next to a green check in the lower-right corner while the Back button card displays K.",
+    "08": "SmartShift has an amber radio and border, with Flick sensitivity at 10 below it.",
+    "09": "Saved gesture actions labels the list beneath the off toggle. Swipe left still shows Ctrl, Win, and a left-arrow keycap."
+  },
+  "terra": {
+    "10": "Switch to the window you want to add: capture banner shows a 4s countdown and Cancel.",
+    "11": "Disconnected: device card says saved button mappings are still editable.",
+    "12": "HID++ features: named hexadecimal IDs appear above unnamed feature chips and Copy IDs.",
+    "13": "Couldn't save assignment: Copy is still unsaved, with Try again and Back to editing.",
+    "14": "Start with Windows: tray menu has a checkmark and Pause or Resume remapping.",
+    "01": "Buttons: Default profile dropdown opens to Preview app above numbered mouse artwork.",
+    "02": "Haptic Sense Panel: MX Master 4 artwork has marker 6 and an additional reported button row.",
+    "03": "Gesture button tap: compact mapping list shows Win and Tab keycaps beside Task View.",
+    "04": "Back button: category menu lists Common, Edit, Tabs & windows, Navigation, System and Media.",
+    "05": "No matching actions: empty search result offers Record a keyboard shortcut.",
+    "06": "Switch pointer speed: two DPI sliders appear above Save pointer speed action.",
+    "07": "Save shortcut: recorded K appears on the Back button row with a green confirmation toast.",
+    "08": "SmartShift: selected wheel mode uses an amber radio and border, above sensitivity sliders.",
+    "09": "Tap vs. swipe threshold: slider reads 60 counts above five gesture rows."
+  },
+  "astra": {
+    "01": "Buttons. Amber selection stripe marks the sidebar item, while the top-right Profile menu shows Default with a check and Preview app below it in both themes.",
+    "02": "Other reported buttons. MX Master 4 has six numbered artwork markers, and Additional button 1 sits in a separate bottom row with Control ID 0x01FF and Edit action.",
+    "03": "Gesture button tap. Compact mapping rows pair left-side line icons with right-side keycaps, including Win and Tab beside Task View.",
+    "04": "Thumb buttons. The cropped mouse image marks button 2 in amber, and the open Category menu lists Common, Edit, Tabs & windows, Navigation, System and Media with icons and counts.",
+    "05": "No matching actions. The zzzz search produces an empty result with Record a keyboard shortcut, while Copy produces a row with Ctrl and C keycaps and an Assign button.",
+    "06": "Switch pointer speed. Wheel mode button offers Assign for Switch wheel mode and Set up for pointer speed; its editor shows separate 800 and 1600 DPI sliders and a full-width save button.",
+    "07": "Saved shortcut. The ordered frames show recording, an M draft, a compact resize, cancellation, a K draft, the K saved for Back button toast, and a reopened editor with K and Done.",
+    "08": "Ignore accidental nudges. A slider shows 4 with off and 8 endpoints below the three wheel-mode cards; SmartShift has an amber radio and border.",
+    "09": "Saved gesture actions. The off state retains Tap and four swipe rows beneath an explicit gestures-off explanation, while the enabled state shows a 60 counts threshold slider.",
+    "10": "Switch to the window that you want to add. The window-pick banner shows 4s and Cancel above the Preview app profile, which contains a preview.exe chip.",
+    "11": "Reapply settings. The connected device view has a 50% green battery bar, Bluetooth, firmware MPM 12.01.B0006 and 1000 DPI; disconnected and no-device views use a crossed mouse icon.",
+    "12": "HID++ features. Amber hexadecimal IDs align beside feature names, with two rows of Unnamed features chips and a Copy IDs button below.",
+    "13": "Couldn't save assignment. The error panel says Copy is still unsaved, explains that the previous assignment is active, and places amber Try again beside Back to editing.",
+    "14": "Start with Windows. The white native tray menu shows a check beside startup and replaces Pause remapping with Resume remapping in the paused state."
+  }
+}

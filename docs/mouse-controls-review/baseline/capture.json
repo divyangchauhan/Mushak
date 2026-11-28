@@ -1,0 +1,20 @@
+{
+  "packet": "juniper",
+  "source": "6cd6850bd0ead8d81c482f5fb5137b0af8021a91",
+  "hostScale": 200,
+  "device": "Simulated MX Master 2S from recorded Bluetooth report. A4 disconnected.",
+  "window": {
+    "A3 A4": [
+      720,
+      540
+    ],
+    "B4 C4 D2": [
+      720,
+      360
+    ],
+    "other": [
+      968,
+      668
+    ]
+  }
+}

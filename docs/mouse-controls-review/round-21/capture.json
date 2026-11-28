@@ -1,0 +1,20 @@
+{
+  "packet": "dune",
+  "source": "f6ef9da6a532847834c80538ce542d2805b0b154",
+  "hostScale": 200,
+  "device": "Simulated MX Master 2S from recorded Bluetooth report. A4 disconnected.",
+  "window": {
+    "A3 A4": [
+      720,
+      540
+    ],
+    "B4 C4 D2": [
+      720,
+      360
+    ],
+    "other": [
+      968,
+      668
+    ]
+  }
+}

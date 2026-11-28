@@ -1,0 +1,176 @@
+{
+  "sol": {
+    "1": {
+      "label": "Default",
+      "detail": "The top-right Profile menu checks Default in amber and lists Preview app below it. The sidebar device tile shows a green connection dot and a half-filled battery."
+    },
+    "2": {
+      "label": "Additional button 1",
+      "detail": "On the MX Master 4, marker 6 sits on the thumb pad and matches Haptic Sense Panel. Additional button 1 has its own unnumbered row under Outside the diagram."
+    },
+    "3": {
+      "label": "Gesture button tap",
+      "detail": "The compact mapping list puts Win and Tab keycaps before Task View in a right-aligned pill, opposite Set swipes in Gestures."
+    },
+    "4": {
+      "label": "System",
+      "detail": "The Back button editor highlights System in the category column, with Task View, Desktop left, Desktop right and Show desktop beside it. An amber 2 points to the button in the thumb-wheel closeup."
+    },
+    "5": {
+      "label": "No matching actions",
+      "detail": "The empty search dialog keeps the query and clear icon visible and offers Record a keyboard shortcut. The Copy result in the other frame has Ctrl and C keycaps beside Assign."
+    },
+    "6": {
+      "label": "Switch pointer speed",
+      "detail": "The wheel editor shows Set up on the pointer speed row. The next panel shows separate amber sliders at 800 and 1600 DPI above Save pointer speed action."
+    },
+    "7": {
+      "label": "Saved shortcut",
+      "detail": "The short-window dialog keeps the M draft beside Change key. A later frame shows a green check with K saved for Back button, and the restart capture shows K under both Assigned now and Saved shortcut."
+    },
+    "8": {
+      "label": "SmartShift",
+      "detail": "The SmartShift tile has an amber radio dot and border. The limited Scroll frame selects Always ratchet and shows only the two toggle rows beneath the wheel modes."
+    },
+    "9": {
+      "label": "Tap vs. swipe threshold",
+      "detail": "The slider reads 60 counts above rows with amber directional arrows. The off state replaces the slider with a Saved gesture actions list."
+    },
+    "10": {
+      "label": "Pick a window",
+      "detail": "The profile card places Pick a window next to the preview.exe chip. The capture state puts a 4s countdown and Cancel at the right end of an amber banner above the card."
+    },
+    "11": {
+      "label": "Pointer speed (DPI)",
+      "detail": "The connected device page shows 1000 above a slider labeled 200 and 4000, next to a separate green battery bar at 50%. The disconnected card uses a crossed-out mouse."
+    },
+    "12": {
+      "label": "HID++ features",
+      "detail": "The diagnostics card aligns amber hexadecimal IDs beside names such as SmartShift. Unnamed IDs appear in two rows of chips beneath the list beside Copy IDs."
+    },
+    "13": {
+      "label": "Couldn't save assignment",
+      "detail": "A red warning triangle marks the save error above Copy is still unsaved. The amber Try again control sits next to Back to editing under the file-in-use explanation."
+    },
+    "14": {
+      "label": "Pause remapping",
+      "detail": "The Windows tray menu swaps Pause remapping for Resume remapping in the same slot, while Start with Windows keeps its checkmark."
+    }
+  },
+  "terra": {
+    "1": {
+      "label": "Profile",
+      "detail": "The Default dropdown opens above the button cards with Preview app as another choice."
+    },
+    "2": {
+      "label": "Additional button 1",
+      "detail": "On the MX Master 4, this card sits beneath the six numbered controls under Outside the diagram."
+    },
+    "3": {
+      "label": "Gesture button tap",
+      "detail": "The compact list shows Win and Tab keycaps followed by Task View on the right."
+    },
+    "4": {
+      "label": "System",
+      "detail": "The selected category has an amber tinted background and lists Task View and desktop navigation actions."
+    },
+    "5": {
+      "label": "No matching actions",
+      "detail": "A search for zzzz shows a Record a keyboard shortcut button in the empty result area."
+    },
+    "6": {
+      "label": "Switch pointer speed",
+      "detail": "Its row says Alternate two DPI values and has a Set up button."
+    },
+    "7": {
+      "label": "Saved shortcut",
+      "detail": "The reopened Back button editor shows K in a large central panel and Assigned now K above it."
+    },
+    "8": {
+      "label": "Flick sensitivity",
+      "detail": "The SmartShift screen shows value 10 above a slider with endpoints 1 and 50."
+    },
+    "9": {
+      "label": "Tap vs. swipe threshold",
+      "detail": "The slider shows 60 counts, with swipe action rows beneath it."
+    },
+    "10": {
+      "label": "Switch to the window you want to add",
+      "detail": "An amber banner displays a 4s countdown and Cancel button above the profile card."
+    },
+    "11": {
+      "label": "Disconnected",
+      "detail": "A wide card pairs a crossed mouse icon with instructions to wake or reconnect the mouse."
+    },
+    "12": {
+      "label": "HID++ features",
+      "detail": "Hexadecimal IDs appear beside named features, and unnamed IDs appear as chips below Copy IDs."
+    },
+    "13": {
+      "label": "Couldn't save assignment",
+      "detail": "The error says Copy is still unsaved and offers Try again and Back to editing."
+    },
+    "14": {
+      "label": "Start with Windows",
+      "detail": "A checkmark appears to the left of this item in both tray menu states."
+    }
+  },
+  "astra": {
+    "1": {
+      "label": "Profile",
+      "detail": "The top-right Default menu opens to Default with an amber checkmark and Preview app below it in both themes."
+    },
+    "2": {
+      "label": "Outside the diagram",
+      "detail": "The MX Master 4 has six numbered circles on its artwork, followed by an unnumbered Additional button 1 row below the six matching cards."
+    },
+    "3": {
+      "label": "Gesture button tap",
+      "detail": "The compact list displays Win and Tab keycaps beside Task View, with Set swipes in Gestures. beneath the button name."
+    },
+    "4": {
+      "label": "Tabs & windows",
+      "detail": "The compact picker selects this category in amber and shows Close tab checked, with Ctrl + W aligned at the right of its row."
+    },
+    "5": {
+      "label": "No matching actions",
+      "detail": "The zzzz search produces an empty-state message with a Record a keyboard shortcut button, while Copy produces one result with Ctrl and C keycaps and Assign."
+    },
+    "6": {
+      "label": "Switch pointer speed",
+      "detail": "The wheel action panel puts Set up beside the two-DPI action and Assign beside Switch wheel mode; the editor displays 800 and 1600 DPI sliders."
+    },
+    "7": {
+      "label": "Saved shortcut",
+      "detail": "The ordered frames show recording, an M draft, cancellation, then saving K with a green-check toast; reopened and restarted views show K under Saved shortcut."
+    },
+    "8": {
+      "label": "Ignore accidental nudges",
+      "detail": "The full scroll view shows value 4 on an off-to-8 slider beneath Flick sensitivity, with SmartShift selected in amber."
+    },
+    "9": {
+      "label": "Tap vs. swipe threshold",
+      "detail": "The enabled view shows 60 counts above five gesture rows; the off view removes the threshold and labels the still-visible rows Saved gesture actions."
+    },
+    "10": {
+      "label": "Switch to the window you want to add",
+      "detail": "Window capture displays a wide amber notice with a 4s countdown and Cancel, above the Preview app and Default cards."
+    },
+    "11": {
+      "label": "Reapply settings",
+      "detail": "The connected device view pairs Bluetooth and firmware cards, a green 50% battery bar, and a Current DPI card reading 1000."
+    },
+    "12": {
+      "label": "HID++ features",
+      "detail": "Named hexadecimal feature IDs form two aligned columns in one card; Unnamed features appear below as small chips beside Copy IDs."
+    },
+    "13": {
+      "label": "Couldn't save assignment",
+      "detail": "A red warning triangle precedes the error; Copy is still unsaved. appears above a settings-file explanation and Try again and Back to editing buttons."
+    },
+    "14": {
+      "label": "Start with Windows",
+      "detail": "Both native white tray menus check this entry, while Pause remapping changes to Resume remapping in the paused frame."
+    }
+  }
+}

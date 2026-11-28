@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.12.0.schema.json
 
 PackageIdentifier: Divyang.Mushak
-PackageVersion: 0.0.8
+PackageVersion: 0.0.11
 PackageLocale: en-US
 Publisher: Divyang Chauhan
 PublisherUrl: https://github.com/divyangchauhan
@@ -28,6 +28,6 @@ Tags:
   - mx-vertical
   - productivity
   - utility
-ReleaseNotesUrl: https://github.com/divyangchauhan/Mushak/releases/tag/v0.0.8
+ReleaseNotesUrl: https://github.com/divyangchauhan/Mushak/releases/tag/v0.0.11
 ManifestType: defaultLocale
 ManifestVersion: 1.12.0

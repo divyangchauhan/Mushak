@@ -1,0 +1,20 @@
+{
+  "packet": "mercury",
+  "source": "0a4085970c467f96721ef4f8b3abb1b12481612a",
+  "hostScale": 200,
+  "device": "Simulated MX Master 2S from recorded Bluetooth report. A4 disconnected.",
+  "window": {
+    "A3 A4": [
+      720,
+      540
+    ],
+    "B4 C4 D2": [
+      720,
+      360
+    ],
+    "other": [
+      968,
+      668
+    ]
+  }
+}

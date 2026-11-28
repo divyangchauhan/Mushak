@@ -1,0 +1,218 @@
+{
+  "sol": [
+    {
+      "id": 1,
+      "label": "Default",
+      "detail": "The profile menu shows a check on Default above Preview app. Buttons stays highlighted in the rail, and the battery tile shows a half-filled green bar."
+    },
+    {
+      "id": 2,
+      "label": "Spare button",
+      "detail": "The rename dialog identifies Control 0x01FF and shows Spare button in the outlined field. The new name appears under Outside the diagram, below the six numbered MX Master 4 assignments."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "The compact list pairs the finger icon and Set swipes in Gestures with Win and Tab keycaps inside the Task View edit button. The offline list retains the edit controls."
+    },
+    {
+      "id": 4,
+      "label": "System",
+      "detail": "The System category has an amber-tinted fill. Its right column shows Desktop left and Desktop right with matching arrow shortcuts, and the thumb-wheel crop still carries marker 2."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "The empty state centers a magnifier and an outlined Record a keyboard shortcut button. A successful Copy search shows the Edit category and two separate keycaps."
+    },
+    {
+      "id": 6,
+      "label": "Save pointer speed action",
+      "detail": "The solid amber save button spans the DPI editor. Two aligned fields show 800 and 1600 alongside sliders, and Next press shows 800 DPI."
+    },
+    {
+      "id": 7,
+      "label": "Recorded key",
+      "detail": "The M draft survives the resize and disappears on Cancel. The K save produces a green-check toast, and the restarted view shows K with green Saved. In the compact dialog all four checked modifiers and Space fit on one line."
+    },
+    {
+      "id": 8,
+      "label": "SmartShift",
+      "detail": "The selected mode has a filled radio and amber outline. Flick sensitivity reads 10, the nudge filter reads 4, and the limited screen drops both slider cards."
+    },
+    {
+      "id": 9,
+      "label": "Saved gesture actions",
+      "detail": "In the off state the threshold slider disappears and the directional icons lose their amber color. The Swipe right row still shows Ctrl, Win, and the right arrow beside Desktop right."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "Picking in 6s appears in an amber chip beside Cancel. The completion screen pairs the new python.exe chip with a green-check toast confirming Preview app."
+    },
+    {
+      "id": 11,
+      "label": "Disconnected",
+      "detail": "A slashed mouse icon sits in a tile next to the reconnect instruction. The connected view uses a green half-width battery bar and shows 1000 under Current DPI."
+    },
+    {
+      "id": 12,
+      "label": "Copy unnamed IDs",
+      "detail": "The diagnostics list aligns colored hexadecimal codes with feature names. The Copy unnamed IDs button sits at the right of the 18 unnamed features heading, above two rows of ID chips."
+    },
+    {
+      "id": 13,
+      "label": "Couldn't save assignment",
+      "detail": "An orange warning triangle precedes the error. The text keeps Copy identified as unsaved and presents Try again beside Back to editing. The separate quit failure banner shows a green Remapping is on line."
+    },
+    {
+      "id": 14,
+      "label": "Resume remapping",
+      "detail": "The paused Windows menu swaps in Resume remapping under the first divider. A checkmark stays beside Start with Windows, and a second divider separates Quit Mushak."
+    }
+  ],
+  "terra": [
+    {
+      "id": 1,
+      "label": "Buttons",
+      "detail": "The Default profile picker sits beside the title; numbered mouse markers correspond to cards at right."
+    },
+    {
+      "id": 2,
+      "label": "Spare button",
+      "detail": "The MX Master 4 image has six numbered markers, with Spare button listed below Outside the diagram."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "The compact list shows Win and Tab keycaps before Task View, with a pencil at the end."
+    },
+    {
+      "id": 4,
+      "label": "Back button",
+      "detail": "System is selected in the category column and Task View, Desktop left, Desktop right and Show desktop appear alongside."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "A magnifier appears above the empty state and Record a keyboard shortcut button."
+    },
+    {
+      "id": 6,
+      "label": "Switch between two pointer speeds",
+      "detail": "Speed 1 is 800 and Speed 2 is 1600 DPI, each paired with a slider and a wide save button."
+    },
+    {
+      "id": 7,
+      "label": "Keyboard shortcut",
+      "detail": "The recorded chord shows Ctrl, Win, Alt and Shift selected, followed by Space and a Save shortcut button."
+    },
+    {
+      "id": 8,
+      "label": "Flick sensitivity",
+      "detail": "SmartShift is selected and the slider displays 10 between endpoints 1 and 50."
+    },
+    {
+      "id": 9,
+      "label": "Tap vs. swipe threshold",
+      "detail": "The slider reads 60 counts above rows for Tap and four swipe directions with shortcut chips."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "Preview app contains preview.exe and python.exe chips, with a confirmation toast for python.exe."
+    },
+    {
+      "id": 11,
+      "label": "Disconnected",
+      "detail": "A crossed mouse icon sits beside a message to wake or reconnect the mouse."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "The list pairs amber hexadecimal IDs with names such as Adjustable DPI and Hi-res wheel."
+    },
+    {
+      "id": 13,
+      "label": "Couldn't save assignment",
+      "detail": "The error says Copy is still unsaved and offers Try again and Back to editing."
+    },
+    {
+      "id": 14,
+      "label": "Pause remapping",
+      "detail": "The Windows tray menu shows Open mouse settings, a checked Start with Windows item and Quit Mushak."
+    }
+  ],
+  "astra": [
+    {
+      "id": 1,
+      "label": "Buttons",
+      "detail": "The Profile Default selector sits beside the title. Its open menu marks Default with an amber check above Preview app, while the bottom-left MX Master 2S card shows Connected and 50%."
+    },
+    {
+      "id": 2,
+      "label": "Spare button",
+      "detail": "The MX Master 4 artwork has six numbered markers. A separate Spare button row appears under Outside the diagram, matching the name-control dialog's Spare button field and Save name button."
+    },
+    {
+      "id": 3,
+      "label": "Gesture button tap",
+      "detail": "The compact list pairs Back button with Ctrl and W keycaps plus Close tab. Gesture button tap has a second line saying Set swipes in Gestures and a Win Tab Task View assignment."
+    },
+    {
+      "id": 4,
+      "label": "Assign an action",
+      "detail": "The System category is highlighted to the left of Task View, Desktop left, Desktop right and Show desktop. Their shortcuts align on the right, beside the cropped Thumb buttons picture with marker 2."
+    },
+    {
+      "id": 5,
+      "label": "No matching actions",
+      "detail": "Searching Copy leaves one Edit result with separate Ctrl and C keycaps. The empty search state centers a magnifier above No matching actions and an outlined Record a keyboard shortcut button."
+    },
+    {
+      "id": 6,
+      "label": "Save pointer speed action",
+      "detail": "The DPI editor shows Speed 1 at 800 and Speed 2 at 1600 with aligned sliders, the supported 200 to 4000 DPI range, and Next press: 800 DPI above a full-width amber save button."
+    },
+    {
+      "id": 7,
+      "label": "Save shortcut",
+      "detail": "The ordered frames show Record key, Press a key, an M draft retained after resize, cancellation back to Native action, then a K save and green Saved on reopening. The chord original fits Ctrl + Win + Alt + Shift + Space beside Change key, with four selected modifier buttons."
+    },
+    {
+      "id": 8,
+      "label": "Ignore accidental nudges",
+      "detail": "SmartShift is the selected third wheel-mode card. Flick sensitivity shows 10 and the nudge slider shows 4; the limited state selects Always ratchet and removes both sliders while keeping the two toggles."
+    },
+    {
+      "id": 9,
+      "label": "Tap vs. swipe threshold",
+      "detail": "The threshold is 60 counts with endpoints 10 and 400. Amber directional arrows label four swipe rows, and the off state replaces the threshold with a notice that saved assignments take effect when gestures turn on."
+    },
+    {
+      "id": 10,
+      "label": "Pick a window",
+      "detail": "Numbered Preview app and Photo editor cards expose Move down and Move up. The picked original adds a python.exe chip beside preview.exe and a bottom-right Added python.exe to Preview app confirmation."
+    },
+    {
+      "id": 11,
+      "label": "Reapply settings",
+      "detail": "The connected Device screen has Bluetooth and firmware cards above a green 50% battery bar and Current DPI 1000. Disconnected and No device use a crossed mouse symbol, while the USB mouse state shows only Connection USB."
+    },
+    {
+      "id": 12,
+      "label": "HID++ features",
+      "detail": "Amber hexadecimal IDs form a left column beside names such as 0x2201 Adjustable DPI. Below the named list, 18 unnamed features appear as two rows of ID chips with a Copy unnamed IDs button."
+    },
+    {
+      "id": 13,
+      "label": "Couldn't save assignment",
+      "detail": "The save-error original says Copy is still unsaved and that the previous assignment is still active, followed by Try again and Back to editing. The conflict banner separately shows Logi Options+ is running and Quit Logi Options+."
+    },
+    {
+      "id": 14,
+      "label": "Start with Windows",
+      "detail": "The native tray menu has a check beside Start with Windows and separators above Pause remapping and Quit Mushak. The paused version changes the action to Resume remapping."
+    }
+  ]
+}
