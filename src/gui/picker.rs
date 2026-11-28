@@ -1001,17 +1001,7 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
         .layout(|l| l.direction(TopToBottom).gap(6).padding((8, 16, 8, 16)))
         .children(|ui| {
             if editing {
-                let steps = if choices.len() <= 6 {
-                    let values: Vec<_> = choices.iter().map(u16::to_string).collect();
-                    format!("DPI steps   {}", values.join("   ·   "))
-                } else {
-                    format!(
-                        "{} supported steps   ·   {} to {} DPI",
-                        choices.len(),
-                        choices.iter().min().unwrap(),
-                        choices.iter().max().unwrap()
-                    )
-                };
+                let steps = format!("{} supported DPI values", choices.len());
                 if !side_by_side {
                     ui.text("Switch between two pointer speeds", |t| {
                         t.font(&fonts::SANS_SEMIBOLD).font_size(15).color(pal.text)
@@ -1153,6 +1143,33 @@ fn device_actions(ui: &mut Ui2, app: &mut App, query: &str, chosen: &mut Option<
                                             field.clone(),
                                             &choices[v as usize].to_string(),
                                         );
+                                    }
+                                    if choices.len() <= 6 {
+                                        ui.element()
+                                            .width(grow!())
+                                            .height(fit!())
+                                            .layout(|l| {
+                                                l.direction(LeftToRight).align(Left, CenterY)
+                                            })
+                                            .children(|ui| {
+                                                for (j, step) in choices.iter().enumerate() {
+                                                    if j > 0 {
+                                                        ui.element()
+                                                            .width(grow!())
+                                                            .height(fixed!(1.0))
+                                                            .empty();
+                                                    }
+                                                    ui.text(&step.to_string(), |t| {
+                                                        t.font(&fonts::MONO_MEDIUM)
+                                                            .font_size(11)
+                                                            .color(if *step == app.picker_dpi[i] {
+                                                                pal.text
+                                                            } else {
+                                                                pal.muted
+                                                            })
+                                                    });
+                                                }
+                                            });
                                     }
                                     let value = ui
                                         .get_text_value(field)
