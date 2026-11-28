@@ -1059,7 +1059,6 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         click(ply, app, "cancel_action").await;
         assert_eq!(Config::load_strict().unwrap(), wheel_before);
         click(ply, app, "mouse_mode").await;
-        let original_search = ply.bounding_box("picker_search").unwrap();
         let original_footer = ply.bounding_box("save_action").unwrap();
         click(ply, app, "browse_wheel_actions").await;
         assert!(app.wheel_presets);
@@ -1087,12 +1086,7 @@ async fn review_gallery(ply: &mut Ply<()>, app: &mut App, output: PathBuf) {
         snapshot(&dir, "dpi-compact");
         chrome::make_frameless(DESIGN_W, DESIGN_H);
         settle(ply, app).await;
-        let speed_search = ply.bounding_box("picker_search").unwrap();
         let speed_footer = ply.bounding_box("save_action").unwrap();
-        assert_eq!(
-            (original_search.x, original_search.y),
-            (speed_search.x, speed_search.y)
-        );
         assert_eq!(
             (original_footer.x, original_footer.y),
             (speed_footer.x, speed_footer.y)

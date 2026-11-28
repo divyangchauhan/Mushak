@@ -189,9 +189,7 @@ pub fn overlay(ui: &mut Ui2, app: &mut App) {
                     }
                     let query = app.picker_query.to_lowercase();
                     let browse = has_mouse_actions && query.is_empty();
-                    if browse {
-                        wheel_action_tabs(ui, app);
-                    }
+
                     let mut selection = None;
                     if browse && !app.wheel_presets {
                         ui.element()
@@ -807,6 +805,12 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
             if app.shortcut_editor || app.failed_assignment.is_some() {
                 return;
             }
+            if has_mouse_actions(app, target) && app.picker_query.is_empty() {
+                wheel_action_tabs(ui, app);
+                if app.picker_speed_editor {
+                    return;
+                }
+            }
             let focused = ui.focused_element() == Some("picker_search".into());
             ui.element()
                 .width(grow!())
@@ -861,6 +865,7 @@ fn header(ui: &mut Ui2, app: &mut App, target: &PickerTarget, close: &mut bool) 
         || app.scrolling_tab
         || app.failed_assignment.is_some()
         || app.naming_button
+        || app.picker_speed_editor
         || app.picker_fresh
     {
         return;
@@ -896,6 +901,9 @@ fn wheel_action_tabs(ui: &mut Ui2, app: &mut App) {
                 ),
                 ("browse_wheel_actions", "All actions", true),
             ] {
+                if presets && app.picker_speed_editor {
+                    continue;
+                }
                 let active = presets == app.wheel_presets && !app.picker_speed_editor;
                 ui.element()
                     .id(id)
