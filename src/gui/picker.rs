@@ -1738,17 +1738,18 @@ fn results(
                     .height(fit!())
                     .layout(|l| l.padding((8, 10, 4, 10)))
                     .children(|ui| {
-                        let heading = if gi == 0 {
-                            draft_replacement_hint(app, current).unwrap_or_else(|| {
-                                if app.device_view.paused {
-                                    "Select an action".to_owned()
-                                } else {
-                                    header.clone()
-                                }
-                            })
+                        let count = items.len();
+                        let result_count = if count == 1 {
+                            "1 match".to_owned()
                         } else {
-                            header.clone()
+                            format!("{count} matches")
                         };
+                        let heading = if gi == 0 {
+                            draft_replacement_hint(app, current)
+                        } else {
+                            None
+                        }
+                        .unwrap_or_else(|| format!("{header}  ·  {result_count}"));
                         ui.text(&heading, |t| {
                             t.font(&fonts::SANS_SEMIBOLD).font_size(14).color(pal.text)
                         });
