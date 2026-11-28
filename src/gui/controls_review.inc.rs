@@ -99,6 +99,11 @@ async fn controls_review(ply: &mut Ply<()>, app: &mut App, output: &std::path::P
         settle(ply, app).await;
         assert_eq!(app.custom_key, Some(75));
         review_frame(&dir, "C3");
+        click(ply, app, ("mod", 0u32)).await;
+        assert!(app.custom_mods.contains(&crate::config::Modifier::Ctrl));
+        review_frame(&dir, "C5");
+        click(ply, app, ("mod", 0u32)).await;
+        assert!(app.custom_mods.is_empty());
         chrome::make_frameless(720.0, 360.0);
         settle(ply, app).await;
         review_frame(&dir, "C4");

@@ -1942,15 +1942,17 @@ fn shortcut_editor(
                     .enumerate()
                     {
                         let on = mods.contains(&m);
+                        let state_label =
+                            format!("{label}, {}", if on { "selected" } else { "off" });
                         let id: Id = ("mod", mi as u32).into();
                         ui.element()
                             .id(id)
-                            .accessibility(|a| a.button(label))
+                            .accessibility(|a| a.button(&state_label))
                             .width(grow!())
                             .height(fixed!(34.0))
                             .corner_radius(8.0)
                             .background_color(if on {
-                                super::theme::Palette::mix(pal.accent, 16.0, pal.surface)
+                                super::theme::Palette::mix(pal.accent, 24.0, pal.surface)
                             } else {
                                 super::theme::TRANSPARENT
                             })
